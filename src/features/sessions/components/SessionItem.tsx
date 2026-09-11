@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, type MouseEvent } from "react";
+import type { MouseEvent } from "react";
 import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Circle,
   Clock,
   ExternalLink,
   FileText,
   HelpCircle,
+  Lock,
   MessageSquare,
   Video,
 } from "lucide-react";
@@ -19,8 +16,8 @@ import {
   useUncompleteClassroomSessionMutation,
 } from "../sessionsApi";
 import type { ClassroomSession } from "../sessionsTypes";
-import { cn } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api";
+import SessionThumbnail from "./SessionThumbnail";
 
 interface SessionItemProps {
   enrollmentId: string;
@@ -33,7 +30,6 @@ export default function SessionItem({
   session,
   isReadOnly = false,
 }: SessionItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [complete, { isLoading: isCompleting }] =
     useCompleteClassroomSessionMutation();
   const [uncomplete, { isLoading: isUncompleting }] =
@@ -62,133 +58,80 @@ export default function SessionItem({
   };
 
   return (
-    <article
-      className={cn(
-        "group overflow-hidden rounded-xl border bg-card transition-all duration-200",
-        isExpanded
-          ? "border-primary/30 shadow-sm"
-          : "border-border shadow-xs hover:border-primary/20",
-      )}
-    >
-      <div className="flex items-center gap-4 p-4">
-        <button
-          type="button"
-          onClick={handleToggleComplete}
-          disabled={isUpdating || isReadOnly}
-          aria-label={
-            isReadOnly
-              ? `Session completion is locked: ${session.completed ? "completed" : "incomplete"}`
-              : session.completed
-                ? "Mark session incomplete"
-                : "Mark session complete"
-          }
-          title={isReadOnly ? "Completed enrollment history is read-only" : undefined}
-          className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {session.completed ? (
-            <CheckCircle2 className="h-6 w-6 fill-green-50 text-green-500" />
-          ) : (
-            <Circle className="h-6 w-6 text-muted-foreground group-hover:text-blue-400" />
-          )}
-        </button>
+    <article className="overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-colors hover:border-primary/20">
+      <SessionThumbnail
+        title={session.title}
+        completed={session.completed}
+        isReadOnly={isReadOnly}
+        isUpdating={isUpdating}
+        onToggleComplete={handleToggleComplete}
+      />
 
-        <button
-          type="button"
-          onClick={() => setIsExpanded((expanded) => !expanded)}
-          aria-expanded={isExpanded}
-          className="flex min-w-0 flex-1 items-center justify-between gap-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <div className="min-w-0 space-y-0.5">
-            <p className="text-xs font-bold uppercase tracking-tight text-muted-foreground">
-              Session {(session.orderIndex ?? 0) + 1}
-            </p>
-            <h3
-              className={cn(
-                "truncate font-bold transition-colors",
-                session.completed
-                  ? "text-muted-foreground"
-                  : "text-foreground group-hover:text-primary",
-              )}
-            >
-              {session.title}
-            </h3>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-3">
-            {session.durationMinutes ? (
-              <span className="hidden items-center gap-1.5 text-xs font-medium text-muted-foreground sm:flex">
-                <Clock className="h-3.5 w-3.5" />
-                {session.durationMinutes}m
-              </span>
-            ) : null}
-            {isExpanded ? (
-              <ChevronUp className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-            )}
-          </div>
-        </button>
-      </div>
-
-      {isExpanded ? (
-        <div className="animate-in space-y-4 px-4 pb-5 pt-0 duration-200 fade-in slide-in-from-top-2 sm:px-14">
-          {session.description ? (
-            <p className="text-sm leading-relaxed text-foreground">
-              {session.description}
-            </p>
+      <div className="space-y-1.5 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-xs font-bold uppercase tracking-tight text-muted-foreground">
+            Session {(session.orderIndex ?? 0) + 1}
+          </p>
+          {session.durationMinutes ? (
+            <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              {session.durationMinutes}m
+            </span>
           ) : null}
-
-          <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
-            {session.recordingUrl ? (
-              <ResourceLink href={session.recordingUrl} label="Watch Recording" icon={Video} tone="red" />
-            ) : null}
-            {session.materialUrl ? (
-              <ResourceLink href={session.materialUrl} label="Learning Materials" icon={FileText} tone="blue" />
-            ) : null}
-            {session.quizUrl ? (
-              <ResourceLink href={session.quizUrl} label="Take Session Quiz" icon={HelpCircle} tone="amber" />
-            ) : null}
-            {session.feedbackUrl ? (
-              <ResourceLink href={session.feedbackUrl} label="Submit Feedback" icon={MessageSquare} tone="purple" />
-            ) : null}
-          </div>
         </div>
-      ) : null}
+
+        {session.description ? (
+          <p className="text-sm leading-relaxed text-foreground">
+            {session.description}
+          </p>
+        ) : null}
+
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <ResourceLink href={session.recordingUrl} label="Recording" icon={Video} />
+          <ResourceLink href={session.materialUrl} label="Materials" icon={FileText} />
+          <ResourceLink href={session.quizUrl} label="Quiz" icon={HelpCircle} />
+          <ResourceLink href={session.feedbackUrl} label="Feedback" icon={MessageSquare} />
+        </div>
+      </div>
     </article>
   );
 }
 
-const tones = {
-  red: "border-red-100 bg-red-50 text-red-700 hover:bg-red-100",
-  blue: "border-primary/20 bg-primary/10 text-primary hover:bg-blue-100",
-  amber: "border-amber-100 bg-amber-50 text-amber-700 hover:bg-amber-100",
-  purple: "border-purple-100 bg-purple-50 text-purple-700 hover:bg-purple-100",
-} as const;
-
+// One consistent, neutral style for every resource type instead of a
+// different loud color per link — the icon is enough to tell them apart.
 function ResourceLink({
   href,
   label,
   icon: Icon,
-  tone,
 }: {
-  href: string;
+  href: string | null | undefined;
   label: string;
   icon: typeof Video;
-  tone: keyof typeof tones;
 }) {
+  if (!href) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Not available for this session"
+        className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-muted-foreground/50"
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate text-xs font-semibold">{label}</span>
+        <Lock className="ml-auto h-3.5 w-3.5 shrink-0" />
+      </div>
+    );
+  }
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "flex items-center gap-3 rounded-lg border p-3 transition-colors",
-        tones[tone],
-      )}
+      className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
     >
-      <Icon className="h-5 w-5" />
-      <span className="text-sm font-bold">{label}</span>
-      <ExternalLink className="ml-auto h-3.5 w-3.5 opacity-50" />
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="truncate text-xs font-semibold text-foreground">{label}</span>
+      <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 opacity-50" />
     </a>
   );
 }

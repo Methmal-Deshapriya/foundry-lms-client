@@ -11,7 +11,6 @@ import {
   Check,
   ExternalLink,
   FolderGit2,
-  LockKeyhole,
   Loader2,
   Users,
   Wallet,
@@ -39,6 +38,12 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   NOT_REQUIRED: "No payment required",
 };
 
+const ENROLLMENT_STATUS_STYLES: Record<string, string> = {
+  ACTIVE: "bg-primary/10 text-primary",
+  COMPLETED: "bg-emerald-50 text-emerald-700",
+  CANCELLED: "bg-red-50 text-red-700",
+};
+
 // Compact "at a glance" tile — for short facts (a date, a status word), not
 // the big-number KPI tiles used on the admin catalog pages, which read too
 // heavy for text values like these.
@@ -62,6 +67,18 @@ function FactTile({
           {children}
         </div>
       </div>
+    </div>
+  );
+}
+
+// A labeled section — same label styling as the Explore page's filter
+// sidebar (FilterSection), minus its divider, so groups stay identifiable
+// without the horizontal rules.
+function AboutSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2.5 py-5 first:pt-0 last:pb-0">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</p>
+      {children}
     </div>
   );
 }
@@ -140,10 +157,10 @@ export default function LearningPage() {
             can't silently cancel the negative margin that pulls the
             completion card up to overlap the backdrop below. */}
         <div>
-          {/* Cover-photo-style backdrop, styled as its own card like the
-              rest of the page. Title sits inside the band; the completion
-              card below overlaps its lower edge, straddling the two cards. */}
-          <div className="flex items-center gap-4 rounded-lg border border-border bg-linear-to-b from-primary/25 via-primary/8 to-transparent px-6 pt-8 pb-40 shadow-sm sm:pt-10 sm:pb-48">
+          {/* Cover-photo-style backdrop — a flat brand-gradient wash, no
+              border/shadow of its own. Title sits inside the band; the
+              completion card below overlaps its lower edge. */}
+          <div className="flex items-center gap-4 rounded-lg bg-linear-to-b from-blue-600/10 via-indigo-500/5 to-transparent px-6 pt-8 pb-36 sm:pt-10 sm:pb-40">
             <div className="relative hidden h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/50 bg-card shadow-sm sm:flex">
               {course.thumbnailUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URLs; next/image's domain allowlist would need constant upkeep
@@ -163,9 +180,19 @@ export default function LearningPage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                 {course.serviceTitle} · {course.categoryTitle}
               </p>
-              <h1 className="text-2xl font-bold text-foreground">
-                {course.title}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-foreground">
+                  {course.title}
+                </h1>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+                    ENROLLMENT_STATUS_STYLES[enrollment.status] ?? "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {enrollment.status.toLowerCase()}
+                </span>
+              </div>
               <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                 {isSeasonal ? (
                   <>
@@ -180,9 +207,9 @@ export default function LearningPage() {
           </div>
 
           {/* One "at a glance" card: progress + every quick fact together,
-              inset from the backdrop's edges and floated up to overlap its
-              bottom, so it reads as a narrower card sitting on top. */}
-          <div className="-mt-10 mx-6 rounded-lg border border-border bg-card p-6 shadow-md sm:-mt-12 sm:mx-10">
+              inset from the backdrop's edges and floated up so its own
+              vertical middle sits on the backdrop's bottom border. */}
+          <div className="-mt-28 mx-6 rounded-lg border border-border bg-card p-6 shadow-md sm:mx-10">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-foreground">
                 Course Completion
@@ -271,91 +298,93 @@ export default function LearningPage() {
           </div>
         </div>
 
-        {isCompletionHistoryReadOnly ? (
-          <div
-            role="status"
-            className="flex items-start gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-800"
-          >
-            <LockKeyhole
-              className="mt-0.5 size-4 shrink-0"
-              aria-hidden="true"
-            />
-            <p>
-              This enrollment is complete. You can continue viewing its
-              sessions, but your completion history is now read-only.
-            </p>
-          </div>
-        ) : null}
-
-        {/* Sessions is the primary reason a student opens this page — it
-            belongs right after "where am I", ahead of reference content. */}
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Your Sessions</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Sessions appear here as they are released and become available for
-              your course.
-            </p>
-          </div>
-          <SessionList
-            enrollmentId={enrollment.id}
-            sessions={sessions}
-            isReadOnly={isCompletionHistoryReadOnly}
-          />
-        </section>
-
-        {/* Reference/marketing content the student already saw before
-            enrolling — useful to have on hand, but secondary to the above. */}
-        {hasAboutContent ? (
-          <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-            <h2 className="mb-4 text-base font-bold text-foreground">
-              About this course
-            </h2>
-            {course.description ? (
-              <p className="text-sm text-muted-foreground">
-                {course.description}
+        {/* Sessions is the primary reason a student opens this page, so it
+            gets the flexible width; "About" rides alongside as a fixed,
+            narrow sticky rail — same w-72 the Explore page's secondary
+            sidebar uses, rather than a proportional column that would grow
+            (and crowd out sessions) on wider screens. Hidden below lg,
+            where there isn't room for it without squeezing sessions down to
+            a single column. */}
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <section className="min-w-0 flex-1 space-y-6">
+            <div>
+              <h2 className="text-base font-bold text-foreground">Your Sessions</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sessions appear here as they are released and become available for
+                your course.
               </p>
-            ) : null}
+            </div>
+            <SessionList
+              enrollmentId={enrollment.id}
+              sessions={sessions}
+              isReadOnly={isCompletionHistoryReadOnly}
+            />
+          </section>
 
-            {hasHighlights ? (
-              <ul className="mt-4 space-y-2">
-                {course.highlights.map((item) => (
-                  <li
-                    key={item}
-                    className="flex gap-2.5 text-sm text-foreground"
-                  >
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+          {/* Reference/marketing content the student already saw before
+              enrolling — useful to have on hand, but secondary to the
+              sessions above. Sticky so it stays in view while only the
+              sessions column scrolls past it; hidden below lg where there
+              isn't room to give it without squeezing sessions down to one
+              column. */}
+          {hasAboutContent ? (
+            <aside className="hidden shrink-0 lg:block lg:w-72">
+              <div className="sticky top-6 border-l border-border pl-6">
+                <h2 className="mb-1 text-base font-bold text-foreground">
+                  About this course
+                </h2>
+                <div>
+                  {course.description ? (
+                    <AboutSection title="Description">
+                      <p className="text-sm text-muted-foreground">
+                        {course.description}
+                      </p>
+                    </AboutSection>
+                  ) : null}
 
-            {hasSkills ? (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {course.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary"
-                  >
-                    {skill}
-                  </span>
-                ))}
+                  {hasHighlights ? (
+                    <AboutSection title="Highlights">
+                      <ul className="space-y-2">
+                        {course.highlights.map((item) => (
+                          <li
+                            key={item}
+                            className="flex gap-2.5 text-sm text-foreground"
+                          >
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </AboutSection>
+                  ) : null}
+
+                  {hasSkills ? (
+                    <AboutSection title="Skills">
+                      <div className="flex flex-wrap gap-1.5">
+                        {course.skills.map((skill) => (
+                          <span
+                            key={skill}
+                            className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </AboutSection>
+                  ) : null}
+
+                  {hasPrerequisites ? (
+                    <AboutSection title="Prerequisites">
+                      <p className="text-sm text-muted-foreground">
+                        {course.prerequisites.join(" · ")}
+                      </p>
+                    </AboutSection>
+                  ) : null}
+                </div>
               </div>
-            ) : null}
-
-            {hasPrerequisites ? (
-              <div className="mt-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Prerequisites
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {course.prerequisites.join(" · ")}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+            </aside>
+          ) : null}
+        </div>
       </div>
     </StudentOnlyRoute>
   );
