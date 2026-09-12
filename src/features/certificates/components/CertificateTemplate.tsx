@@ -40,16 +40,21 @@ export default function CertificateTemplate({
             alt="Foundry Academy"
             className="h-9 w-auto"
           />
-          <p className="mt-6 text-sm text-gray-500">
+          <p className="mt-2 text-xs text-gray-500">
             {format(new Date(issuedDate), "MMM d, yyyy")}
           </p>
           <h1 className="mt-2 text-xl font-extrabold leading-tight text-black">
             {displayName}
           </h1>
-          <p className="mt-1 text-sm text-gray-400">has successfully completed</p>
+          <p className="mt-0 text-xs text-gray-400">has successfully completed</p>
+          <p className="mt-6 text-base font-bold text-black">{courseName}</p>
+          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+            This is to certify successful completion of the program, having covered the
+            skill set listed below during this course.
+          </p>
 
           {skills.length > 0 ? (
-            <div className="mt-6 flex flex-wrap gap-1.5">
+            <div className="mt-4 flex flex-wrap gap-1.5">
               {skills.map((skill) => (
                 <span
                   key={skill}
@@ -62,10 +67,9 @@ export default function CertificateTemplate({
           ) : null}
         </div>
 
-        <div className="max-w-[220px]">
-          <div className="border-t border-gray-400 pt-2">
-            <p className="text-sm text-gray-600">Instructor, Foundry</p>
-          </div>
+        <div className="flex max-w-60 gap-4">
+          <SignatureBlock src="/certificate/certificate_anushka_sign.jpeg" />
+          <SignatureBlock src="/certificate/certificate_methmal_sign.webp" />
         </div>
       </div>
 
@@ -91,6 +95,22 @@ export default function CertificateTemplate({
           <QRCodeSVG value={verifyUrl} size={64} level="M" />
           <p className="text-[10px] font-medium text-gray-500">ID: {shortId}</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Two instructors sign every certificate — one column each, sharing the
+// same layout. `src` intentionally isn't validated as existing: drop the
+// matching file into public/certificate/ and it renders, same as the other
+// certificate assets.
+function SignatureBlock({ src }: { src: string }) {
+  return (
+    <div className="flex-1 text-center">
+      {/* eslint-disable-next-line @next/next/no-img-element -- captured by html-to-image, see note on the logo above */}
+      <img src={src} alt="Instructor signature" className="mx-auto h-8 w-auto" />
+      <div className="border-t border-gray-400 pt-1.5">
+        <p className="text-xs text-gray-600">Instructor, Foundry</p>
       </div>
     </div>
   );
