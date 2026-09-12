@@ -1,9 +1,12 @@
 "use client";
 
-import { use } from "react";
-import { format } from "date-fns";
-import { Award, CircleAlert, Loader2, ShieldCheck, ShieldX } from "lucide-react";
+import { use, useRef, useState } from "react";
+import { toPng } from "html-to-image";
+import { jsPDF } from "jspdf";
+import { CircleAlert, Download, FileDown, Loader2, ShieldX } from "lucide-react";
 import { useVerifyCertificateQuery } from "@/features/certificates/certificatesApi";
+import CertificateTemplate from "@/features/certificates/components/CertificateTemplate";
+import { Button } from "@/components/ui/button";
 
 export default function PublicCertificateVerificationPage({
   params,
@@ -12,6 +15,8 @@ export default function PublicCertificateVerificationPage({
 }) {
   const { code } = use(params);
   const { data: certificate, isLoading, isError } = useVerifyCertificateQuery(code);
+  const certificateRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState<"png" | "pdf" | null>(null);
 
   if (isLoading) {
     return (
@@ -39,82 +44,101 @@ export default function PublicCertificateVerificationPage({
   }
 
   const isIssued = certificate.status === "ISSUED";
+  const verifyUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/certificates/verify/${code}` : "";
+
+  const captureCertificatePng = async () => {
+    if (!certificateRef.current) return null;
+    // pixelRatio 3: the on-screen card is a few hundred px wide, but a
+    // downloaded/printed certificate needs to hold up at a much larger
+    // size — this renders at ~3x resolution before export.
+    return toPng(certificateRef.current, { pixelRatio: 3, cacheBust: true });
+  };
+
+  const handleDownloadPng = async () => {
+    setIsExporting("png");
+    try {
+      const dataUrl = await captureCertificatePng();
+      if (!dataUrl) return;
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = `${certificate.certificateCode}.png`;
+      link.click();
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsExporting("pdf");
+    try {
+      const dataUrl = await captureCertificatePng();
+      if (!dataUrl || !certificateRef.current) return;
+      const { width, height } = certificateRef.current.getBoundingClientRect();
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "px",
+        format: [width, height],
+      });
+      pdf.addImage(dataUrl, "PNG", 0, 0, width, height);
+      pdf.save(`${certificate.certificateCode}.pdf`);
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   return (
-    <main className="mx-auto min-h-[60vh] max-w-3xl px-6 py-20">
-      <article className="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <div className="border-b bg-muted/30 p-8 text-center">
-          <Award className="mx-auto size-12 text-primary" aria-hidden="true" />
-          <p className="mt-4 text-sm font-medium uppercase tracking-widest text-muted-foreground">
-            Foundry Academy certificate
-          </p>
-          <h1 className="mt-2 text-3xl font-bold">Credential verification</h1>
-        </div>
-        <div className="space-y-6 p-8">
-          <div
-            role="status"
-            className={
-              isIssued
-                ? "flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-700"
-                : "flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive"
-            }
-          >
-            {isIssued ? (
-              <ShieldCheck className="size-6 shrink-0" aria-hidden="true" />
-            ) : (
-              <ShieldX className="size-6 shrink-0" aria-hidden="true" />
-            )}
-            <div>
-              <p className="font-semibold">{isIssued ? "Valid certificate" : "Revoked certificate"}</p>
-              <p className="text-sm opacity-90">
-                {isIssued
-                  ? "This credential is currently valid."
-                  : "This credential is retained for verification history but is no longer valid."}
-              </p>
-            </div>
+    <main className="mx-auto min-h-[60vh] max-w-4xl px-6 py-20">
+      {!isIssued ? (
+        <div
+          role="status"
+          className="mb-6 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive"
+        >
+          <ShieldX className="size-6 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-semibold">Revoked certificate</p>
+            <p className="text-sm opacity-90">
+              This credential is retained for verification history but is no longer valid.
+            </p>
           </div>
-
-          <dl className="grid gap-5 sm:grid-cols-2">
-            <CertificateField label="Student" value={certificate.studentName} />
-            <CertificateField label="Course" value={certificate.courseName} />
-            <CertificateField
-              label="Issued date"
-              value={format(new Date(certificate.issuedDate), "MMMM dd, yyyy")}
-            />
-            <CertificateField label="Certificate code" value={certificate.certificateCode} mono />
-          </dl>
-
-          {certificate.skills.length > 0 ? (
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Skills recorded</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {certificate.skills.map((skill) => (
-                  <span key={skill} className="rounded-md border bg-background px-2.5 py-1 text-sm">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
         </div>
-      </article>
-    </main>
-  );
-}
+      ) : null}
 
-function CertificateField({
-  label,
-  value,
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div>
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className={mono ? "mt-1 font-mono font-medium" : "mt-1 font-medium"}>{value}</dd>
-    </div>
+      <div className="overflow-hidden rounded-xl border shadow-sm" ref={certificateRef}>
+        <CertificateTemplate
+          studentName={certificate.studentName}
+          courseName={certificate.courseName}
+          description={certificate.description}
+          issuedDate={certificate.issuedDate}
+          certificateCode={certificate.certificateCode}
+          skills={certificate.skills}
+          verifyUrl={verifyUrl}
+        />
+      </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+        <p className="text-sm text-muted-foreground">
+          Certificate code: <span className="font-mono">{certificate.certificateCode}</span>
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleDownloadPng} disabled={isExporting !== null}>
+            {isExporting === "png" ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 size-4" />
+            )}
+            Download PNG
+          </Button>
+          <Button onClick={handleDownloadPdf} disabled={isExporting !== null}>
+            {isExporting === "pdf" ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <FileDown className="mr-2 size-4" />
+            )}
+            Download PDF
+          </Button>
+        </div>
+      </div>
+    </main>
   );
 }

@@ -25,6 +25,7 @@ export type Certificate = {
 export type PublicCertificateVerification = {
   studentName: string;
   courseName: string;
+  description?: string | null;
   issuedDate: string;
   certificateCode: string;
   status: CertificateStatus;
