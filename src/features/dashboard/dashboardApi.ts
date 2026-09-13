@@ -1,5 +1,5 @@
 import { baseApi } from "@/store/baseApi";
-import type { AdminDashboardSummary, StudentDashboardSummary } from "./dashboardTypes";
+import type { AdminDashboardQuery, AdminDashboardSummary, StudentDashboardSummary } from "./dashboardTypes";
 
 export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -24,8 +24,8 @@ export const dashboardApi = baseApi.injectEndpoints({
         ]) ?? []),
       ],
     }),
-    getAdminDashboard: builder.query<AdminDashboardSummary, void>({
-      query: () => "/dashboard/admin",
+    getAdminDashboard: builder.query<AdminDashboardSummary, AdminDashboardQuery | void>({
+      query: (params) => ({ url: "/dashboard/admin", params: params || undefined }),
       // pendingProjectReviews/projectStatusBreakdown need the same scoped
       // tag reviewProject actually invalidates — a bare "Projects" tag
       // would miss it, same reasoning as the student dashboard above.

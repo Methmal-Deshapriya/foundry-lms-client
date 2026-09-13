@@ -17,6 +17,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@reduxjs/toolkit": "^2.11.2",
+    "@svg-maps/sri-lanka": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cn": "^0.3.0",

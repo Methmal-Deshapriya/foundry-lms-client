@@ -49,10 +49,17 @@ export type MonthlyAmount = { month: string; amount: number };
 export type EnrollmentStatusKey = "ACTIVE" | "COMPLETED" | "CANCELLED";
 export type CertificateStatusKey = "ISSUED" | "REVOKED";
 export type ProjectStatusKey = "PENDING" | "APPROVED" | "REJECTED";
+export type PaymentStatusKey = "PARTIAL" | "COMPLETED";
 
 export type DistrictCount = { district: string; count: number };
 export type TopCourse = { courseId: string; title: string; count: number };
 export type ServiceCount = { service: string; count: number };
+
+/** Either a preset lookback (`months`: 3/6/12) or an explicit custom range
+ * (`from`/`to`, ISO date strings) for the enrollment/revenue trend charts —
+ * see dashboard.repository.js's resolveTrendWindow. Every other field on
+ * AdminDashboardSummary is an all-time snapshot and ignores this. */
+export type AdminDashboardQuery = { months?: number; from?: string; to?: string };
 
 export type AdminDashboardSummary = {
   totalStudents: number;
@@ -61,11 +68,14 @@ export type AdminDashboardSummary = {
   totalCertificatesIssued: number;
   pendingProjectReviews: number;
   totalRevenue: number;
+  fullPotentialRevenue: number;
+  revenueToCome: number;
   enrollmentTrend: MonthlyCount[];
   revenueTrend: MonthlyAmount[];
   enrollmentStatusBreakdown: Partial<Record<EnrollmentStatusKey, number>>;
   certificateStatusBreakdown: Partial<Record<CertificateStatusKey, number>>;
   projectStatusBreakdown: Partial<Record<ProjectStatusKey, number>>;
+  paymentStatusBreakdown: Partial<Record<PaymentStatusKey, number>>;
   districtBreakdown: DistrictCount[];
   topCourses: TopCourse[];
   serviceBreakdown: ServiceCount[];
