@@ -178,14 +178,14 @@ function ProjectCard({ project }: { project: StudentProject }) {
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border px-5 py-3">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 border-t border-border px-5 py-3">
+        <div className="flex items-center gap-1">
           {project.githubUrl ? (
             <a
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="-m-2 flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
             >
               <Github className="h-4 w-4" />
             </a>
@@ -195,7 +195,7 @@ function ProjectCard({ project }: { project: StudentProject }) {
               href={project.demoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="-m-2 flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
             >
               <Globe className="h-4 w-4" />
             </a>

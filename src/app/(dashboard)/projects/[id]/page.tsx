@@ -160,30 +160,34 @@ export default function ProjectDetailsPage() {
               <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Metadata</h4>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 bg-background rounded-lg flex items-center justify-center text-muted-foreground">
+                  <div className="h-8 w-8 shrink-0 bg-background rounded-lg flex items-center justify-center text-muted-foreground">
                     <BookOpen className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">Course</p>
-                    <p className="text-sm font-bold text-foreground">{project.course?.title}</p>
+                    <p className="truncate text-sm font-bold text-foreground" title={project.course?.title}>
+                      {project.course?.title}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 bg-background rounded-lg flex items-center justify-center text-muted-foreground">
+                  <div className="h-8 w-8 shrink-0 bg-background rounded-lg flex items-center justify-center text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">Submitted On</p>
-                    <p className="text-sm font-bold text-foreground">{format(new Date(project.createdAt), "MMMM dd, yyyy")}</p>
+                    <p className="truncate text-sm font-bold text-foreground">
+                      {format(new Date(project.createdAt), "MMMM dd, yyyy")}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 bg-background rounded-lg flex items-center justify-center text-muted-foreground">
+                  <div className="h-8 w-8 shrink-0 bg-background rounded-lg flex items-center justify-center text-muted-foreground">
                     <User className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase">Student</p>
-                    <p className="text-sm font-bold text-foreground">
+                    <p className="truncate text-sm font-bold text-foreground">
                       {project.user?.firstName} {project.user?.lastName}
                     </p>
                   </div>

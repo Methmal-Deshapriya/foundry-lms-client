@@ -85,8 +85,10 @@ export default function MyCertificatesPage() {
                         }
                       }}
                     >
-                      <TableCell className="px-4 font-medium text-foreground">
-                        {cert.courseName}
+                      <TableCell className="max-w-40 px-4 font-medium text-foreground sm:max-w-60">
+                        <span className="block truncate" title={cert.courseName}>
+                          {cert.courseName}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span
@@ -106,8 +108,10 @@ export default function MyCertificatesPage() {
                       <TableCell className="text-muted-foreground">
                         {format(new Date(cert.issuedDate), "MMM d, yyyy")}
                       </TableCell>
-                      <TableCell className="pr-4 font-mono text-xs text-muted-foreground">
-                        {cert.certificateCode}
+                      <TableCell className="max-w-36 pr-4 font-mono text-xs text-muted-foreground">
+                        <span className="block truncate" title={cert.certificateCode}>
+                          {cert.certificateCode}
+                        </span>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -118,7 +122,6 @@ export default function MyCertificatesPage() {
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                size="sm"
                 disabled={history.length === 0 || isFetching}
                 onClick={() => {
                   setCursor(history.at(-1));
@@ -129,7 +132,6 @@ export default function MyCertificatesPage() {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
                 disabled={!data?.pagination.hasMore || !data.pagination.nextCursor || isFetching}
                 onClick={() => {
                   setHistory((items) => [...items, cursor]);

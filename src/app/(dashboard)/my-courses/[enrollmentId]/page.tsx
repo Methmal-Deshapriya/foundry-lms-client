@@ -179,8 +179,8 @@ export default function LearningPage() {
                 />
               )}
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold uppercase tracking-wide text-primary">
                 {course.serviceTitle} · {course.categoryTitle}
               </p>
               <div className="flex items-center gap-2">
@@ -327,13 +327,15 @@ export default function LearningPage() {
 
           {/* Reference/marketing content the student already saw before
               enrolling — useful to have on hand, but secondary to the
-              sessions above. Sticky so it stays in view while only the
-              sessions column scrolls past it; hidden below lg where there
-              isn't room to give it without squeezing sessions down to one
-              column. */}
+              sessions above. At `lg`+, a sticky rail beside the sessions
+              column, which stays in view while only sessions scrolls past
+              it. Below `lg` there isn't room for that side-by-side layout,
+              but the content itself is still real and worth keeping —
+              instead of hiding it outright, it drops to a plain full-width
+              block stacked after the sessions list. */}
           {hasAboutContent ? (
-            <aside className="hidden shrink-0 lg:block lg:w-72">
-              <div className="sticky top-6 border-l border-border pl-6">
+            <aside className="shrink-0 lg:w-72">
+              <div className="border-t border-border pt-6 lg:sticky lg:top-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
                 <h2 className="mb-1 text-base font-bold text-foreground">
                   About this course
                 </h2>

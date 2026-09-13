@@ -197,15 +197,15 @@ function ProjectEditForm({ project }: { project: StudentProject }) {
             />
           </div>
 
-          <div className="pt-4 flex gap-4">
-            <Button 
-              type="submit" 
+          <div className="pt-4 flex flex-col gap-4 sm:flex-row">
+            <Button
+              type="submit"
               disabled={isUpdating}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white h-12 rounded-xl text-lg font-bold"
+              className="w-full sm:flex-1 bg-primary hover:bg-primary/90 text-white h-12 rounded-xl text-lg font-bold"
             >
               {isUpdating ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Save className="h-5 w-5 mr-2" /> Save Changes</>}
             </Button>
-            <Button asChild variant="outline" className="h-12 rounded-xl px-8 border-border">
+            <Button asChild variant="outline" className="w-full sm:w-auto h-12 rounded-xl px-8 border-border">
               <Link href="/projects">Cancel</Link>
             </Button>
           </div>

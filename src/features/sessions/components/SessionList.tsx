@@ -26,15 +26,21 @@ export default function SessionList({
   }
 
   return (
-    <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {sessions.map((session) => (
-        <SessionItem
-          key={session.courseSessionId}
-          enrollmentId={enrollmentId}
-          session={session}
-          isReadOnly={isReadOnly}
-        />
-      ))}
+    // @container: this list sits inside a section whose actual width is
+    // viewport minus the dashboard sidebar and (at lg+) a sticky aside —
+    // two fixed-width siblings a viewport breakpoint can't see, so the
+    // column count needs to track this container's own width instead.
+    <div className="@container">
+      <div className="grid grid-cols-1 items-start gap-4 @sm:grid-cols-2 @xl:grid-cols-3">
+        {sessions.map((session) => (
+          <SessionItem
+            key={session.courseSessionId}
+            enrollmentId={enrollmentId}
+            session={session}
+            isReadOnly={isReadOnly}
+          />
+        ))}
+      </div>
     </div>
   );
 }

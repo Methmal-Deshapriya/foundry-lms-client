@@ -44,9 +44,18 @@ function getInitials(firstName?: string, lastName?: string) {
 /**
  * The student dashboard, laid out to the 2026-09-14 sketch: the page itself
  * never scrolls at desktop width — only the courses list scrolls internally
- * — with a full-height profile rail on the right. Below `lg` there's no
- * room for that, so it falls back to a normal stacked, page-scrolling
- * layout instead of squeezing everything into a fixed box.
+ * — with a full-height profile rail on the right. That needs real room: a
+ * 16rem sidebar plus a 5-column nested split easily outgrows `lg` (1024px),
+ * which is exactly where it used to visibly overflow — so this switches at
+ * `xl` (1280px) instead. Below that there's no room for it, so it falls
+ * back to a normal stacked, page-scrolling layout instead of squeezing
+ * everything into a fixed box, and the profile rail (see ProfileRail)
+ * hides outright rather than stacking under the main content.
+ *
+ * The rail's own width isn't fixed: `min(27.5rem, 22.5vw)` makes it track
+ * viewport width fluidly, capped at the 27.5rem it reaches once the
+ * viewport hits ~1950px — wider than that and it just stops growing rather
+ * than eating an ever-larger, disproportionate share of the screen.
  */
 export default function StudentDashboard({ firstName }: { firstName?: string }) {
   const { data, isLoading } = useGetStudentDashboardQuery();
@@ -57,8 +66,8 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
   for (const project of projects) projectCounts[project.status]++;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:h-[calc(100svh-7rem)] lg:grid-cols-[minmax(0,1fr)_27.5rem]">
-      <div className="flex flex-col gap-4 lg:min-h-0">
+    <div className="grid grid-cols-1 gap-4 xl:h-[calc(100svh-7rem)] xl:grid-cols-[minmax(0,1fr)_min(27.5rem,22.5vw)]">
+      <div className="flex flex-col gap-4 xl:min-h-0">
         <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Welcome back, {firstName}! 👋</h1>
@@ -66,32 +75,51 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
               Here&apos;s what&apos;s happening with your learning journey today.
             </p>
           </div>
-          <Button asChild className="bg-primary text-white hover:bg-primary/90">
+          {/* self-start: the parent flex-col row (below `sm`) defaults to
+              stretching its children to full width — this hugs its own
+              content instead of becoming a giant full-width bar. */}
+          <Button asChild className="self-start bg-primary text-white hover:bg-primary/90">
             <Link href="/explore">
-              Explore More Courses
+              Explore Courses
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-4">
+        {/* A grid, not a flex-wrap row: with 4 tiles wrapping unevenly (e.g.
+            3 on one line, 1 stranded alone on the next, each hugging its
+            own content) never looks intentional — a grid's columns always
+            split the row's full width evenly, at every size, with no dead
+            gaps and no lonely leftover tile. 2 columns where space is
+            tight, 4 once there's room for a single row. min-w-0 overrides
+            the shared component's own min-w-40 floor, which would
+            otherwise stop a grid cell shrinking below 160px and force
+            overflow on a narrow phone. */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <CourseKpiTile
+            size="sm"
+            className="min-w-0"
             icon={BookOpen}
             label="Active courses"
             value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : data?.coursesEnrolled ?? 0}
           />
           <CourseKpiTile
+            size="sm"
+            className="min-w-0"
             icon={CheckCircle2}
             label="Completed"
             value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : data?.coursesCompleted ?? 0}
           />
           <CourseKpiTile
+            size="sm"
+            className="min-w-0"
             icon={FolderGit2}
             label="Projects in review"
             value={projectCounts.PENDING}
-            secondary={`${projectCounts.APPROVED} approved`}
           />
           <CourseKpiTile
+            size="sm"
+            className="min-w-0"
             icon={Award}
             label="Certificates earned"
             value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : data?.certificatesEarned ?? 0}
@@ -102,10 +130,10 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
           <NotificationPanel continueLearning={data?.continueLearning ?? null} items={data?.recentActivity ?? []} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-5">
           <Section
             title="Your courses"
-            className="lg:col-span-3 lg:flex lg:h-full lg:min-h-0 lg:flex-col"
+            className="xl:col-span-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col"
             action={
               <Link href="/my-courses" className="text-xs font-semibold text-primary hover:text-primary/80">
                 View all
@@ -124,7 +152,7 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
                 <p className="text-sm text-muted-foreground">Once you enroll in a course, it will show up here.</p>
               </div>
             ) : (
-              <div className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+              <div className="space-y-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
                 {data.recentEnrollments.map((enrollment) => (
                   <DashboardCourseCard key={enrollment.id} enrollment={enrollment} />
                 ))}
@@ -132,9 +160,16 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
             )}
           </Section>
 
-          <div className="flex flex-col gap-4 lg:col-span-2 lg:h-full lg:min-h-0 lg:overflow-y-auto">
+          {/* Below `sm`, stacked full-width each — too narrow to split.
+              From `sm` up to just below `xl`, side by side at 70/30: the
+              heatmap's 26-week grid genuinely wants the extra width, and
+              the project chart's own @container already copes fine with a
+              narrower share. At `xl`+, this whole div becomes the narrow
+              xl:col-span-2 column beside "Your courses" — too tight for a
+              70/30 split, so xl:grid-cols-1 reverts to stacking. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[7fr_3fr] xl:col-span-2 xl:h-full xl:min-h-0 xl:grid-cols-1 xl:overflow-y-auto">
             <ActivityHeatmap heatmap={data?.heatmap ?? []} />
-            <ProjectAnalyticsCard projects={projects} className="lg:min-h-0 lg:flex-1" />
+            <ProjectAnalyticsCard projects={projects} />
           </div>
         </div>
       </div>
@@ -186,18 +221,24 @@ function NotificationPanel({
   const isEmpty = !continueLearning && items.length === 0;
 
   return (
-    <Section title="Notifications">
+    // No title row — this reads as one more KPI-row-height tile, not a
+    // titled section like the rest of the page.
+    <div className="rounded-md border border-input bg-card px-4 py-3">
       {isEmpty ? (
-        <p className="py-1 text-sm text-muted-foreground">Nothing new yet.</p>
+        <p className="text-sm text-muted-foreground">Nothing new yet.</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {continueLearning ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-primary/5 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-primary/5 p-2.5">
               <div className="flex min-w-0 items-center gap-2.5 text-sm">
                 <PlayCircle className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">Continue: {continueLearning.courseTitle}</p>
-                  <p className="truncate text-xs text-muted-foreground">{continueLearning.sessionTitle}</p>
+                  <p className="truncate leading-tight font-medium text-foreground">
+                    Continue: {continueLearning.courseTitle}
+                  </p>
+                  <p className="truncate text-xs leading-tight text-muted-foreground">
+                    {continueLearning.sessionTitle}
+                  </p>
                 </div>
               </div>
               <Button asChild size="sm">
@@ -210,21 +251,22 @@ function NotificationPanel({
           ) : null}
 
           {items.length > 0 ? (
-            <ul className="space-y-2.5">
-              {items.map((item) => {
+            <ul>
+              {items.slice(0, 1).map((item) => {
                 const Icon = ACTIVITY_ICON[item.type];
                 return (
                   <li
                     key={`${item.type}-${item.occurredAt}-${item.title}`}
-                    className="flex items-start gap-2.5 text-sm"
+                    className="flex items-center gap-2 text-sm"
                   >
-                    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                    <div className="min-w-0">
-                      <p className="truncate text-foreground">{activityLabel(item)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(item.occurredAt), { addSuffix: true })}
-                      </p>
-                    </div>
+                    <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <p className="min-w-0 truncate text-foreground">
+                      {activityLabel(item)}
+                      <span className="text-xs text-muted-foreground">
+                        {" "}
+                        · {formatDistanceToNow(new Date(item.occurredAt), { addSuffix: true })}
+                      </span>
+                    </p>
                   </li>
                 );
               })}
@@ -232,7 +274,7 @@ function NotificationPanel({
           ) : null}
         </div>
       )}
-    </Section>
+    </div>
   );
 }
 
@@ -264,11 +306,19 @@ function ProjectAnalyticsCard({ projects, className }: { projects: StudentProjec
     : [{ status: "empty", label: "No projects yet", count: 1, fill: "var(--muted)" }];
 
   return (
-    <Section title="Project analytics" className={`lg:flex lg:flex-col ${className ?? ""}`}>
-      <div className="flex items-center gap-4 lg:min-h-0 lg:flex-1">
+    // @container: the row below needs to know its OWN rendered width, not
+    // the viewport's — this card sits in a column whose actual width varies
+    // a lot (a cramped desktop split vs. a full-width mobile stack)
+    // independent of screen size. Below 18rem there's no room for the
+    // legend text beside the chart, and stacking it underneath just makes
+    // the card taller for no real benefit — hovering a slice already shows
+    // what it is via the tooltip, so the legend is dropped entirely rather
+    // than stacked. Past 18rem, chart and legend sit side by side.
+    <Section title="Project analytics" className={`@container xl:flex xl:flex-col ${className ?? ""}`}>
+      <div className="flex items-center justify-center gap-4 @2xs:justify-start xl:min-h-0 xl:flex-1">
         <ChartContainer config={PROJECT_CHART_CONFIG} className="mx-auto aspect-square h-32 w-32 shrink-0">
           <PieChart>
-            {hasProjects ? <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="label" />} /> : null}
+            {hasProjects ? <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="label" />} /> : null}
             <Pie data={chartData} dataKey="count" nameKey="label" innerRadius={32} outerRadius={56} strokeWidth={2}>
               {chartData.map((row) => (
                 <Cell key={row.status} fill={row.fill} stroke="var(--card)" />
@@ -277,7 +327,7 @@ function ProjectAnalyticsCard({ projects, className }: { projects: StudentProjec
           </PieChart>
         </ChartContainer>
 
-        <div className="min-w-0 flex-1 space-y-1.5 text-sm">
+        <div className="hidden min-w-0 flex-1 space-y-1.5 text-sm @2xs:block">
           <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <span
@@ -334,18 +384,22 @@ function ProfileRail({ projects }: { projects: StudentProject[] }) {
     6,
   );
 
+  type DetailTile = { icon: LucideIcon; label: string; value: string; badgeClass: string; secondary?: boolean };
   const detailTiles = (
     [
       user.phone ? { icon: Phone, label: "Phone", value: user.phone, badgeClass: "bg-sky-50 text-sky-600" } : null,
       user.district
         ? { icon: MapPin, label: "District", value: user.district, badgeClass: "bg-emerald-50 text-emerald-600" }
         : null,
+      // Secondary: dropped first when the panel narrows and tiles stack to
+      // one column — phone/district stay as the two that always matter.
       user.alStream
         ? {
             icon: GraduationCap,
             label: "A/L Stream",
             value: user.alStream,
             badgeClass: "bg-violet-50 text-violet-600",
+            secondary: true,
           }
         : null,
       user.dateOfBirth
@@ -354,18 +408,24 @@ function ProfileRail({ projects }: { projects: StudentProject[] }) {
             label: "Date of birth",
             value: format(new Date(user.dateOfBirth), "MMM d, yyyy"),
             badgeClass: "bg-amber-50 text-amber-600",
+            secondary: true,
           }
         : null,
-    ] as ({ icon: LucideIcon; label: string; value: string; badgeClass: string } | null)[]
-  ).filter((tile): tile is { icon: LucideIcon; label: string; value: string; badgeClass: string } => tile !== null);
+    ] as (DetailTile | null)[]
+  ).filter((tile): tile is DetailTile => tile !== null);
 
   return (
-    // Bleeds out of `main`'s p-6 padding (lg only) so it reads as a
+    // Bleeds out of `main`'s p-6 padding (xl only) so it reads as a
     // persistent panel flush against the top bar and the bottom of the
     // viewport, like the app's own left sidebar — not a card floating with
     // gaps around it. Only a left border separates it, no rounded corners,
-    // matching that sidebar's visual language.
-    <div className="flex flex-col gap-4 overflow-hidden rounded-md border border-input bg-card p-4 pt-0 lg:h-[calc(100svh-4rem)] lg:min-h-0 lg:-my-6 lg:-mr-6 lg:rounded-none lg:border-t-0 lg:border-r-0 lg:border-b-0 lg:border-l lg:pb-6">
+    // matching that sidebar's visual language. Hidden below `xl` entirely
+    // (rather than stacking under the main content, like it used to) — the
+    // rail's own fluid width already shrinks it to nothing usable by then,
+    // and a student's profile is still one click away at /account.
+    // @container: the detail-tile grid below reflows off this panel's own
+    // width, which is now fluid and decoupled from viewport breakpoints.
+    <div className="@container hidden flex-col gap-4 overflow-hidden rounded-md border border-input bg-card p-4 pt-0 xl:flex xl:h-[calc(100svh-4rem)] xl:min-h-0 xl:-my-6 xl:-mr-6 xl:rounded-none xl:border-t-0 xl:border-r-0 xl:border-b-0 xl:border-l xl:pb-6">
       <div className="shrink-0">
         <div className="relative -mx-4 h-24 bg-linear-to-br from-primary to-primary/70">
           <Avatar className="absolute top-full left-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full ring-4 ring-card">
@@ -383,7 +443,7 @@ function ProfileRail({ projects }: { projects: StudentProject[] }) {
         </div>
       </div>
 
-      <div className="space-y-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+      <div className="space-y-6 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-1">
         {skills.length > 0 ? (
           <div className="flex flex-wrap justify-center gap-1.5">
             {skills.map((skill) => (
@@ -395,9 +455,12 @@ function ProfileRail({ projects }: { projects: StudentProject[] }) {
         ) : null}
 
         {detailTiles.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 @xs:grid-cols-2">
             {detailTiles.map((tile) => (
-              <div key={tile.label} className="flex items-center gap-2.5 rounded-md border border-input p-2.5">
+              <div
+                key={tile.label}
+                className={`flex items-center gap-2.5 rounded-md border border-input p-2.5 ${tile.secondary ? "hidden @xs:flex" : ""}`}
+              >
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tile.badgeClass}`}>
                   <tile.icon className="h-4 w-4" aria-hidden="true" />
                 </div>

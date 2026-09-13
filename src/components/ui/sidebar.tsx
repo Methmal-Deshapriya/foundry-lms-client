@@ -28,7 +28,12 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
+// Narrowed from the shadcn default (16rem) — the actual nav content (icon +
+// label, longest label "Manage Certificates") never needed that much width;
+// this frees real space for every page's own content without the sidebar's
+// own layout changing at all (collapsible="icon" width, mobile Sheet width,
+// etc. are untouched).
+const SIDEBAR_WIDTH = "14rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"

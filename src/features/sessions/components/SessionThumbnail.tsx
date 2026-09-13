@@ -47,7 +47,7 @@ export default function SessionThumbnail({
               ? "Mark session incomplete"
               : "Mark session complete"
         }
-        className="absolute right-3 top-3 rounded-full bg-background/80 backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-background/80"
+        className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-background/80"
       >
         {completed ? (
           <CheckCircle2 className="h-6 w-6 fill-green-50 text-green-500" />
