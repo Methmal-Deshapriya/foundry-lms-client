@@ -4,11 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis } from "recharts";
-import { ArrowRight, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile";
 import { MagnitudeBar, Section } from "@/components/dataviz/StatPrimitives";
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { DateRangePicker, type DateRange } from "@/components/ui/date-range-picker";
 import { useAppSelector } from "@/store/hooks";
@@ -18,24 +19,20 @@ import { useGetAuditLogsQuery } from "@/features/audit/auditApi";
 import type { AuditLogsResponse } from "@/features/audit/auditTypes";
 import { Icons } from "@/lib/icons";
 import { cn, formatLKR, formatLKRCompact } from "@/lib/utils";
+import { ENROLLMENT_REQUEST_STATUS_STYLES, INTAKE_STATUS_STYLES } from "@/lib/statusColors";
 import type { Role } from "@/lib/constants";
 import { useGetAdminDashboardQuery } from "../dashboardApi";
 import type {
   AdminDashboardSummary,
   CertificateStatusKey,
+  DashboardEnrollmentRequest,
+  DashboardIntakeCard,
   EnrollmentStatusKey,
   PaymentStatusKey,
   ProjectStatusKey,
+  ServiceCount,
 } from "../dashboardTypes";
 import { SriLankaDistrictMap } from "./SriLankaDistrictMap";
-
-const QUICK_LINKS = [
-  { href: "/admin/services", label: "Manage catalog", icon: Icons.services },
-  { href: "/admin/sessions", label: "Session Library", icon: Icons.sessionLibrary },
-  { href: "/admin/projects", label: "Review projects", icon: Icons.reviewProjects },
-  { href: "/admin/certificates", label: "Certificates", icon: Icons.certificates },
-  { href: "/admin/users", label: "Manage users", icon: Icons.users },
-];
 
 const MONTH_PRESETS = [3, 6, 12] as const;
 
@@ -105,7 +102,6 @@ export default function AdminDashboard() {
   );
 
   const maxTopCourse = Math.max(1, ...(data?.topCourses.map((row) => row.count) ?? [1]));
-  const maxService = Math.max(1, ...(data?.serviceBreakdown.map((row) => row.count) ?? [1]));
 
   const handlePreset = (months: number) => {
     setCustomRange({});
@@ -193,7 +189,6 @@ export default function AdminDashboard() {
           auditData={auditData}
           isAuditLoading={isAuditLoading}
           maxTopCourse={maxTopCourse}
-          maxService={maxService}
         />
       )}
 
@@ -360,7 +355,6 @@ function AdminDashboardPageTwo({
   auditData,
   isAuditLoading,
   maxTopCourse,
-  maxService,
 }: {
   data: AdminDashboardSummary | undefined;
   isLoading: boolean;
@@ -368,11 +362,14 @@ function AdminDashboardPageTwo({
   auditData: AuditLogsResponse | undefined;
   isAuditLoading: boolean;
   maxTopCourse: number;
-  maxService: number;
 }) {
   return (
     <div className="flex flex-1 flex-col gap-4 lg:min-h-0">
-      <div className="grid flex-1 grid-cols-1 gap-4 lg:min-h-0 lg:grid-cols-4">
+      {/* Not flex-1: this row's content (two small donuts, two short lists)
+          never needs a full share of the page's fixed height — letting it
+          size to content instead frees that space for the more substantive
+          rows below (course delivery, quick links/recent activity). */}
+      <div className="grid shrink-0 grid-cols-1 gap-4 lg:grid-cols-4">
         <StatusDonutCard
           title="Certificate status"
           order={["ISSUED", "REVOKED"]}
@@ -400,36 +397,26 @@ function AdminDashboardPageTwo({
           )}
         </Section>
 
-        <Section title="Active enrollments by service" className="flex flex-col lg:min-h-0 lg:overflow-y-auto">
-          {!data || data.serviceBreakdown.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No active enrollments yet.</p>
-          ) : (
-            <div className="space-y-2.5">
-              {data.serviceBreakdown.map((row) => (
-                <MagnitudeBar key={row.service} label={row.service} count={row.count} max={maxService} />
-              ))}
-            </div>
-          )}
-        </Section>
+        <ServiceEnrollmentsCard data={data?.serviceBreakdown} isLoading={isLoading} />
       </div>
 
-      <div className="grid flex-1 grid-cols-1 gap-6 lg:min-h-0 lg:grid-cols-3">
-        <div className="flex flex-col gap-3 lg:col-span-2 lg:min-h-0 lg:overflow-y-auto">
-          <h2 className="shrink-0 text-lg font-bold text-foreground">Quick links</h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {QUICK_LINKS.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm hover:bg-muted/50"
-              >
-                <span className="flex items-center gap-3 font-medium text-foreground">
-                  <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                  {label}
-                </span>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              </Link>
-            ))}
+      {/* Left column stacks the two operational lists; Recent activity sits
+          beside them as one tall right-hand column spanning both rows'
+          combined height, rather than being squeezed into just the bottom
+          row's share — a super-admin-only feed reads better as a single
+          continuous timeline than a short, easily-exhausted list. */}
+      <div className={cn("grid flex-1 grid-cols-1 gap-4 lg:min-h-0", isSuperAdmin(role) && "lg:grid-cols-3")}>
+        <div className={cn("flex flex-col gap-4 lg:min-h-0", isSuperAdmin(role) && "lg:col-span-2")}>
+          <div className="flex-1 lg:min-h-0">
+            <IntakesCard
+              running={data?.runningIntakes}
+              upcoming={data?.upcomingIntakes}
+              overdue={data?.overdueIntakes}
+              isLoading={isLoading}
+            />
+          </div>
+          <div className="flex-1 lg:min-h-0">
+            <EnrollmentRequestsCard data={data?.enrollmentRequestsList} isLoading={isLoading} />
           </div>
         </div>
 
@@ -467,6 +454,182 @@ function AdminDashboardPageTwo({
         ) : null}
       </div>
     </div>
+  );
+}
+
+// Shared by every status badge on this page ("OPEN_ACTIVE" -> "Open active").
+function formatStatusLabel(status: string) {
+  return status.replace("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function intakeHref(intake: DashboardIntakeCard) {
+  // All four segments are required by the route, even though only
+  // courseId/intakeId are actually used to fetch data on that page — see
+  // dashboard.repository.js's INTAKE_CARD_SELECT comment.
+  return `/admin/services/${intake.serviceSlug}/categories/${intake.categoryId}/courses/${intake.courseId}/intakes/${intake.id}`;
+}
+
+function intakeDateRange(intake: DashboardIntakeCard) {
+  if (!intake.startDate) return "No start date set";
+  const start = format(new Date(intake.startDate), "MMM d");
+  if (!intake.expectedEndDate) return `Started ${start}`;
+  return `${start} – ${format(new Date(intake.expectedEndDate), "MMM d, yyyy")}`;
+}
+
+const INTAKE_VIEWS = [
+  { key: "running", label: "Running", empty: "No intakes currently running." },
+  { key: "upcoming", label: "Starting soon", empty: "Nothing scheduled to start soon." },
+  { key: "overdue", label: "Overdue", empty: "No cohorts overdue for closing." },
+] as const;
+
+// Thin inline meter for a single 0-100 stat on an intake row — same "one
+// hue, a labeled value, a muted track" shape as the revenue summary's
+// collected-vs-outstanding bar, just single-segment here since each stat
+// stands alone rather than summing to a whole.
+function IntakeStatBar({ label, pct, color }: { label: string; pct: number | null; color: string }) {
+  if (pct === null) return null;
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span>{label}</span>
+        <span className="tabular-nums">{pct}%</span>
+      </div>
+      <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+      </div>
+    </div>
+  );
+}
+
+// "What's actually being delivered right now" — the operational counterpart
+// to page 1's money/enrollment numbers. Each row links straight into the
+// intake's admin workspace, skipping the service → category → course
+// click-through an admin would otherwise have to do to reach it.
+function IntakesCard({
+  running,
+  upcoming,
+  overdue,
+  isLoading,
+}: {
+  running: DashboardIntakeCard[] | undefined;
+  upcoming: DashboardIntakeCard[] | undefined;
+  overdue: DashboardIntakeCard[] | undefined;
+  isLoading: boolean;
+}) {
+  const [view, setView] = useState<(typeof INTAKE_VIEWS)[number]["key"]>("running");
+  const rows = view === "running" ? running : view === "upcoming" ? upcoming : overdue;
+  const activeView = INTAKE_VIEWS.find((v) => v.key === view)!;
+
+  return (
+    <Section
+      title="Course delivery"
+      className="flex h-full flex-col lg:min-h-0"
+      action={
+        <div className="flex items-center gap-1 rounded-md border border-input p-1">
+          {INTAKE_VIEWS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setView(key)}
+              className={cn(
+                "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                view === key ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      }
+    >
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : !rows || rows.length === 0 ? (
+        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">{activeView.empty}</p>
+      ) : (
+        <ul className="flex-1 divide-y divide-border lg:min-h-0 lg:overflow-y-auto">
+          {rows.map((intake) => (
+            <li key={intake.id}>
+              <Link href={intakeHref(intake)} className="flex flex-col gap-1.5 py-2.5 first:pt-0 last:pb-0 hover:opacity-75">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground" title={intake.title}>
+                      {intake.title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {intake.code} · {intakeDateRange(intake)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                      {intake.enrolledCount}
+                      {intake.capacity ? ` / ${intake.capacity}` : ""} seats
+                    </span>
+                    <Badge className={INTAKE_STATUS_STYLES[intake.status]}>{formatStatusLabel(intake.status)}</Badge>
+                  </div>
+                </div>
+                {intake.totalSessions > 0 ? (
+                  <div className="flex items-center gap-4">
+                    <IntakeStatBar label="Curriculum released" pct={intake.releaseProgressPct} color={TREND_COLOR} />
+                    <IntakeStatBar label="Completion" pct={intake.completionPct} color={AVAILABLE_COLOR} />
+                  </div>
+                ) : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function enrollmentRequestHref(request: DashboardEnrollmentRequest) {
+  // Same 4-segment intake workspace URL as intakeHref, plus the query params
+  // that open straight to this specific request's detail sheet there — see
+  // EnrollmentRequestsTab.tsx, which reads `tab`/`requestId` off the URL.
+  return `/admin/services/${request.serviceSlug}/categories/${request.categoryId}/courses/${request.courseId}/intakes/${request.intakeId}?tab=enrollment-requests&requestId=${request.id}`;
+}
+
+// Oldest-pending-first jump-off list — the counterpart to "Course delivery"
+// on the other half of this page's "services delivered" half, surfacing
+// which prospective students are still waiting on an admin to reach out.
+function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollmentRequest[] | undefined; isLoading: boolean }) {
+  return (
+    <Section title="Enrollment requests" className="flex h-full flex-col lg:min-h-0">
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : !data || data.length === 0 ? (
+        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">No pending enrollment requests.</p>
+      ) : (
+        <ul className="flex-1 divide-y divide-border lg:min-h-0 lg:overflow-y-auto">
+          {data.map((request) => (
+            <li key={request.id}>
+              <Link
+                href={enrollmentRequestHref(request)}
+                className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0 hover:opacity-75"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground" title={request.studentName}>
+                    {request.studentName}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {request.courseTitle} · {request.contactPhone}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-xs text-muted-foreground">{format(new Date(request.createdAt), "MMM d")}</span>
+                  <Badge className={ENROLLMENT_REQUEST_STATUS_STYLES[request.status]}>{formatStatusLabel(request.status)}</Badge>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
   );
 }
 
@@ -532,6 +695,67 @@ function RevenueSummaryBody({
         </div>
       </div>
     </div>
+  );
+}
+
+// Services are admin-created catalog entities, not a fixed reserved status
+// set (unlike enrollment/payment/certificate/project statuses elsewhere on
+// this page) — so this draws from the app's generic --chart-1..4 categorical
+// ramp instead of a reserved palette. Capped at 4 named slices; anything
+// past that folds into one neutral "Other" bucket rather than inventing a
+// 5th+ hue or cycling the ramp.
+const SERVICE_CHART_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)"];
+const OTHER_SERVICE_COLOR = "#cbd5e1"; // slate-300 — same "neutral, not a real category" role as the district map's zero-count fill
+
+function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | undefined; isLoading: boolean }) {
+  const rows = data ?? [];
+  const named = rows.slice(0, 4);
+  const otherCount = rows.slice(4).reduce((sum, row) => sum + row.count, 0);
+  const slices = otherCount > 0 ? [...named, { service: "Other", count: otherCount }] : named;
+  const total = slices.reduce((sum, row) => sum + row.count, 0);
+  const colorFor = (service: string, index: number) => (service === "Other" ? OTHER_SERVICE_COLOR : SERVICE_CHART_COLORS[index % SERVICE_CHART_COLORS.length]);
+  // A solid (non-donut), no-separator pie — deliberately different from
+  // every status pie on this page, so "this one is a different kind of
+  // breakdown" (a real category, not a reserved status) reads at a glance.
+  const chartData =
+    total > 0
+      ? slices.map((row, index) => ({ ...row, fill: colorFor(row.service, index) }))
+      : [{ service: "None", count: 1, fill: "var(--muted)" }];
+  const chartConfig = Object.fromEntries(slices.map((row) => [row.service, { label: row.service }])) satisfies ChartConfig;
+
+  return (
+    <Section title="Active enrollments by service" className="flex flex-col lg:min-h-0">
+      {isLoading ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="flex flex-1 items-center gap-4">
+          <ChartContainer config={chartConfig} className="mx-auto aspect-square h-28 w-28 shrink-0">
+            <PieChart>
+              {total > 0 ? <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="service" />} /> : null}
+              <Pie data={chartData} dataKey="count" nameKey="service" outerRadius={50} stroke="0" />
+            </PieChart>
+          </ChartContainer>
+
+          {slices.length === 0 ? (
+            <p className="min-w-0 flex-1 text-sm text-muted-foreground">No active enrollments yet.</p>
+          ) : (
+            <div className="min-w-0 flex-1 space-y-1.5 text-sm">
+              {slices.map((row, index) => (
+                <div key={row.service} className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 truncate text-muted-foreground">
+                    <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: colorFor(row.service, index) }} aria-hidden="true" />
+                    {row.service}
+                  </span>
+                  <span className="font-medium tabular-nums text-foreground">{row.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </Section>
   );
 }
 
