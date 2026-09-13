@@ -11,6 +11,7 @@ import {
   canAccessAdminArea,
   canViewUsers,
   canViewAuditLogs,
+  getDashboardPath,
 } from "@/lib/access";
 import {
   SidebarGroup,
@@ -38,9 +39,10 @@ export function DashboardNavMain() {
   const pathname = usePathname();
   const user = useAppSelector(selectAuthUser);
   const role = user?.role ?? null;
+  const dashboardPath = getDashboardPath(role);
 
   const overviewItems: NavItem[] = [
-    { label: "Dashboard", href: "/dashboard", icon: Icons.dashboard },
+    { label: "Dashboard", href: dashboardPath, icon: Icons.dashboard },
     ...(isStudent(role)
       ? [
           { label: "Explore", href: "/explore", icon: Icons.explore },
@@ -66,7 +68,7 @@ export function DashboardNavMain() {
   ];
 
   const isItemActive = (href: string) =>
-    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
+    href === dashboardPath ? pathname === href : pathname.startsWith(href);
 
   const renderGroup = (label: string, items: NavItem[]) => {
     if (items.length === 0) return null;

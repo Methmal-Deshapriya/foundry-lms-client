@@ -40,3 +40,10 @@ export const canAccessAdminArea = (subject: AuthorizationSubject) => hasPermissi
 export const canManageUsers = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.USERS_MANAGE_ROLES);
 export const canViewUsers = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.USERS_VIEW);
 export const canViewAuditLogs = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.AUDIT_VIEW);
+
+// The one place that decides where a logged-in user's "home" is — students
+// and admins now have entirely separate dashboards (/dashboard vs.
+// /admin/dashboard), so every post-login/verification redirect and the
+// sidebar's own Dashboard link all resolve through this instead of each
+// hardcoding the split.
+export const getDashboardPath = (role: Role | null | undefined) => (isStudent(role) ? "/dashboard" : "/admin/dashboard");

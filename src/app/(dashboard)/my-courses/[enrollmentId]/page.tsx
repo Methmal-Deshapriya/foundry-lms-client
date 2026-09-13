@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ElementType, ReactNode } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -25,6 +26,7 @@ import { Progress } from "@/components/ui/progress";
 import { CatalogIcon } from "@/components/marketing/catalog/visuals";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { SubmitProjectDialog } from "@/features/projects/components/SubmitProjectDialog";
 
 const PROJECT_STATUS_STYLES: Record<string, string> = {
   PENDING: "bg-amber-50 text-amber-700",
@@ -91,6 +93,7 @@ export default function LearningPage() {
     error,
   } = useGetClassroomQuery(enrollmentId);
   const { data: projectsPage } = useGetMyProjectsQuery({ limit: 50 });
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -285,13 +288,14 @@ export default function LearningPage() {
                     </span>
                   </span>
                 ) : (
-                  <Link
-                    href={`/projects/new?enrollmentId=${enrollment.id}`}
+                  <button
+                    type="button"
+                    onClick={() => setSubmitDialogOpen(true)}
                     className="inline-flex items-center gap-1 text-primary hover:underline"
                   >
                     Submit project
                     <ExternalLink className="h-3 w-3" />
-                  </Link>
+                  </button>
                 )}
               </FactTile>
             </div>
@@ -386,6 +390,12 @@ export default function LearningPage() {
           ) : null}
         </div>
       </div>
+
+      <SubmitProjectDialog
+        open={submitDialogOpen}
+        onOpenChange={setSubmitDialogOpen}
+        defaultEnrollmentId={enrollment.id}
+      />
     </StudentOnlyRoute>
   );
 }

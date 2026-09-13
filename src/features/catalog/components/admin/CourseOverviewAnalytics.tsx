@@ -3,25 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useGetIntakeAnalyticsQuery } from "@/features/catalog/catalogApi";
 import { formatLKR } from "@/lib/utils";
-
-// A ranked, length-encoded bar — one hue, magnitude only (no categorical
-// color needed since there's exactly one series). Follows the dataviz
-// skill's "meter" spec: accent fill, unfilled track a lighter step of the
-// same ramp, value labeled at the tip rather than inside the bar.
-function MagnitudeBar({ label, count, max }: { label: string; count: number; max: number }) {
-  const pct = max > 0 ? Math.min((count / max) * 100, 100) : 0;
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="truncate text-foreground">{label}</span>
-        <span className="shrink-0 font-medium tabular-nums text-muted-foreground">{count}</span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-primary/15">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
+import { MagnitudeBar, Section, StatRow } from "@/components/dataviz/StatPrimitives";
 
 // Status is a reserved palette, not a categorical series — reuses the exact
 // colors ClassRosterTable already uses for the same three EnrollmentStatus
@@ -31,27 +13,6 @@ const STATUS_DOT_COLOR: Record<"ACTIVE" | "COMPLETED" | "CANCELLED", string> = {
   COMPLETED: "bg-emerald-500",
   CANCELLED: "bg-destructive",
 };
-
-function StatRow({ dotClassName, label, count }: { dotClassName?: string; label: string; count: number }) {
-  return (
-    <div className="flex items-center justify-between gap-3 text-sm">
-      <span className="flex items-center gap-2 text-foreground">
-        {dotClassName ? <span className={`size-2 shrink-0 rounded-full ${dotClassName}`} aria-hidden="true" /> : null}
-        {label}
-      </span>
-      <span className="font-medium tabular-nums text-muted-foreground">{count}</span>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-3 rounded-md border border-input bg-card p-4">
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      {children}
-    </div>
-  );
-}
 
 export function CourseOverviewAnalytics({ intakeId }: { intakeId: string }) {
   const { data, isLoading, isError } = useGetIntakeAnalyticsQuery(intakeId);

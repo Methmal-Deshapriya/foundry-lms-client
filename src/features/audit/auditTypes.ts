@@ -29,6 +29,8 @@ export type AuditLogsParams = {
   action?: string;
   resourceType?: string;
   actorUserId?: string;
+  /** Case-insensitive substring match against the actor's name/email. */
+  q?: string;
   entityId?: string;
   from?: string;
   to?: string;

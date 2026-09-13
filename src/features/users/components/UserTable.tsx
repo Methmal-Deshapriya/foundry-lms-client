@@ -7,10 +7,26 @@ import {
   ArrowUpCircle,
   Loader2,
   Mail,
-  User as UserIcon,
+  MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -50,24 +66,23 @@ export default function UserTable({
   const [promote, { isLoading: isPromoting }] = usePromoteUserMutation();
   const [demote, { isLoading: isDemoting }] = useDemoteUserMutation();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{ id: string; name: string; action: "PROMOTE" | "DEMOTE" } | null>(
+    null,
+  );
 
-  const handlePromote = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to promote "${name}" to ADMIN?`)) return;
+  const confirmRoleChange = async () => {
+    if (!confirmTarget) return;
+    const { id, name, action } = confirmTarget;
     try {
-      await promote(id).unwrap();
-      toast.success(`${name} has been promoted to ADMIN`);
+      if (action === "PROMOTE") {
+        await promote(id).unwrap();
+        toast.success(`${name} has been promoted to ADMIN`);
+      } else {
+        await demote(id).unwrap();
+        toast.success(`${name} has been demoted to STUDENT`);
+      }
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, "Promotion failed"));
-    }
-  };
-
-  const handleDemote = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to demote "${name}" to STUDENT?`)) return;
-    try {
-      await demote(id).unwrap();
-      toast.success(`${name} has been demoted to STUDENT`);
-    } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, "Demotion failed"));
+      toast.error(getApiErrorMessage(error, action === "PROMOTE" ? "Promotion failed" : "Demotion failed"));
     }
   };
 
@@ -127,27 +142,13 @@ export default function UserTable({
                     }
                   }}
                 >
-                  <TableCell className="max-w-sm whitespace-normal px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "flex size-10 shrink-0 items-center justify-center rounded-full",
-                          user.role === "SUPER_ADMIN"
-                            ? "bg-purple-500/10 text-purple-600"
-                            : user.role === "ADMIN"
-                              ? "bg-primary/10 text-primary"
-                              : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        <UserIcon className="size-5" aria-hidden="true" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold">{name}</p>
-                        <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                          <Mail className="size-3" aria-hidden="true" />
-                          {user.email}
-                        </p>
-                      </div>
+                  <TableCell className="max-w-sm whitespace-normal px-4">
+                    <div className="min-w-0">
+                      <p className="font-semibold">{name}</p>
+                      <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                        <Mail className="size-3" aria-hidden="true" />
+                        {user.email}
+                      </p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -160,30 +161,37 @@ export default function UserTable({
                     {format(new Date(user.createdAt), "MMM dd, yyyy")}
                   </TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    {canManageRoles && user.role === "STUDENT" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePromote(user.id, name)}
-                        disabled={isPromoting}
-                      >
-                        <ArrowUpCircle className="size-4" aria-hidden="true" /> Promote
-                      </Button>
-                    ) : null}
-                    {canManageRoles && user.role === "ADMIN" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDemote(user.id, name)}
-                        disabled={isDemoting}
-                      >
-                        <ArrowDownCircle className="size-4" aria-hidden="true" /> Demote
-                      </Button>
-                    ) : null}
-                    {canManageRoles && user.role === "SUPER_ADMIN" ? (
+                    {canManageRoles && (user.role === "STUDENT" || user.role === "ADMIN") ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`}>
+                            <MoreHorizontal />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {user.role === "STUDENT" ? (
+                            <DropdownMenuItem
+                              disabled={isPromoting}
+                              onSelect={() => setConfirmTarget({ id: user.id, name, action: "PROMOTE" })}
+                            >
+                              <ArrowUpCircle /> Promote to admin
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              variant="destructive"
+                              disabled={isDemoting}
+                              onSelect={() => setConfirmTarget({ id: user.id, name, action: "DEMOTE" })}
+                            >
+                              <ArrowDownCircle /> Demote to student
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : canManageRoles && user.role === "SUPER_ADMIN" ? (
                       <span className="text-xs text-muted-foreground">Protected</span>
-                    ) : null}
-                    {!canManageRoles ? <span className="text-xs text-muted-foreground">View only</span> : null}
+                    ) : (
+                      <span className="text-xs text-muted-foreground">View only</span>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -196,6 +204,31 @@ export default function UserTable({
         onOpenChange={(open) => !open && setSelectedUserId(null)}
         canManageRoles={canManageRoles}
       />
+
+      <AlertDialog open={Boolean(confirmTarget)} onOpenChange={(open) => !open && setConfirmTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmTarget?.action === "PROMOTE" ? "Promote to admin?" : "Demote to student?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmTarget?.action === "PROMOTE"
+                ? `"${confirmTarget?.name}" will gain admin access to the platform.`
+                : `"${confirmTarget?.name}" will lose admin access and be reverted to a student account.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant={confirmTarget?.action === "DEMOTE" ? "destructive" : "default"}
+              disabled={isPromoting || isDemoting}
+              onClick={confirmRoleChange}
+            >
+              {confirmTarget?.action === "PROMOTE" ? "Promote" : "Demote"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

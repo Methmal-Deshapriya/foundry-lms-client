@@ -58,7 +58,10 @@ export default function VerifyLoginChallengeForm() {
       const intent = enrollmentCourseId
         ? `?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
         : "";
-      router.replace(`/dashboard${intent}`);
+      // This challenge only ever exists for admin/super-admin logins (see
+      // SignInForm's requiresMfa branch), so the target is always the
+      // admin dashboard — no role check needed.
+      router.replace(`/admin/dashboard${intent}`);
     } catch (error: unknown) {
       const message = isNormalizedApiError(error)
         ? error.message

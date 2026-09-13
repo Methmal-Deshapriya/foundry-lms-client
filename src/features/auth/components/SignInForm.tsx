@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { isNormalizedApiError } from "@/lib/api";
+import { getDashboardPath } from "@/lib/access";
 
 // 1. Define Validation Schema (Matches backend logic)
 const loginSchema = z.object({
@@ -73,7 +74,7 @@ export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => voi
       const intent = enrollmentCourseId
         ? `?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
         : "";
-      router.replace(`/dashboard${intent}`);
+      router.replace(`${getDashboardPath(result.role)}${intent}`);
     } catch (error: unknown) {
       if (isNormalizedApiError(error) && error.code === "EMAIL_NOT_VERIFIED") {
         toast.error("Please verify your email before logging in.");

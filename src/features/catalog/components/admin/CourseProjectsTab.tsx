@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, ExternalLink, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, Loader2, MoreHorizontal, XCircle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -201,31 +208,34 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{format(new Date(project.createdAt), "MMM dd, yyyy")}</TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button asChild variant="ghost" size="icon">
-                        <Link href={`/projects/${project.id}`} aria-label={`View ${project.title}`}>
-                          <ExternalLink className="size-4 text-primary" aria-hidden="true" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Approve ${project.title}`}
-                        onClick={() => openReview(project, "APPROVED")}
-                        disabled={isReviewing || project.status === "APPROVED"}
-                      >
-                        <CheckCircle2 className="size-4 text-emerald-600" aria-hidden="true" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Reject ${project.title}`}
-                        onClick={() => openReview(project, "REJECTED")}
-                        disabled={isReviewing || project.status === "REJECTED"}
-                      >
-                        <XCircle className="size-4 text-destructive" aria-hidden="true" />
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label={`Actions for ${project.title}`}>
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/projects/${project.id}`}>
+                            <ExternalLink /> View project
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          disabled={isReviewing || project.status === "APPROVED"}
+                          onSelect={() => openReview(project, "APPROVED")}
+                        >
+                          <CheckCircle2 /> Approve
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          disabled={isReviewing || project.status === "REJECTED"}
+                          onSelect={() => openReview(project, "REJECTED")}
+                        >
+                          <XCircle /> Reject
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))

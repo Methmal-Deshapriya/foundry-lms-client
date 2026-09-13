@@ -1,32 +1,28 @@
 "use client";
 
 import { useAppSelector } from "@/store/hooks";
-import { selectAuthRole, selectAuthUser } from "@/features/auth/authSelectors";
-import { isStudent } from "@/lib/access";
+import { selectAuthUser } from "@/features/auth/authSelectors";
+import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import EnrollmentIntentHandler from "@/features/enrollments/components/EnrollmentIntentHandler";
 import EnrollmentRequestIntentHandler from "@/features/enrollments/components/EnrollmentRequestIntentHandler";
 import StudentDashboard from "@/features/dashboard/components/StudentDashboard";
-import AdminDashboard from "@/features/dashboard/components/AdminDashboard";
 
 /**
- * Two genuinely separate dashboards sharing one route: students get their
- * own learning-progress overview, admins/super-admins get a platform-wide
- * operations overview. Which one renders is entirely determined by role —
- * a student can never see the admin view and vice versa.
+ * The student dashboard — its own route now, separate from the admin one
+ * at /admin/dashboard (they used to share this page, branching on role).
+ * An admin/super-admin landing here sees StudentOnlyRoute's restricted
+ * message rather than a student's data; see lib/access.ts's
+ * getDashboardPath for where every login/redirect path now sends each
+ * role instead.
  */
 export default function DashboardPage() {
-  const role = useAppSelector(selectAuthRole);
   const user = useAppSelector(selectAuthUser);
 
   return (
-    <>
+    <StudentOnlyRoute description="Admins have their own dashboard — see /admin/dashboard.">
       <EnrollmentIntentHandler />
       <EnrollmentRequestIntentHandler />
-      {isStudent(role) ? (
-        <StudentDashboard firstName={user?.firstName} />
-      ) : (
-        <AdminDashboard />
-      )}
-    </>
+      <StudentDashboard firstName={user?.firstName} />
+    </StudentOnlyRoute>
   );
 }

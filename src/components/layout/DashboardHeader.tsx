@@ -14,6 +14,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/my-courses": "My Courses",
   "/certificates": "Certificates",
   "/projects": "My Projects",
+  "/admin/dashboard": "Dashboard",
   "/admin/services": "Services",
   "/admin/sessions": "Session Library",
   "/admin/certificates": "Manage Certificates",

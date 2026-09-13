@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { ExternalLink, Loader2, XCircle } from "lucide-react";
+import { ExternalLink, Loader2, MoreHorizontal, XCircle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -189,30 +195,35 @@ export function CourseCertificatesTab({ intakeId }: { intakeId: string }) {
                     {format(new Date(certificate.issuedDate), "MMM dd, yyyy")}
                   </TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button asChild variant="ghost" size="icon">
-                        <Link
-                          href={`/certificates/verify/${certificate.certificateCode}`}
-                          target="_blank"
-                          aria-label={`Open public verification for ${certificate.certificateCode}`}
-                        >
-                          <ExternalLink className="size-4 text-primary" aria-hidden="true" />
-                        </Link>
-                      </Button>
-                      {certificate.status === "ISSUED" ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`Revoke certificate ${certificate.certificateCode}`}
-                          onClick={() => {
-                            setReason("");
-                            setRevokeTarget(certificate);
-                          }}
+                          aria-label={`Actions for certificate ${certificate.certificateCode}`}
                         >
-                          <XCircle className="size-4 text-destructive" aria-hidden="true" />
+                          <MoreHorizontal />
                         </Button>
-                      ) : null}
-                    </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/certificates/verify/${certificate.certificateCode}`} target="_blank">
+                            <ExternalLink /> Open verification
+                          </Link>
+                        </DropdownMenuItem>
+                        {certificate.status === "ISSUED" ? (
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => {
+                              setReason("");
+                              setRevokeTarget(certificate);
+                            }}
+                          >
+                            <XCircle /> Revoke certificate
+                          </DropdownMenuItem>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))

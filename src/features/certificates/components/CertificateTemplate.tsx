@@ -74,7 +74,7 @@ export default function CertificateTemplate({
       </div>
 
       {/* Right panel */}
-      <div className="relative flex flex-1 flex-col items-center justify-start overflow-hidden bg-gray-50 px-10 pb-8 pt-16 text-center">
+      <div className="relative flex flex-1 flex-col items-center justify-start overflow-hidden bg-white px-10 pb-8 pt-16 text-center">
         <HexagonBackdrop />
 
         {/* eslint-disable-next-line @next/next/no-img-element -- captured by html-to-image, see note on the logo above */}

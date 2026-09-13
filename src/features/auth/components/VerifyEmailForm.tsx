@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { isNormalizedApiError } from "@/lib/api";
+import { getDashboardPath } from "@/lib/access";
 
 // 1. Define Validation Schema (Matches backend verifyOtpSchema)
 const verifyOtpSchema = z.object({
@@ -59,12 +60,12 @@ export default function VerifyEmailForm() {
     if (!email) return;
 
     try {
-      await verifyOtp({ email, code: values.code }).unwrap();
+      const verifiedUser = await verifyOtp({ email, code: values.code }).unwrap();
       toast.success("Email verified! Welcome to Foundry Academy.");
       const intent = enrollmentCourseId
         ? `?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
         : "";
-      router.replace(`/dashboard${intent}`);
+      router.replace(`${getDashboardPath(verifiedUser.role)}${intent}`);
     } catch (error: unknown) {
       if (isNormalizedApiError(error) && error.field) {
         setError("code", {
