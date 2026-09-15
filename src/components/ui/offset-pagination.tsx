@@ -35,8 +35,12 @@ export function OffsetPagination({
   const currentPage = Math.floor(offset / pageSize) + 1;
 
   return (
-    <div className="flex items-center justify-between text-sm text-muted-foreground">
-      <div className="flex items-center gap-3">
+    // flex-wrap: on a narrow phone, the "Showing…" text + page-size select
+    // (left) plus Previous/Page X of Y/Next (right) don't both fit on one
+    // line — this is reused by every offset-paginated admin table, so a
+    // fixed no-wrap row would break identically everywhere it's used.
+    <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-3">
         <p>
           Showing {Math.min(offset + 1, total)}–{Math.min(offset + shownCount, total)} of {total}
         </p>

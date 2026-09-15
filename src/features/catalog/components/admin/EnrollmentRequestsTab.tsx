@@ -226,15 +226,15 @@ export function EnrollmentRequestsTab({
       </div>
 
       <div className="overflow-hidden rounded-md border bg-card" aria-busy={isLoading || isFetching}>
-        <Table>
+        <Table className="table-fixed">
           <TableCaption className="sr-only">Enrollment requests submitted for this intake</TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Student</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Requested</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-40">Phone</TableHead>
+              <TableHead className="w-28">Status</TableHead>
+              <TableHead className="w-28">Requested</TableHead>
+              <TableHead className="w-28 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -269,20 +269,22 @@ export function EnrollmentRequestsTab({
                     }
                   }}
                 >
-                  <TableCell className="max-w-xs whitespace-normal px-4 py-4">
-                    <p className="font-semibold">
+                  <TableCell className="max-w-0 px-4 py-4">
+                    <p className="truncate font-semibold" title={`${request.student?.firstName} ${request.student?.lastName}`}>
                       {request.student?.firstName} {request.student?.lastName}
                     </p>
-                    <p className="text-xs text-muted-foreground">{request.student?.email}</p>
+                    <p className="truncate text-xs text-muted-foreground" title={request.student?.email}>
+                      {request.student?.email}
+                    </p>
                   </TableCell>
                   <TableCell className="font-mono text-sm">
                     <div className="flex items-center gap-1.5">
-                      {request.contactPhone}
+                      <span className="truncate">{request.contactPhone}</span>
                       <Button
                         aria-label="Copy phone number"
                         variant="ghost"
                         size="icon"
-                        className="size-6"
+                        className="size-8 shrink-0"
                         onClick={() => copyPhone(request.contactPhone)}
                       >
                         <Copy className="size-3" aria-hidden="true" />

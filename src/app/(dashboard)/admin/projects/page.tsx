@@ -42,6 +42,7 @@ import { useGetAllProjectsAdminQuery, useReviewProjectMutation, type ProjectAdmi
 import type { ProjectStatus, StudentProject } from "@/features/projects/projectsTypes";
 import { getApiErrorMessage } from "@/lib/api";
 import { PROJECT_STATUS_STYLES } from "@/lib/statusColors";
+import { cn } from "@/lib/utils";
 
 const statusStyles = PROJECT_STATUS_STYLES;
 
@@ -149,15 +150,15 @@ export default function AdminProjectsPage() {
       </div>
 
       <div className="overflow-hidden rounded-md border bg-card" aria-busy={isLoading || isFetching}>
-        <Table>
+        <Table className="table-fixed">
           <TableCaption className="sr-only">Student projects awaiting or carrying an administrative review</TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Project</TableHead>
-              <TableHead>Student / Course</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Submitted</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-48">Student / Course</TableHead>
+              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-28">Submitted</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -200,26 +201,29 @@ export default function AdminProjectsPage() {
                     }
                   }}
                 >
-                  <TableCell className="max-w-xs px-4 whitespace-normal">
+                  <TableCell className="max-w-0 px-4">
                     <div className="flex min-w-0 items-center gap-2">
-                      <p className="truncate font-semibold">{project.title}</p>
+                      <p className="min-w-0 truncate font-semibold" title={project.title}>
+                        {project.title}
+                      </p>
                       <Badge
                         variant="outline"
-                        className={
+                        className={cn(
+                          "shrink-0",
                           project.isPublic
                             ? "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                            : "border-muted-foreground/25 bg-muted text-muted-foreground"
-                        }
+                            : "border-muted-foreground/25 bg-muted text-muted-foreground",
+                        )}
                       >
                         {project.isPublic ? "Public" : "Private"}
                       </Badge>
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-xs whitespace-normal">
-                    <p className="font-medium">
+                  <TableCell className="max-w-0">
+                    <p className="wrap-break-word font-medium">
                       {project.user?.firstName} {project.user?.lastName}
                     </p>
-                    <p className="text-sm text-muted-foreground">{project.course?.title}</p>
+                    <p className="wrap-break-word text-sm text-muted-foreground">{project.course?.title}</p>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={statusStyles[project.status]}>
@@ -235,7 +239,7 @@ export default function AdminProjectsPage() {
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label={`Actions for ${project.title}`}>
+                        <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${project.title}`}>
                           <MoreHorizontal />
                         </Button>
                       </DropdownMenuTrigger>
@@ -346,7 +350,7 @@ export default function AdminProjectsPage() {
                   </Badge>
                 </div>
                 {detailProject.description ? (
-                  <p className="text-sm text-muted-foreground">{detailProject.description}</p>
+                  <p className="wrap-break-word text-sm text-muted-foreground">{detailProject.description}</p>
                 ) : null}
                 {detailProject.technologies.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
@@ -360,7 +364,7 @@ export default function AdminProjectsPage() {
                 {detailProject.adminFeedback ? (
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">Feedback</p>
-                    <p className="text-sm text-muted-foreground">{detailProject.adminFeedback}</p>
+                    <p className="wrap-break-word text-sm text-muted-foreground">{detailProject.adminFeedback}</p>
                   </div>
                 ) : null}
                 <div className="space-y-1.5 text-sm">

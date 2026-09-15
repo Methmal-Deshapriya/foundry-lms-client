@@ -125,7 +125,7 @@ export default function AdminAuditPage() {
 
       {/* Body */}
       <div
-        className="flex-1 overflow-y-auto bg-background p-4 font-mono text-sm lg:min-h-0"
+        className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 font-mono text-sm lg:min-h-0"
         aria-busy={isLoading || isFetching}
       >
         {isLoading ? (
@@ -142,11 +142,11 @@ export default function AdminAuditPage() {
           <div className={cn("space-y-0.5", isFetching && "opacity-60")}>
             {logs.map((log) => (
               <div key={log.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 py-1 leading-relaxed">
-                <span className="text-muted-foreground/70">
+                <span className="shrink-0 whitespace-nowrap text-muted-foreground/70">
                   [{format(new Date(log.createdAt), "yyyy-MM-dd HH:mm:ss")}]
                 </span>
-                <span className={cn("font-semibold", actionColorClass(log.action))}>{log.action}</span>
-                <span className="text-foreground">
+                <span className={cn("shrink-0", actionColorClass(log.action), "font-semibold")}>{log.action}</span>
+                <span className="min-w-0 wrap-break-word text-foreground">
                   {log.description || `${log.entityType}${log.entityId ? ` #${log.entityId.slice(0, 8)}` : ""}`}
                 </span>
                 <span className="text-muted-foreground/70">

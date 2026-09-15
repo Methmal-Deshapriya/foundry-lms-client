@@ -78,20 +78,28 @@ export default function CategoryCoursesPage() {
           </Button>
         }
       />
-      <div className="flex flex-wrap gap-3">
+      {/* A grid, not flex-wrap: 3 tiles at min-w-40/flex-1 wrap unevenly
+          (2-then-1) right around the width the sidebar appears — the same
+          pattern fixed on the admin/student dashboards. min-w-0 overrides
+          the shared component's own 160px floor so a narrow-phone cell can
+          still shrink enough. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <CourseKpiTile
+          className="min-w-0"
           icon={BookOpen}
           label="Courses"
           value={courses.filter((course) => !course.archivedAt).length}
           secondary={`${courses.filter((course) => course.archivedAt).length} archived`}
         />
         <CourseKpiTile
+          className="min-w-0"
           icon={CalendarCheck}
           label="Open for enrollment"
           value={courses.filter((course) => course.enrollmentStatus === "OPEN").length}
           secondary="Have an open-active intake"
         />
         <CourseKpiTile
+          className="min-w-0"
           icon={Layers}
           label="Total intakes"
           value={courses.reduce((total, course) => total + course.intakeCount, 0)}

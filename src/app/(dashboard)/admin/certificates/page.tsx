@@ -138,16 +138,16 @@ export default function AdminCertificatesPage() {
       </div>
 
       <div className="overflow-hidden rounded-md border bg-card" aria-busy={isLoading || isFetching}>
-        <Table>
+        <Table className="table-fixed">
           <TableCaption className="sr-only">Issued and revoked certificates</TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Certificate code</TableHead>
-              <TableHead>Student</TableHead>
+              <TableHead className="w-40 px-4">Certificate code</TableHead>
+              <TableHead className="w-40">Student</TableHead>
               <TableHead>Course</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Issued</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-28">Issued</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -190,9 +190,15 @@ export default function AdminCertificatesPage() {
                     }
                   }}
                 >
-                  <TableCell className="px-4 py-4 font-mono">{certificate.certificateCode}</TableCell>
-                  <TableCell className="font-medium">{certificate.studentName}</TableCell>
-                  <TableCell className="max-w-xs truncate">{certificate.courseName}</TableCell>
+                  <TableCell className="max-w-0 truncate px-4 py-4 font-mono" title={certificate.certificateCode}>
+                    {certificate.certificateCode}
+                  </TableCell>
+                  <TableCell className="max-w-0 truncate font-medium" title={certificate.studentName}>
+                    {certificate.studentName}
+                  </TableCell>
+                  <TableCell className="max-w-0 truncate" title={certificate.courseName}>
+                    {certificate.courseName}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={CERTIFICATE_STATUS_STYLES[certificate.status]}>
                       {certificate.status}
@@ -206,7 +212,7 @@ export default function AdminCertificatesPage() {
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="icon-lg"
                           aria-label={`Actions for certificate ${certificate.certificateCode}`}
                         >
                           <MoreHorizontal />
@@ -305,7 +311,7 @@ export default function AdminCertificatesPage() {
                   </Badge>
                 </div>
                 {detailCertificate.description ? (
-                  <p className="text-sm text-muted-foreground">{detailCertificate.description}</p>
+                  <p className="wrap-break-word text-sm text-muted-foreground">{detailCertificate.description}</p>
                 ) : null}
                 <div className="space-y-1.5 text-sm">
                   <p className="flex justify-between gap-4">
@@ -329,7 +335,7 @@ export default function AdminCertificatesPage() {
                         </p>
                       ) : null}
                       {detailCertificate.revocationReason ? (
-                        <p className="text-muted-foreground">{detailCertificate.revocationReason}</p>
+                        <p className="wrap-break-word text-muted-foreground">{detailCertificate.revocationReason}</p>
                       ) : null}
                     </>
                   ) : null}

@@ -302,14 +302,14 @@ export function CategoryManager({
         className="overflow-hidden rounded-md border bg-card"
         aria-busy={isLoading}
       >
-        <Table>
+        <Table className="table-fixed">
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Category</TableHead>
-              <TableHead>Audience</TableHead>
-              <TableHead>Courses</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-28">Audience</TableHead>
+              <TableHead className="w-20">Courses</TableHead>
+              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

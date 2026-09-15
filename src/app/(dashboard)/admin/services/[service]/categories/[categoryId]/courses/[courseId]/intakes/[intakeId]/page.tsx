@@ -145,8 +145,14 @@ export default function IntakeWorkspacePage() {
               }
             />
 
-            <div className="flex flex-wrap gap-3">
+            {/* A grid, not flex-wrap: 3 tiles at min-w-40/flex-1 wrap
+                unevenly (2-then-1) right around the width the sidebar
+                appears — the same pattern fixed on the other catalog
+                pages. min-w-0 overrides the shared component's own 160px
+                floor so a narrow-phone cell can still shrink enough. */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <CourseKpiTile
+                className="min-w-0"
                 label="Enrolled"
                 value={analytics ? `${enrolledCount} / ${analytics.enrollments.capacity ?? "∞"}` : "—"}
                 secondary={
@@ -156,10 +162,12 @@ export default function IntakeWorkspacePage() {
                 }
               />
               <CourseKpiTile
+                className="min-w-0"
                 label="Revenue"
                 value={analytics ? formatLKR(analytics.revenue.total) : "—"}
               />
               <CourseKpiTile
+                className="min-w-0"
                 label="Success rate"
                 value={analytics?.successRate.completedPct != null ? `${analytics.successRate.completedPct}%` : "—"}
                 secondary={

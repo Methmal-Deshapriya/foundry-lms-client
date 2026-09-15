@@ -9,7 +9,12 @@ import type {
 type ApiEnvelope<T> = { success: boolean; data?: T; error?: string };
 
 async function fetchCatalog<T>(path: string): Promise<T | null> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  // Runs server-side (Next.js fetch cache tags), so it always needs a real,
+  // directly-reachable absolute URL — never the relative form
+  // NEXT_PUBLIC_API_BASE_URL can take for the browser (see next.config.ts).
+  // API_INTERNAL_BASE_URL overrides it for that case; unset everywhere else,
+  // where the two are the same value anyway.
+  const baseUrl = process.env.API_INTERNAL_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!baseUrl) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured.");
   try {
     const response = await fetch(`${baseUrl}${path}`, {

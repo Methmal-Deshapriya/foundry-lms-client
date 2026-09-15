@@ -6,6 +6,22 @@ export function readClientBuildConfig(environment = process.env) {
   const configuredApiUrl = environment.NEXT_PUBLIC_API_BASE_URL?.trim();
   const apiUrl = configuredApiUrl || DEFAULT_DEVELOPMENT_API_URL;
 
+  // A relative value (e.g. "/api/v1") means the browser reaches the API
+  // through this app's own origin instead of a separate one — the dev-only
+  // rewrite below proxies it to the real API server. This lets a tunneled
+  // frontend (shared with someone for a manual QA pass) reach the API
+  // without a second public tunnel or a cross-site cookie problem. Never
+  // valid in production, where the API is always its own real, absolute,
+  // separately-hosted URL.
+  if (apiUrl.startsWith("/")) {
+    if (environment.NODE_ENV === "production") {
+      throw new Error(
+        "NEXT_PUBLIC_API_BASE_URL must be an absolute HTTP(S) URL in production.",
+      );
+    }
+    return { apiUrl, apiOrigin: "" };
+  }
+
   let parsedApiUrl: URL;
   try {
     parsedApiUrl = new URL(apiUrl);
@@ -60,7 +76,7 @@ export function createContentSecurityPolicy(
     "object-src 'none'",
     "frame-ancestors 'none'",
     "form-action 'self'",
-    `connect-src 'self' ${apiOrigin}`,
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}`,
     `img-src 'self' data: blob:${imageOrigins.length ? ` ${imageOrigins.join(" ")}` : ""}`,
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
@@ -88,6 +104,19 @@ const nextConfig: NextConfig = {
         : []),
     ];
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  async rewrites() {
+    // Dev-only proxy for the relative NEXT_PUBLIC_API_BASE_URL case above —
+    // forwards same-origin /api/v1/* calls (from the browser, possibly via
+    // a tunnel) to the real API server, which only ever needs to be
+    // reachable from this machine. A no-op whenever NEXT_PUBLIC_API_BASE_URL
+    // is the normal absolute URL, since the browser then calls that origin
+    // directly and never hits this rewrite table at all.
+    if (process.env.NODE_ENV === "production") return [];
+    const internalApiBase = (
+      process.env.API_INTERNAL_BASE_URL || DEFAULT_DEVELOPMENT_API_URL
+    ).replace(/\/$/, "");
+    return [{ source: "/api/v1/:path*", destination: `${internalApiBase}/:path*` }];
   },
   async redirects() {
     return [

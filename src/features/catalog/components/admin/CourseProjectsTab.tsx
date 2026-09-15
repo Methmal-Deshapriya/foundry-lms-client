@@ -143,15 +143,15 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
       </div>
 
       <div className="overflow-hidden rounded-md border bg-card" aria-busy={isLoading || isFetching}>
-        <Table>
+        <Table className="table-fixed">
           <TableCaption className="sr-only">Student projects submitted for this course</TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Project</TableHead>
-              <TableHead>Student</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Submitted</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-48">Student</TableHead>
+              <TableHead className="w-28">Status</TableHead>
+              <TableHead className="w-28">Submitted</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -194,8 +194,15 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
                     }
                   }}
                 >
-                  <TableCell className="max-w-xs whitespace-normal px-4 py-4 font-semibold">{project.title}</TableCell>
-                  <TableCell>{project.user?.firstName} {project.user?.lastName}</TableCell>
+                  <TableCell className="max-w-0 truncate px-4 py-4 font-semibold" title={project.title}>
+                    {project.title}
+                  </TableCell>
+                  <TableCell
+                    className="max-w-0 truncate"
+                    title={`${project.user?.firstName ?? ""} ${project.user?.lastName ?? ""}`.trim()}
+                  >
+                    {project.user?.firstName} {project.user?.lastName}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={statusStyles[project.status]}>
                       <span className="inline-flex items-center gap-1.5">

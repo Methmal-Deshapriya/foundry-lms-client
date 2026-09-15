@@ -111,7 +111,7 @@ function CurriculumCard({
       role="button"
       aria-label={`View details for ${item.session.title}`}
       className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-md border bg-card p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "flex cursor-pointer flex-col gap-2 rounded-md border bg-card p-3 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         isDragging && "relative z-10 shadow-md",
         dimmed && "opacity-40",
       )}
@@ -127,65 +127,69 @@ function CurriculumCard({
         }
       }}
     >
-      {!readOnly ? (
-        <button
-          type="button"
-          aria-label={`Reorder ${item.session.title}`}
-          data-no-row-navigation
-          className="shrink-0 cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="size-4" aria-hidden="true" />
-        </button>
-      ) : null}
-      <span className="w-6 shrink-0 text-center font-mono text-sm text-muted-foreground">{position}</span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold">{item.session.title}</p>
-        <p className="text-xs text-muted-foreground">
-          {item.session.durationMinutes ? `${item.session.durationMinutes} minutes` : "Duration not set"}
-        </p>
-      </div>
-      {item.availableAt ? (
-        <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-          <Clock className="size-3" aria-hidden="true" />
-          {format(new Date(item.availableAt), "MMM d, yyyy · h:mm a")}
-        </span>
-      ) : null}
-      <Badge variant="outline" className={cn("shrink-0", statusClass[item.deliveryStatus])}>
-        {item.deliveryStatus.replace("_", " ")}
-      </Badge>
-      <span className="w-20 shrink-0 text-right font-mono text-sm text-muted-foreground">
-        {item.usage.completionCount} done
-      </span>
-      {readOnly ? (
-        <span className="shrink-0 text-xs text-muted-foreground">Read only</span>
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={`Actions for ${item.session.title}`}>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {item.deliveryStatus !== "RELEASED" ? (
-              <DropdownMenuItem onSelect={onRelease}>Release now</DropdownMenuItem>
-            ) : null}
-            {item.deliveryStatus !== "RELEASED" ? (
-              <DropdownMenuItem onSelect={onSchedule}>
-                {item.deliveryStatus === "SCHEDULED" ? "Reschedule release" : "Schedule release"}
+      <div className="flex items-center gap-3">
+        {!readOnly ? (
+          <button
+            type="button"
+            aria-label={`Reorder ${item.session.title}`}
+            data-no-row-navigation
+            className="flex size-8 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:text-foreground active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="size-4" aria-hidden="true" />
+          </button>
+        ) : null}
+        <span className="w-6 shrink-0 text-center font-mono text-sm text-muted-foreground">{position}</span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold" title={item.session.title}>
+            {item.session.title}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {item.session.durationMinutes ? `${item.session.durationMinutes} minutes` : "Duration not set"}
+          </p>
+        </div>
+        {readOnly ? (
+          <span className="shrink-0 text-xs text-muted-foreground">Read only</span>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={`Actions for ${item.session.title}`}>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {item.deliveryStatus !== "RELEASED" ? (
+                <DropdownMenuItem onSelect={onRelease}>Release now</DropdownMenuItem>
+              ) : null}
+              {item.deliveryStatus !== "RELEASED" ? (
+                <DropdownMenuItem onSelect={onSchedule}>
+                  {item.deliveryStatus === "SCHEDULED" ? "Reschedule release" : "Schedule release"}
+                </DropdownMenuItem>
+              ) : null}
+              {item.deliveryStatus === "RELEASED" || item.deliveryStatus === "SCHEDULED" ? (
+                <DropdownMenuItem onSelect={onWithdraw}>Withdraw</DropdownMenuItem>
+              ) : null}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onSelect={onRemove}>
+                <Trash2 /> Remove from curriculum
               </DropdownMenuItem>
-            ) : null}
-            {item.deliveryStatus === "RELEASED" || item.deliveryStatus === "SCHEDULED" ? (
-              <DropdownMenuItem onSelect={onWithdraw}>Withdraw</DropdownMenuItem>
-            ) : null}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" onSelect={onRemove}>
-              <Trash2 /> Remove from curriculum
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 pl-9 text-xs text-muted-foreground">
+        <Badge variant="outline" className={cn("shrink-0", statusClass[item.deliveryStatus])}>
+          {item.deliveryStatus.replace("_", " ")}
+        </Badge>
+        {item.availableAt ? (
+          <span className="flex shrink-0 items-center gap-1">
+            <Clock className="size-3" aria-hidden="true" />
+            {format(new Date(item.availableAt), "MMM d, yyyy · h:mm a")}
+          </span>
+        ) : null}
+        <span className="shrink-0 font-mono">{item.usage.completionCount} done</span>
+      </div>
     </div>
   );
 }
@@ -422,7 +426,7 @@ export default function CourseCurriculumManager({
                 tabIndex={0}
                 role="button"
                 aria-label={`View details for ${item.session.title}`}
-                className="flex cursor-pointer items-center gap-3 rounded-md border bg-card p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex cursor-pointer flex-col gap-2 rounded-md border bg-card p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-row sm:items-center sm:gap-3"
                 onClick={(event) => {
                   if (event.target instanceof Element && event.target.closest(INTERACTIVE_SELECTOR)) return;
                   setDetailItem(item);
@@ -436,35 +440,39 @@ export default function CourseCurriculumManager({
                 }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{item.session.title}</p>
+                  <p className="truncate font-semibold" title={item.session.title}>
+                    {item.session.title}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Historical position {item.historicalOrderIndex == null ? "—" : `#${item.historicalOrderIndex + 1}`}
                   </p>
                 </div>
-                <Badge variant="outline" className={statusClass[item.deliveryStatus]}>
-                  {item.deliveryStatus.replace("_", " ")}
-                </Badge>
-                <span className="w-20 shrink-0 text-right font-mono text-sm text-muted-foreground">
-                  {item.usage.completionCount} done
-                </span>
-                {readOnly ? (
-                  <span className="shrink-0 text-xs text-muted-foreground">Read only</span>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={attachState.isLoading}
-                    data-no-row-navigation
-                    onClick={() =>
-                      attach({ intakeId, sessionId: item.session.id })
-                        .unwrap()
-                        .then(() => toast.success("Session reattached as withdrawn"))
-                        .catch((error) => toast.error(getApiErrorMessage(error, "Could not reattach session")))
-                    }
-                  >
-                    <RotateCcw /> Reattach
-                  </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className={cn("shrink-0", statusClass[item.deliveryStatus])}>
+                    {item.deliveryStatus.replace("_", " ")}
+                  </Badge>
+                  <span className="shrink-0 text-right font-mono text-sm text-muted-foreground">
+                    {item.usage.completionCount} done
+                  </span>
+                  {readOnly ? (
+                    <span className="shrink-0 text-xs text-muted-foreground">Read only</span>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={attachState.isLoading}
+                      data-no-row-navigation
+                      onClick={() =>
+                        attach({ intakeId, sessionId: item.session.id })
+                          .unwrap()
+                          .then(() => toast.success("Session reattached as withdrawn"))
+                          .catch((error) => toast.error(getApiErrorMessage(error, "Could not reattach session")))
+                      }
+                    >
+                      <RotateCcw /> Reattach
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

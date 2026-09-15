@@ -252,7 +252,7 @@ export default function ClassRosterTable({
       </div>
 
       <div className="overflow-hidden rounded-md border bg-card" aria-busy={isLoading || isFetching}>
-        <Table>
+        <Table className="table-fixed">
           <TableCaption className="sr-only">
             {deliveryMode === "PAID"
               ? "Enrolled students in this course intake"
@@ -261,10 +261,10 @@ export default function ClassRosterTable({
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Student</TableHead>
-              <TableHead>Enrollment status</TableHead>
-              <TableHead>Payment</TableHead>
-              <TableHead>Certificate</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-36">Enrollment status</TableHead>
+              <TableHead className="w-28">Payment</TableHead>
+              <TableHead className="w-28">Certificate</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -319,18 +319,18 @@ export default function ClassRosterTable({
                       }
                     }}
                   >
-                    <TableCell className="max-w-xs whitespace-normal px-4 py-4">
+                    <TableCell className="max-w-0 px-4 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                           <User className="size-4" aria-hidden="true" />
                         </div>
-                        <div>
-                          <p className="font-semibold">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold" title={`${entry.user?.firstName} ${entry.user?.lastName}`}>
                             {entry.user?.firstName} {entry.user?.lastName}
                           </p>
-                          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Mail className="size-3" aria-hidden="true" />
-                            {entry.user?.email}
+                          <p className="flex items-center gap-1 truncate text-xs text-muted-foreground" title={entry.user?.email}>
+                            <Mail className="size-3 shrink-0" aria-hidden="true" />
+                            <span className="truncate">{entry.user?.email}</span>
                           </p>
                         </div>
                       </div>

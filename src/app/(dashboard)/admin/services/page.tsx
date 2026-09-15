@@ -251,19 +251,19 @@ export default function AdminServicesPage() {
         ]}
       />
       <div className="overflow-hidden rounded-md border bg-card">
-        <Table>
+        <Table className="table-fixed">
           <TableCaption className="sr-only">
             Learning services summary
           </TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Service</TableHead>
-              <TableHead>Categories</TableHead>
-              <TableHead>Course lifecycle</TableHead>
-              <TableHead>Learners</TableHead>
-              <TableHead>Inherited policy</TableHead>
-              <TableHead>Attention</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-28">Categories</TableHead>
+              <TableHead className="w-36">Course lifecycle</TableHead>
+              <TableHead className="w-32">Learners</TableHead>
+              <TableHead className="w-44">Inherited policy</TableHead>
+              <TableHead className="w-24">Attention</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -314,40 +314,46 @@ export default function AdminServicesPage() {
                         {service.status}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="line-clamp-2 text-xs text-muted-foreground" title={service.description}>
                       {service.description}
                     </p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-mono">
+                    <p className="truncate font-mono">
                       {service.categories.published} /{" "}
                       {service.categories.total - service.categories.archived}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       published / active
                     </p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-mono">
+                    <p
+                      className="truncate font-mono"
+                      title={`${service.courses.openActive} / ${service.courses.closedActive} / ${service.courses.completed}`}
+                    >
                       {service.courses.openActive} /{" "}
                       {service.courses.closedActive} /{" "}
                       {service.courses.completed}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-muted-foreground">
                       open / closed-active / completed
                     </p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-mono">{service.learners.activeUnique}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate font-mono">{service.learners.activeUnique}</p>
+                    <p className="truncate text-xs text-muted-foreground">
                       {service.learners.activeEnrollments} active enrollments
                     </p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-medium">
+                    <p className="truncate font-medium">
                       {service.accessType} · {service.courseMode}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p
+                      className="truncate text-xs text-muted-foreground"
+                      title={`${service.enrollmentMode} enrollment · payment ${service.paymentRequirement.toLowerCase().replace("_", " ")}`}
+                    >
                       {service.enrollmentMode} enrollment · payment{" "}
                       {service.paymentRequirement
                         .toLowerCase()

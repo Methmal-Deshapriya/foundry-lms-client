@@ -88,15 +88,15 @@ export default function UserTable({
 
   return (
     <div className="overflow-hidden rounded-md border bg-card" aria-busy={isLoading || isFetching}>
-      <Table>
+      <Table className="table-fixed">
         <TableCaption className="sr-only">Platform users and their access roles</TableCaption>
         <TableHeader className="bg-muted/40">
           <TableRow>
             <TableHead className="px-4">User</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Verification</TableHead>
-            <TableHead>Member since</TableHead>
-            <TableHead className="pr-4 text-right">Access control</TableHead>
+            <TableHead className="w-32">Role</TableHead>
+            <TableHead className="w-32">Verification</TableHead>
+            <TableHead className="w-28">Member since</TableHead>
+            <TableHead className="w-36 pr-4 text-right">Access control</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody className={cn(isFetching && !isLoading && "opacity-60")}>
@@ -144,7 +144,9 @@ export default function UserTable({
                 >
                   <TableCell className="max-w-sm whitespace-normal px-4">
                     <div className="min-w-0">
-                      <p className="font-semibold">{name}</p>
+                      <p className="truncate font-semibold" title={name}>
+                        {name}
+                      </p>
                       <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
                         <Mail className="size-3" aria-hidden="true" />
                         {user.email}

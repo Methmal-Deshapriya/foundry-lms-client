@@ -45,6 +45,33 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Fluid type scale: every text-* utility (text-xs...text-7xl) now scales
+   continuously with viewport width between 375px and 1920px instead of
+   sitting at one fixed size (or jumping between fixed sizes at manual
+   sm:/md:/lg: breakpoints). The existing default size is the ceiling — kept
+   as the clamp() max so nothing ever renders bigger than it already does on
+   a large desktop screen — and each step has its own floor, tuned so text
+   stays comfortably readable at phone width without shrinking so far it
+   reads as a different type scale. Line-height (below, untouched) is
+   Tailwind's own unitless ratio per step, so it keeps scaling
+   proportionally with whatever the clamped font-size resolves to.
+   Exception: CertificateTemplate.tsx pins its own literal rem sizes,
+   because that DOM node is captured into a fixed-size exported certificate
+   image and must never vary with the capturing browser's viewport. */
+@theme {
+  --text-xs: clamp(0.6875rem, 0.6723rem + 0.065vw, 0.75rem);
+  --text-sm: clamp(0.8125rem, 0.7973rem + 0.065vw, 0.875rem);
+  --text-base: clamp(0.875rem, 0.8447rem + 0.13vw, 1rem);
+  --text-lg: clamp(0.9375rem, 0.892rem + 0.194vw, 1.125rem);
+  --text-xl: clamp(1rem, 0.9393rem + 0.259vw, 1.25rem);
+  --text-2xl: clamp(1.125rem, 1.034rem + 0.388vw, 1.5rem);
+  --text-3xl: clamp(1.375rem, 1.2536rem + 0.518vw, 1.875rem);
+  --text-4xl: clamp(1.625rem, 1.4733rem + 0.647vw, 2.25rem);
+  --text-5xl: clamp(2rem, 1.7573rem + 1.036vw, 3rem);
+  --text-6xl: clamp(2.5rem, 2.1966rem + 1.295vw, 3.75rem);
+  --text-7xl: clamp(3rem, 2.6359rem + 1.553vw, 4.5rem);
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -122,4 +149,43 @@
 }
 .catalog-scrollbar::-webkit-scrollbar-button {
   display: none;
+}
+
+/* Horizontal-scroll fallback for tables on narrow screens (see the shared
+   Table component in components/ui/table.tsx) — table-fixed + explicit
+   column widths keep desktop widths from ever needing this. No native
+   browser scrollbar, ever: a thin,
+   theme-tinted bar fades in only on hover/focus or while `.is-scrolling` is
+   toggled during an active scroll, then fades back out. scrollbar-width
+   stays "thin" at rest (not "none") so the reserved gutter never changes
+   size on hover in Firefox — only the thumb's color fades. */
+.table-hscroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.table-hscroll:hover,
+.table-hscroll:focus-within,
+.table-hscroll.is-scrolling {
+  scrollbar-color: rgba(37, 99, 235, 0.35) transparent;
+}
+.table-hscroll::-webkit-scrollbar {
+  height: 8px;
+}
+.table-hscroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.table-hscroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 150ms ease;
+}
+.table-hscroll:hover::-webkit-scrollbar-thumb,
+.table-hscroll:focus-within::-webkit-scrollbar-thumb,
+.table-hscroll.is-scrolling::-webkit-scrollbar-thumb {
+  background-color: rgba(37, 99, 235, 0.35);
+}
+.table-hscroll:hover::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(37, 99, 235, 0.5);
 }

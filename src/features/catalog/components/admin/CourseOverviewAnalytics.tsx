@@ -33,7 +33,10 @@ export function CourseOverviewAnalytics({ intakeId }: { intakeId: string }) {
   const sessionMax = data.sessionEngagement.reduce((max, row) => Math.max(max, row.eligible), 0);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    // lg not md: md (768px) is exactly where the dashboard's own sidebar
+    // appears, so switching to 2 columns in that same instant compounds
+    // into a sharper squeeze than a graduated step-down.
+    <div className="grid gap-4 lg:grid-cols-2">
       <Section title="Where students are enrolling from">
         <p className="text-xs text-muted-foreground">
           {data.districts.length > 0

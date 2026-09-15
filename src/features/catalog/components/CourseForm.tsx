@@ -271,26 +271,28 @@ export function CourseForm({
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-1">
-          {WIZARD_STEPS.map(({ step }, index) => (
-            <Fragment key={step}>
-              <span
-                className={cn(
-                  "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-                  wizardStep === step
-                    ? "bg-linear-to-r from-blue-600 to-indigo-500 text-white"
-                    : wizardStep > step
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground",
-                )}
-              >
-                {wizardStep > step ? <Check className="size-3.5" aria-hidden="true" /> : step}
-              </span>
-              {index < WIZARD_STEPS.length - 1 ? (
-                <div className={cn("h-px min-w-3 flex-1", wizardStep > step ? "bg-primary/40" : "bg-border")} />
-              ) : null}
-            </Fragment>
-          ))}
+        <div className="-mx-1 overflow-x-auto px-1">
+          <div className="flex w-max items-center gap-1">
+            {WIZARD_STEPS.map(({ step }, index) => (
+              <Fragment key={step}>
+                <span
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
+                    wizardStep === step
+                      ? "bg-linear-to-r from-blue-600 to-indigo-500 text-white"
+                      : wizardStep > step
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {wizardStep > step ? <Check className="size-3.5" aria-hidden="true" /> : step}
+                </span>
+                {index < WIZARD_STEPS.length - 1 ? (
+                  <div className={cn("h-px w-8 shrink-0", wizardStep > step ? "bg-primary/40" : "bg-border")} />
+                ) : null}
+              </Fragment>
+            ))}
+          </div>
         </div>
         <p className="mt-2 text-sm font-medium text-foreground">
           Step {wizardStep} of {LAST_STEP} — {WIZARD_STEPS[wizardStep - 1].label}

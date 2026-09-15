@@ -40,15 +40,15 @@ export default function CertificateTemplate({
             alt="Foundry Academy"
             className="h-9 w-auto"
           />
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-[0.75rem]/[1rem] text-gray-500">
             {format(new Date(issuedDate), "MMM d, yyyy")}
           </p>
-          <h1 className="mt-2 text-xl font-extrabold leading-tight text-black">
+          <h1 className="mt-2 text-[1.25rem] leading-tight font-extrabold text-black">
             {displayName}
           </h1>
-          <p className="mt-0 text-xs text-gray-400">has successfully completed</p>
-          <p className="mt-6 text-base font-bold text-black">{courseName}</p>
-          <p className="mt-2 text-xs leading-relaxed text-gray-500">
+          <p className="mt-0 text-[0.75rem]/[1rem] text-gray-400">has successfully completed</p>
+          <p className="mt-6 text-[1rem]/[1.5rem] font-bold text-black">{courseName}</p>
+          <p className="mt-2 text-[0.75rem] leading-relaxed text-gray-500">
             This is to certify successful completion of the program, having covered the
             skill set listed below during this course.
           </p>
@@ -84,9 +84,9 @@ export default function CertificateTemplate({
           className="relative h-44 w-auto"
         />
 
-        <h2 className="relative -mt-4 text-2xl font-extrabold text-black">{courseName}</h2>
+        <h2 className="relative -mt-4 text-[1.5rem]/[2rem] font-extrabold text-black">{courseName}</h2>
         {description ? (
-          <p className="relative mt-1.5 max-w-sm text-xs leading-relaxed text-gray-500">
+          <p className="relative mt-1.5 max-w-sm text-[0.75rem] leading-relaxed text-gray-500">
             {description}
           </p>
         ) : null}
@@ -110,7 +110,7 @@ function SignatureBlock({ src }: { src: string }) {
       {/* eslint-disable-next-line @next/next/no-img-element -- captured by html-to-image, see note on the logo above */}
       <img src={src} alt="Instructor signature" className="mx-auto h-8 w-auto" />
       <div className="border-t border-gray-400 pt-1.5">
-        <p className="text-xs text-gray-600">Instructor, Foundry</p>
+        <p className="text-[0.75rem]/[1rem] text-gray-600">Instructor, Foundry</p>
       </div>
     </div>
   );

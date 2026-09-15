@@ -143,13 +143,13 @@ export default function CourseDetailPage() {
           </>
         }
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" disabled={Boolean(course.archivedAt)} onClick={() => setEditOpen(true)}>
               <Pencil /> Edit
             </Button>
             <Button variant="outline" asChild>
               <a href={publicHref} target="_blank" rel="noopener noreferrer">
-                <ExternalLink /> View public page
+                <ExternalLink /> <span className="hidden sm:inline">View public page</span>
               </a>
             </Button>
             <DropdownMenu>
@@ -179,16 +179,23 @@ export default function CourseDetailPage() {
         }
       />
 
-      <div className="flex flex-wrap gap-3">
-        <CourseKpiTile icon={Users} label="Total learners" value={totalLearners} secondary="Across every intake" />
-        <CourseKpiTile icon={Layers} label="Intakes" value={course.intakeCount} secondary="Ever run" />
+      {/* A grid, not flex-wrap: 4 tiles at min-w-40/flex-1 wrap unevenly
+          (e.g. 3-then-1) in the pre-sidebar viewport range — the same
+          pattern fixed on the admin/student dashboards. 2x2 below `sm`,
+          one row from `sm` up; min-w-0 overrides the shared component's
+          own 160px floor so a narrow-phone cell can still shrink enough. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <CourseKpiTile className="min-w-0" icon={Users} label="Total learners" value={totalLearners} secondary="Across every intake" />
+        <CourseKpiTile className="min-w-0" icon={Layers} label="Intakes" value={course.intakeCount} secondary="Ever run" />
         <CourseKpiTile
+          className="min-w-0"
           icon={DollarSign}
           label="Total revenue"
           value={analytics ? formatLKR(analytics.revenue.total) : "—"}
           secondary="All-time, this program"
         />
         <CourseKpiTile
+          className="min-w-0"
           icon={CheckCircle2}
           label="Completion rate"
           value={analytics?.successRate.completedPct != null ? `${analytics.successRate.completedPct}%` : "—"}
@@ -200,7 +207,10 @@ export default function CourseDetailPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* lg not md: md (768px) is exactly where the dashboard's own sidebar
+          appears, so switching to 2 columns in that same instant compounds
+          into a sharper squeeze than a graduated step-down. */}
+      <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4 rounded-md border border-input bg-card p-4">
           <div>
             <h2 className="text-sm font-semibold text-foreground">Program details</h2>

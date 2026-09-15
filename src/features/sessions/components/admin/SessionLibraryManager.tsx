@@ -622,9 +622,9 @@ export default function SessionLibraryManager() {
       </div>
 
       {canManage && selectedIds.size > 0 ? (
-        <div className="flex items-center justify-between rounded-md border bg-muted/30 px-4 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-4 py-2">
           <p className="text-sm font-medium">{selectedIds.size} selected</p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="outline"
@@ -656,10 +656,10 @@ export default function SessionLibraryManager() {
               ) : null}
               <TableHead className="w-auto">Resource</TableHead>
               <TableHead className="w-24">Status</TableHead>
-              <TableHead className="w-20">Duration</TableHead>
-              <TableHead className="w-32">Tags</TableHead>
-              <TableHead className="w-24">Usage</TableHead>
-              <TableHead className="w-24">Updated</TableHead>
+              <TableHead className="hidden w-20 sm:table-cell">Duration</TableHead>
+              <TableHead className="hidden w-32 md:table-cell">Tags</TableHead>
+              <TableHead className="hidden w-24 md:table-cell">Usage</TableHead>
+              <TableHead className="hidden w-24 lg:table-cell">Updated</TableHead>
               <TableHead className="w-28 pr-6 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -726,10 +726,10 @@ export default function SessionLibraryManager() {
                         {session.status.charAt(0) + session.status.slice(1).toLowerCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                       {duration ?? "—"}
                     </TableCell>
-                    <TableCell className="max-w-40">
+                    <TableCell className="hidden max-w-40 md:table-cell">
                       {tags.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {tags.map((tag) => (
@@ -742,12 +742,12 @@ export default function SessionLibraryManager() {
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
                       {session.usage.courseCount > 0
                         ? `${session.usage.courseCount} course(s)`
                         : "Unused"}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
                       {formatUpdatedAt(session.updatedAt)}
                     </TableCell>
                     <TableCell className="pr-6 text-right" data-no-row-navigation>
@@ -811,8 +811,8 @@ export default function SessionLibraryManager() {
       </div>
 
       {data && data.pagination.total > 0 ? (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-3">
             <p>
               Showing {Math.min(offset + 1, data.pagination.total)}–
               {Math.min(offset + data.sessions.length, data.pagination.total)} of{" "}
@@ -886,13 +886,25 @@ export default function SessionLibraryManager() {
                       field === "materialUrl" ? "Material" : field === "quizUrl" ? "Quiz" : "Feedback";
                     const url = detailSession[field];
                     return url ? (
-                      <Button key={field} variant="outline" size="sm" asChild>
+                      <Button
+                        key={field}
+                        variant="outline"
+                        size="sm"
+                        className="h-auto whitespace-normal py-1.5 text-center leading-tight"
+                        asChild
+                      >
                         <a href={url} target="_blank" rel="noopener noreferrer">
                           {label}
                         </a>
                       </Button>
                     ) : (
-                      <Button key={field} variant="outline" size="sm" disabled>
+                      <Button
+                        key={field}
+                        variant="outline"
+                        size="sm"
+                        className="h-auto whitespace-normal py-1.5 text-center leading-tight"
+                        disabled
+                      >
                         {label}
                       </Button>
                     );

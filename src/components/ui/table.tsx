@@ -4,11 +4,30 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const SCROLL_IDLE_MS = 800
+
+// table-fixed + each table's own explicit column widths keep this container
+// from ever needing to scroll at desktop widths — this is only the fallback
+// for narrow screens where even a reduced column set doesn't fit. The
+// browser's native scrollbar never shows: a thin, theme-tinted bar (see
+// .table-hscroll in globals.css) fades in only on hover/focus or while
+// actively scrolling, then fades back out, instead of a bar permanently
+// sitting under a table that already fits.
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  const [scrolling, setScrolling] = React.useState(false)
+  const idleTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleScroll = React.useCallback(() => {
+    setScrolling(true)
+    if (idleTimer.current) clearTimeout(idleTimer.current)
+    idleTimer.current = setTimeout(() => setScrolling(false), SCROLL_IDLE_MS)
+  }, [])
+
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn("table-hscroll relative w-full overflow-x-auto", scrolling && "is-scrolling")}
+      onScroll={handleScroll}
     >
       <table
         data-slot="table"

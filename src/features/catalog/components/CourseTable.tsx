@@ -83,15 +83,15 @@ export function CourseTable({
   return (
     <>
       <div className="overflow-hidden rounded-md border bg-card">
-        <Table>
+        <Table className="table-fixed">
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Course</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Intakes</TableHead>
-              <TableHead>Enrollment</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-20">Level</TableHead>
+              <TableHead className="w-24">Price</TableHead>
+              <TableHead className="w-20">Intakes</TableHead>
+              <TableHead className="w-32">Enrollment</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -112,9 +112,11 @@ export function CourseTable({
                     if (event.key === "Enter") router.push(`${base}/${course.id}`);
                   }}
                 >
-                  <TableCell className="py-4">
-                    <p className="font-semibold">{course.title}</p>
-                    <p className="font-mono text-xs text-muted-foreground">
+                  <TableCell className="max-w-0 py-4">
+                    <p className="truncate font-semibold" title={course.title}>
+                      {course.title}
+                    </p>
+                    <p className="truncate font-mono text-xs text-muted-foreground" title={`/${course.slug} · ${course.intakeCodePrefix}`}>
                       /{course.slug} · {course.intakeCodePrefix}
                     </p>
                   </TableCell>

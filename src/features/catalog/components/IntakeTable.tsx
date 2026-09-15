@@ -104,15 +104,15 @@ export function IntakeTable({
       </div>
 
       <div className="overflow-hidden rounded-md border bg-card">
-        <Table>
+        <Table className="table-fixed">
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Intake</TableHead>
-              <TableHead>Dates</TableHead>
-              <TableHead>Curriculum</TableHead>
-              <TableHead>Learners</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-28">Dates</TableHead>
+              <TableHead className="w-24">Curriculum</TableHead>
+              <TableHead className="w-24">Learners</TableHead>
+              <TableHead className="w-32">Status</TableHead>
+              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -135,9 +135,13 @@ export function IntakeTable({
                     if (event.key === "Enter") router.push(`${base}/${intake.id}`);
                   }}
                 >
-                  <TableCell className="py-4">
-                    <p className="font-semibold">{intake.intakeKey}</p>
-                    <p className="font-mono text-xs text-muted-foreground">{intake.code}</p>
+                  <TableCell className="max-w-0 py-4">
+                    <p className="truncate font-semibold" title={intake.intakeKey}>
+                      {intake.intakeKey}
+                    </p>
+                    <p className="truncate font-mono text-xs text-muted-foreground" title={intake.code}>
+                      {intake.code}
+                    </p>
                   </TableCell>
                   <TableCell className="text-xs">
                     {intake.instanceKind === "EVERGREEN" ? (

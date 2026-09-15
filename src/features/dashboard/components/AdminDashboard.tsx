@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="flex flex-col gap-4 lg:h-[calc(100svh-7rem)]">
+    <div className="flex flex-col gap-4 xl:h-[calc(100svh-7rem)]">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <AdminCatalogPageHeader
           title="Admin overview"
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
         />
       )}
 
-      <div className="flex shrink-0 items-center justify-center gap-3 lg:hidden">
+      <div className="flex shrink-0 items-center justify-center gap-3 xl:hidden">
         <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>
           <ChevronLeft className="size-4" /> Page 1
         </Button>
@@ -212,52 +212,66 @@ function AdminDashboardPageOne({
   isLoading: boolean;
 }) {
   return (
-    <div className="flex flex-1 flex-col gap-4 lg:min-h-0">
-      <div className="flex shrink-0 flex-wrap gap-4">
+    <div className="flex flex-1 flex-col gap-4 xl:min-h-0">
+      {/* A grid, not flex-wrap: 6 tiles each with the shared component's
+          min-w-40/flex-1 wrap unevenly (e.g. 4-then-2, or worse depending
+          on width) instead of splitting the row cleanly — the same issue
+          found and fixed on the student dashboard's KPI row. Steps 2→3→6
+          columns (all clean factors of 6) so there's never a lonely
+          leftover tile at any width; min-w-0 overrides the shared
+          component's own 160px floor, which would otherwise stop a
+          narrow-phone grid cell from shrinking enough. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <CourseKpiTile
           size="sm"
+          className="min-w-0"
           icon={Icons.users}
           label="Total students"
           value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.totalStudents ?? 0)}
         />
         <CourseKpiTile
           size="sm"
+          className="min-w-0"
           icon={Icons.enrollments}
           label="Active enrollments"
           value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.totalActiveEnrollments ?? 0)}
         />
         <CourseKpiTile
           size="sm"
+          className="min-w-0"
           icon={Icons.pending}
           label="Pending requests"
           value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.pendingEnrollmentRequests ?? 0)}
         />
         <CourseKpiTile
           size="sm"
+          className="min-w-0"
           icon={Icons.certificates}
           label="Certificates issued"
           value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.totalCertificatesIssued ?? 0)}
         />
         <CourseKpiTile
           size="sm"
+          className="min-w-0"
           icon={Icons.reviewProjects}
           label="Projects in review"
           value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.pendingProjectReviews ?? 0)}
         />
         <CourseKpiTile
           size="sm"
+          className="min-w-0"
           icon={Icons.revenue}
           label="Total revenue"
           value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : formatLKRCompact(data?.totalRevenue ?? 0)}
         />
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 lg:min-h-0 lg:flex-row">
+      <div className="flex flex-1 flex-col gap-4 xl:min-h-0 xl:flex-row">
         {/* Left: the three trend/financial rows, stacked */}
-        <div className="flex flex-1 flex-col gap-4 lg:min-h-0">
-          <div className="grid flex-1 grid-cols-1 gap-4 lg:min-h-0 lg:grid-cols-6">
-            <Section title="Enrollments" className="flex flex-col lg:col-span-4 lg:min-h-0">
-              <div className="min-h-40 flex-1 lg:min-h-0">
+        <div className="flex flex-1 flex-col gap-4 xl:min-h-0">
+          <div className="grid flex-1 grid-cols-1 gap-4 xl:min-h-0 xl:grid-cols-6">
+            <Section title="Enrollments" className="flex flex-col xl:col-span-4 xl:min-h-0">
+              <div className="min-h-40 flex-1 xl:min-h-0">
                 <ChartContainer config={ENROLLMENT_CHART_CONFIG} className="h-full w-full">
                   <BarChart data={data?.enrollmentTrend ?? []}>
                     <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -270,7 +284,7 @@ function AdminDashboardPageOne({
             </Section>
 
             <StatusDonutCard
-              className="lg:col-span-2"
+              className="xl:col-span-2"
               title="Enrollment status"
               order={["ACTIVE", "COMPLETED", "CANCELLED"]}
               counts={data?.enrollmentStatusBreakdown}
@@ -279,8 +293,8 @@ function AdminDashboardPageOne({
             />
           </div>
 
-          <Section title="Revenue" className="flex flex-1 flex-col lg:min-h-0">
-            <div className="min-h-40 flex-1 lg:min-h-0">
+          <Section title="Revenue" className="flex flex-1 flex-col xl:min-h-0">
+            <div className="min-h-40 flex-1 xl:min-h-0">
               <ChartContainer config={REVENUE_CHART_CONFIG} className="h-full w-full">
                 <AreaChart data={data?.revenueTrend ?? []}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -299,9 +313,9 @@ function AdminDashboardPageOne({
             </div>
           </Section>
 
-          <div className="grid flex-1 grid-cols-1 gap-4 lg:min-h-0 lg:grid-cols-5">
+          <div className="grid flex-1 grid-cols-1 gap-4 xl:min-h-0 xl:grid-cols-5">
             <StatusDonutCard
-              className="lg:col-span-2"
+              className="xl:col-span-2"
               title="Payment status"
               order={["COMPLETED", "PARTIAL"]}
               labels={{ COMPLETED: "Fully paid", PARTIAL: "Partially paid" }}
@@ -310,7 +324,7 @@ function AdminDashboardPageOne({
               isLoading={isLoading}
             />
 
-            <Section title="Revenue summary" className="flex flex-col lg:col-span-3 lg:min-h-0">
+            <Section title="Revenue summary" className="flex flex-col xl:col-span-3 xl:min-h-0">
               {isLoading ? (
                 <div className="flex flex-1 items-center justify-center">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -326,19 +340,29 @@ function AdminDashboardPageOne({
           </div>
         </div>
 
-        {/* Right: the district map, full height — a fixed width rather than
-            a fraction of the row, since Sri Lanka's own outline is much
-            taller than it is wide and a proportional column just left
-            whitespace on either side of the map. No Section/title header —
-            the map is self-explanatory and card chrome (border/bg/radius)
-            is dropped at lg so this reads as a plain panel rather than a
-            boxed card, matching the audit terminal/profile-rail de-carding
-            treatment elsewhere in the app. */}
-        <div className="flex shrink-0 flex-col rounded-md border border-input bg-card p-4 lg:w-104 lg:min-h-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
+        {/* Right: the district map — fluid width rather than a flat fixed
+            one, since Sri Lanka's own outline is much taller than it is
+            wide and a proportional column just left whitespace either
+            side of the map. min(26rem, 22vw) keeps it at its original
+            ~26rem on a roomy desktop but lets it shrink fluidly as the
+            viewport narrows toward the breakpoint below, rather than
+            jumping straight to a flat 26rem right up to the cutover —
+            the same "cap, don't fix" treatment used for the student
+            dashboard's profile rail. No Section/title header — the map is
+            self-explanatory and card chrome (border/bg/radius) is dropped
+            at xl so this reads as a plain panel rather than a boxed card,
+            matching the audit terminal/profile-rail de-carding treatment
+            elsewhere in the app. This whole page moved from `lg` (1024px)
+            to `xl` (1280px) as its "is there room for the fixed-height
+            desktop layout" breakpoint — the same fix the student dashboard
+            needed: a 14rem sidebar plus this map plus a 6-column nested
+            financial grid needs real room, and `lg` was exactly where it
+            used to visibly overflow. */}
+        <div className="flex shrink-0 flex-col rounded-md border border-input bg-card p-4 xl:w-[min(26rem,22vw)] xl:min-h-0 xl:rounded-none xl:border-0 xl:bg-transparent xl:p-0">
           {!data || data.districtBreakdown.length === 0 ? (
             <p className="text-sm text-muted-foreground">No district data yet.</p>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center pt-10 lg:min-h-0 lg:overflow-y-auto">
+            <div className="flex flex-1 flex-col items-center justify-center pt-10 xl:min-h-0 xl:overflow-y-auto">
               <SriLankaDistrictMap data={data.districtBreakdown} />
             </div>
           )}
@@ -364,12 +388,12 @@ function AdminDashboardPageTwo({
   maxTopCourse: number;
 }) {
   return (
-    <div className="flex flex-1 flex-col gap-4 lg:min-h-0">
+    <div className="flex flex-1 flex-col gap-4 xl:min-h-0">
       {/* Not flex-1: this row's content (two small donuts, two short lists)
           never needs a full share of the page's fixed height — letting it
           size to content instead frees that space for the more substantive
           rows below (course delivery, quick links/recent activity). */}
-      <div className="grid shrink-0 grid-cols-1 gap-4 lg:grid-cols-4">
+      <div className="grid shrink-0 grid-cols-1 gap-4 xl:grid-cols-4">
         <StatusDonutCard
           title="Certificate status"
           order={["ISSUED", "REVOKED"]}
@@ -385,7 +409,7 @@ function AdminDashboardPageTwo({
           isLoading={isLoading}
         />
 
-        <Section title="Top courses by enrollment" className="flex flex-col lg:min-h-0 lg:overflow-y-auto">
+        <Section title="Top courses by enrollment" className="flex flex-col xl:min-h-0 xl:overflow-y-auto">
           {!data || data.topCourses.length === 0 ? (
             <p className="text-sm text-muted-foreground">No enrollments yet.</p>
           ) : (
@@ -405,9 +429,9 @@ function AdminDashboardPageTwo({
           combined height, rather than being squeezed into just the bottom
           row's share — a super-admin-only feed reads better as a single
           continuous timeline than a short, easily-exhausted list. */}
-      <div className={cn("grid flex-1 grid-cols-1 gap-4 lg:min-h-0", isSuperAdmin(role) && "lg:grid-cols-3")}>
-        <div className={cn("flex flex-col gap-4 lg:min-h-0", isSuperAdmin(role) && "lg:col-span-2")}>
-          <div className="flex-1 lg:min-h-0">
+      <div className={cn("grid flex-1 grid-cols-1 gap-4 xl:min-h-0", isSuperAdmin(role) && "xl:grid-cols-3")}>
+        <div className={cn("flex flex-col gap-4 xl:min-h-0", isSuperAdmin(role) && "xl:col-span-2")}>
+          <div className="flex-1 xl:min-h-0">
             <IntakesCard
               running={data?.runningIntakes}
               upcoming={data?.upcomingIntakes}
@@ -415,7 +439,7 @@ function AdminDashboardPageTwo({
               isLoading={isLoading}
             />
           </div>
-          <div className="flex-1 lg:min-h-0">
+          <div className="flex-1 xl:min-h-0">
             <EnrollmentRequestsCard data={data?.enrollmentRequestsList} isLoading={isLoading} />
           </div>
         </div>
@@ -423,14 +447,14 @@ function AdminDashboardPageTwo({
         {isSuperAdmin(role) ? (
           <Section
             title="Recent activity"
-            className="flex flex-col lg:min-h-0"
+            className="flex flex-col xl:min-h-0"
             action={
               <Link href="/admin/audit" className="text-xs font-semibold text-primary hover:text-primary/80">
                 View all
               </Link>
             }
           >
-            <div className="flex-1 lg:min-h-0 lg:overflow-y-auto">
+            <div className="flex-1 xl:min-h-0 xl:overflow-y-auto">
               {isAuditLoading ? (
                 <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" /> Loading…
@@ -523,7 +547,7 @@ function IntakesCard({
   return (
     <Section
       title="Course delivery"
-      className="flex h-full flex-col lg:min-h-0"
+      className="flex h-full flex-col xl:min-h-0"
       action={
         <div className="flex items-center gap-1 rounded-md border border-input p-1">
           {INTAKE_VIEWS.map(({ key, label }) => (
@@ -549,7 +573,7 @@ function IntakesCard({
       ) : !rows || rows.length === 0 ? (
         <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">{activeView.empty}</p>
       ) : (
-        <ul className="flex-1 divide-y divide-border lg:min-h-0 lg:overflow-y-auto">
+        <ul className="flex-1 divide-y divide-border xl:min-h-0 xl:overflow-y-auto">
           {rows.map((intake) => (
             <li key={intake.id}>
               <Link href={intakeHref(intake)} className="flex flex-col gap-1.5 py-2.5 first:pt-0 last:pb-0 hover:opacity-75">
@@ -597,7 +621,7 @@ function enrollmentRequestHref(request: DashboardEnrollmentRequest) {
 // which prospective students are still waiting on an admin to reach out.
 function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollmentRequest[] | undefined; isLoading: boolean }) {
   return (
-    <Section title="Enrollment requests" className="flex h-full flex-col lg:min-h-0">
+    <Section title="Enrollment requests" className="flex h-full flex-col xl:min-h-0">
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -605,7 +629,7 @@ function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollment
       ) : !data || data.length === 0 ? (
         <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">No pending enrollment requests.</p>
       ) : (
-        <ul className="flex-1 divide-y divide-border lg:min-h-0 lg:overflow-y-auto">
+        <ul className="flex-1 divide-y divide-border xl:min-h-0 xl:overflow-y-auto">
           {data.map((request) => (
             <li key={request.id}>
               <Link
@@ -668,26 +692,32 @@ function RevenueSummaryBody({
         )}
       </div>
 
-      {/* Plain stat row, divider-separated rather than three nested boxes —
-          this already lives inside the "Revenue summary" card, so a card
-          within a card read as visual clutter. */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:divide-x sm:divide-border">
-        <div className="flex-1 sm:pr-4">
+      {/* Always a 3-up row, never a breakpoint-driven stack: this card
+          shares its row with a donut card via xl:col-span-3, so its actual
+          rendered width doesn't track any viewport breakpoint cleanly.
+          flex-wrap lets flexbox itself decide — based on the real rendered
+          width, continuously, not a hard snap — whether a column drops to
+          its own line, so there's no threshold to get wrong. items-start
+          on the dot+label line keeps the dot pinned to the first line if a
+          label ever wraps, instead of floating to the vertical center of
+          both lines. */}
+      <div className="flex flex-wrap gap-x-4 gap-y-3">
+        <div className="min-w-28 flex-1">
           <p className="text-[11px] tracking-wide text-muted-foreground uppercase">Full revenue</p>
           <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{formatLKRCompact(fullPotentialRevenue)}</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">Every paid enrollment, in full</p>
         </div>
-        <div className="flex-1 sm:px-4">
-          <p className="flex items-center gap-1.5 text-[11px] tracking-wide text-muted-foreground uppercase">
-            <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: AVAILABLE_COLOR }} aria-hidden="true" />
+        <div className="min-w-28 flex-1">
+          <p className="flex items-start gap-1.5 text-[11px] tracking-wide text-muted-foreground uppercase">
+            <span className="mt-0.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: AVAILABLE_COLOR }} aria-hidden="true" />
             Available revenue
           </p>
           <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{formatLKRCompact(availableRevenue)}</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">Actually collected so far</p>
         </div>
-        <div className="flex-1 sm:pl-4">
-          <p className="flex items-center gap-1.5 text-[11px] tracking-wide text-muted-foreground uppercase">
-            <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: TO_COME_COLOR }} aria-hidden="true" />
+        <div className="min-w-28 flex-1">
+          <p className="flex items-start gap-1.5 text-[11px] tracking-wide text-muted-foreground uppercase">
+            <span className="mt-0.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: TO_COME_COLOR }} aria-hidden="true" />
             Revenue to come
           </p>
           <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{formatLKRCompact(revenueToCome)}</p>
@@ -724,13 +754,19 @@ function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | un
   const chartConfig = Object.fromEntries(slices.map((row) => [row.service, { label: row.service }])) satisfies ChartConfig;
 
   return (
-    <Section title="Active enrollments by service" className="flex flex-col lg:min-h-0">
+    // @container: this card's column width varies with the nested grid it
+    // sits in, independent of viewport — same reasoning as the student
+    // dashboard's project-analytics chart. Below 18rem of its own space,
+    // the fixed 7rem chart + legend has nowhere to go and would overflow;
+    // the legend drops (hovering a slice already shows label + count via
+    // the tooltip) rather than stacking, matching that established pattern.
+    <Section title="Active enrollments by service" className="@container flex flex-col xl:min-h-0">
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="flex flex-1 items-center gap-4">
+        <div className="flex flex-1 items-center justify-center gap-4 @2xs:justify-start">
           <ChartContainer config={chartConfig} className="mx-auto aspect-square h-28 w-28 shrink-0">
             <PieChart>
               {total > 0 ? <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="service" />} /> : null}
@@ -741,7 +777,7 @@ function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | un
           {slices.length === 0 ? (
             <p className="min-w-0 flex-1 text-sm text-muted-foreground">No active enrollments yet.</p>
           ) : (
-            <div className="min-w-0 flex-1 space-y-1.5 text-sm">
+            <div className="hidden min-w-0 flex-1 space-y-1.5 text-sm @2xs:block">
               {slices.map((row, index) => (
                 <div key={row.service} className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-1.5 truncate text-muted-foreground">
@@ -782,13 +818,18 @@ function StatusDonutCard<TKey extends string>({
   const chartConfig = Object.fromEntries(order.map((key) => [key, { label: labels?.[key] ?? key }])) satisfies ChartConfig;
 
   return (
-    <Section title={title} className={cn("flex flex-col lg:min-h-0", className)}>
+    // @container: same reasoning as ServiceEnrollmentsCard above — this
+    // card's rendered width tracks the nested grid it sits in, not the
+    // viewport, and below 18rem the fixed 7rem chart + legend has nowhere
+    // to shrink to. The legend drops rather than stacking, since hovering
+    // a slice already shows label + count via the tooltip.
+    <Section title={title} className={cn("@container flex flex-col xl:min-h-0", className)}>
       {isLoading ? (
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="flex flex-1 items-center gap-4">
+        <div className="flex flex-1 items-center justify-center gap-4 @2xs:justify-start">
           <ChartContainer config={chartConfig} className="mx-auto aspect-square h-28 w-28 shrink-0">
             <PieChart>
               {total > 0 ? <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="key" />} /> : null}
@@ -800,7 +841,7 @@ function StatusDonutCard<TKey extends string>({
             </PieChart>
           </ChartContainer>
 
-          <div className="min-w-0 flex-1 space-y-1.5 text-sm">
+          <div className="hidden min-w-0 flex-1 space-y-1.5 text-sm @2xs:block">
             {rows.map((row) => (
               <div key={row.key} className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-1.5 truncate text-muted-foreground">

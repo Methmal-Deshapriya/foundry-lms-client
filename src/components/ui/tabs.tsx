@@ -23,9 +23,14 @@ function TabsList({
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
+    // flex-nowrap + overflow-x-auto, not flex-wrap: the active trigger's
+    // -mb-px seam (see TabsTrigger's comment) only lines up against the
+    // border below when it sits on the row's one and only line — wrapping
+    // to a second line breaks that seam visibly. A row that doesn't fit
+    // scrolls horizontally instead, which never has that problem.
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn("flex flex-wrap items-end gap-1 border-b border-input", className)}
+      className={cn("catalog-scrollbar flex flex-nowrap items-end gap-1 overflow-x-auto border-b border-input", className)}
       {...props}
     />
   )
