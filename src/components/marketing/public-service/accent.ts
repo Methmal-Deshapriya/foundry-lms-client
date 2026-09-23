@@ -1,15 +1,14 @@
 import type { PublicServiceConfig } from "./types";
 
 /**
- * The one accent every Level-2 public service page shares — matches the
- * blue/indigo gradient used throughout the landing page (Services slide,
- * WelcomeSlide). Category cards within a page still get their own per-item
- * colors for variety; this is only the page-level accent (hero highlight,
- * indicator icons, CTA button).
+ * The one accent every Level-2/3/4 public page shares — house black
+ * (matching the home page's buttons/icon tiles), not a per-service color.
+ * Red (#E91717) is reserved for the small eyebrow/highlight touches used
+ * site-wide and is applied directly where needed rather than through this
+ * config.
  */
 export const SERVICE_ACCENT: PublicServiceConfig["accent"] = {
-  text: "text-blue-600",
-  gradient: "from-blue-600 to-indigo-500",
-  softBg: "bg-blue-100",
-  button: "bg-blue-600 hover:bg-blue-700",
+  text: "text-[#191919]",
+  softBg: "bg-zinc-100",
+  button: "bg-[#191919] hover:bg-[#27272A]",
 };

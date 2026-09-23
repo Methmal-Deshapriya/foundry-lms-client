@@ -71,6 +71,7 @@ import { hasPermission, PERMISSIONS } from "@/lib/access";
 import { SESSION_STATUS_STYLES } from "@/lib/statusColors";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
+import { ObjectUploadField } from "@/features/storage/components/ObjectUploadField";
 import {
   useArchiveSessionMutation,
   useAttachCourseSessionMutation,
@@ -139,6 +140,8 @@ const emptyForm: CreateSessionRequest = {
   description: "",
   recordingUrl: "",
   materialUrl: "",
+  recordingObjectId: null,
+  materialObjectId: null,
   quizUrl: "",
   feedbackUrl: "",
   durationMinutes: null,
@@ -175,6 +178,8 @@ function hasChanges(session: LibrarySession, payload: CreateSessionRequest): boo
     "description",
     "recordingUrl",
     "materialUrl",
+    "recordingObjectId",
+    "materialObjectId",
     "quizUrl",
     "feedbackUrl",
     "durationMinutes",
@@ -299,6 +304,8 @@ export default function SessionLibraryManager() {
       description: session.description ?? "",
       recordingUrl: session.recordingUrl ?? "",
       materialUrl: session.materialUrl ?? "",
+      recordingObjectId: session.recordingObjectId ?? null,
+      materialObjectId: session.materialObjectId ?? null,
       quizUrl: session.quizUrl ?? "",
       feedbackUrl: session.feedbackUrl ?? "",
       durationMinutes: session.durationMinutes,
@@ -314,7 +321,8 @@ export default function SessionLibraryManager() {
   const isEditingUsed = Boolean(editing?.usage.courseCount);
   const requiresRecording = form.status === "READY";
   const isStep1Valid = form.title.trim().length >= 3;
-  const isStep2Valid = !requiresRecording || Boolean(form.recordingUrl?.trim());
+  const isStep2Valid =
+    !requiresRecording || Boolean(form.recordingUrl?.trim() || form.recordingObjectId);
 
   const performSave = async (payload: CreateSessionRequest) => {
     try {
@@ -402,8 +410,8 @@ export default function SessionLibraryManager() {
       await updateSession({ id: session.id, data: { status: "READY" } }).unwrap();
       toast.success("Session marked Ready");
     } catch (error) {
-      if (isNormalizedApiError(error) && error.field === "recordingUrl") {
-        toast.error("Add a recording URL before marking this session Ready");
+      if (isNormalizedApiError(error) && ["recordingUrl", "recordingObjectId"].includes(error.field ?? "")) {
+        toast.error("Add a recording upload or external URL before marking this session Ready");
       } else {
         toast.error(getApiErrorMessage(error, "Could not mark session Ready"));
       }
@@ -964,7 +972,7 @@ export default function SessionLibraryManager() {
                         return usage.serviceSlug ? (
                           <a
                             key={usage.courseSessionId}
-                            href={`/admin/services/${usage.serviceSlug}/categories/${usage.categoryId}/courses/${usage.courseId}/intakes/${usage.intakeId}`}
+                            href={`/admin/services/${usage.serviceSlug}/courses/${usage.courseId}/intakes/${usage.intakeId}`}
                             className="block rounded-md border p-3 text-sm transition hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             {meta}
@@ -1098,30 +1106,71 @@ export default function SessionLibraryManager() {
             ) : null}
 
             {wizardStep === 2 ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {(["recordingUrl", "materialUrl", "quizUrl", "feedbackUrl"] as const).map((field) => (
-                  <div key={field} className="space-y-2">
-                    <Label htmlFor={`session-${field}`}>
-                      {field.replace("Url", " URL")}{" "}
-                      {field === "recordingUrl" && requiresRecording ? (
-                        <span className="text-red-500" aria-hidden="true">*</span>
-                      ) : null}
-                    </Label>
-                    <Input
-                      id={`session-${field}`}
-                      type="url"
-                      value={form[field] ?? ""}
-                      onChange={(event) => setForm({ ...form, [field]: event.target.value })}
-                      placeholder="https://"
-                    />
-                    {fieldErrors[field] ? (
-                      <p className="text-xs font-medium text-destructive" role="alert">{fieldErrors[field]}</p>
-                    ) : null}
-                  </div>
-                ))}
-                {requiresRecording && !form.recordingUrl?.trim() ? (
+              <div className="space-y-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ObjectUploadField
+                    label={`Recording upload${requiresRecording ? " *" : ""}`}
+                    purpose="SESSION_RECORDING"
+                    accept="video/mp4,video/webm,video/quicktime"
+                    value={form.recordingObjectId}
+                    initialObject={editing?.recordingObject}
+                    onChange={(id) => setForm((current) => ({
+                      ...current,
+                      recordingObjectId: id,
+                      ...(id ? { recordingUrl: "" } : {}),
+                    }))}
+                    helpText="Private file. Students receive a short-lived URL only after classroom access is authorized."
+                  />
+                  <ObjectUploadField
+                    label="Learning material upload"
+                    purpose="SESSION_MATERIAL"
+                    accept="application/pdf,application/zip,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain"
+                    value={form.materialObjectId}
+                    initialObject={editing?.materialObject}
+                    onChange={(id) => setForm((current) => ({
+                      ...current,
+                      materialObjectId: id,
+                      ...(id ? { materialUrl: "" } : {}),
+                    }))}
+                    helpText="Private downloadable material; maximum 100 MB."
+                  />
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {(["recordingUrl", "materialUrl", "quizUrl", "feedbackUrl"] as const).map((field) => {
+                    const uploaded = field === "recordingUrl"
+                      ? form.recordingObjectId
+                      : field === "materialUrl"
+                        ? form.materialObjectId
+                        : null;
+                    return (
+                      <div key={field} className="space-y-2">
+                        <Label htmlFor={`session-${field}`}>
+                          {field.replace("Url", " URL")}
+                          {field === "recordingUrl" || field === "materialUrl" ? " (external alternative)" : ""}
+                        </Label>
+                        <Input
+                          id={`session-${field}`}
+                          type="url"
+                          disabled={Boolean(uploaded)}
+                          value={form[field] ?? ""}
+                          onChange={(event) => setForm({
+                            ...form,
+                            [field]: event.target.value,
+                            ...(field === "recordingUrl" && event.target.value ? { recordingObjectId: null } : {}),
+                            ...(field === "materialUrl" && event.target.value ? { materialObjectId: null } : {}),
+                          })}
+                          placeholder={uploaded ? "Using the uploaded file" : "https://"}
+                        />
+                        {fieldErrors[field] ? (
+                          <p className="text-xs font-medium text-destructive" role="alert">{fieldErrors[field]}</p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+                {requiresRecording && !form.recordingUrl?.trim() && !form.recordingObjectId ? (
                   <p className="text-xs text-muted-foreground md:col-span-2">
-                    A recording URL is required to mark this resource Ready.
+                    A recording upload or external URL is required to mark this resource Ready.
                   </p>
                 ) : null}
               </div>
@@ -1130,6 +1179,9 @@ export default function SessionLibraryManager() {
             {wizardStep === 3 ? (
               <div className="space-y-4">
                 <RecordingPreview url={form.recordingUrl} />
+                {form.recordingObjectId ? (
+                  <p className="text-sm text-muted-foreground">Private R2 recording attached.</p>
+                ) : null}
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className={cn("text-xs", statusStyles[form.status as SessionStatus])}>
                     {STATUS_SELECT_LABELS[form.status as "DRAFT" | "READY"]}
@@ -1160,12 +1212,12 @@ export default function SessionLibraryManager() {
                 <div className="space-y-1.5 rounded-md border bg-muted/30 p-3">
                   {(["recordingUrl", "materialUrl", "quizUrl", "feedbackUrl"] as const).map((field) => (
                     <div key={field} className="flex items-center gap-2 text-sm">
-                      {form[field] ? (
+                      {form[field] || (field === "recordingUrl" ? form.recordingObjectId : field === "materialUrl" ? form.materialObjectId : null) ? (
                         <FileCheck2 className="size-3.5 shrink-0 text-emerald-600" aria-hidden="true" />
                       ) : (
                         <span className="size-3.5 shrink-0 rounded-full border border-dashed border-muted-foreground/40" />
                       )}
-                      <span className={form[field] ? "text-foreground" : "text-muted-foreground"}>
+                      <span className={form[field] || (field === "recordingUrl" ? form.recordingObjectId : field === "materialUrl" ? form.materialObjectId : null) ? "text-foreground" : "text-muted-foreground"}>
                         {field.replace("Url", " URL")}
                       </span>
                     </div>
@@ -1360,7 +1412,7 @@ export default function SessionLibraryManager() {
                     <span>
                       <span className="block text-sm font-semibold">{intake.course.title}</span>
                       <span className="block font-mono text-xs text-muted-foreground">
-                        {intake.code} · {intake.category.title}
+                        {intake.code} · {intake.service.title}
                       </span>
                     </span>
                   </label>

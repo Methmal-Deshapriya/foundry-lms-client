@@ -7,7 +7,6 @@ import { Slot } from "radix-ui"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { CATALOG_GRADIENT_BG } from "@/components/marketing/catalog/background"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -179,7 +178,6 @@ function Sidebar({
           "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
           className
         )}
-        style={{ backgroundImage: CATALOG_GRADIENT_BG }}
         {...props}
       >
         {children}
@@ -198,7 +196,6 @@ function Sidebar({
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              backgroundImage: CATALOG_GRADIENT_BG,
             } as React.CSSProperties
           }
           side={side}
@@ -253,7 +250,6 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
           className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm"
-          style={{ backgroundImage: CATALOG_GRADIENT_BG }}
         >
           {children}
         </div>

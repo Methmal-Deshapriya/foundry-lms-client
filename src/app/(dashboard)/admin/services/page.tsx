@@ -106,12 +106,12 @@ export default function AdminServicesPage() {
 
   const totals = services.reduce(
     (total, service) => ({
-      categories: total.categories + service.categories.total,
       courses: total.courses + service.courses.total,
+      intakes: total.intakes + service.intakes.total,
       learners: total.learners + service.learners.activeUnique,
       attention: total.attention + service.attentionCount,
     }),
-    { categories: 0, courses: 0, learners: 0, attention: 0 },
+    { courses: 0, intakes: 0, learners: 0, attention: 0 },
   );
 
   const openEditor = (service?: AdminLearningServiceSummary) => {
@@ -229,14 +229,14 @@ export default function AdminServicesPage() {
       <AdminSummaryStrip
         items={[
           {
-            label: "Categories",
-            value: totals.categories,
+            label: "Courses",
+            value: totals.courses,
             detail: "Across all services",
           },
           {
-            label: "Course records",
-            value: totals.courses,
-            detail: "Intakes and evergreen courses",
+            label: "Intakes",
+            value: totals.intakes,
+            detail: "Scheduled and evergreen runs",
           },
           {
             label: "Active learners",
@@ -258,8 +258,8 @@ export default function AdminServicesPage() {
           <TableHeader className="bg-muted/40">
             <TableRow>
               <TableHead className="px-4">Service</TableHead>
-              <TableHead className="w-28">Categories</TableHead>
-              <TableHead className="w-36">Course lifecycle</TableHead>
+              <TableHead className="w-28">Courses</TableHead>
+              <TableHead className="w-36">Intake lifecycle</TableHead>
               <TableHead className="w-32">Learners</TableHead>
               <TableHead className="w-44">Inherited policy</TableHead>
               <TableHead className="w-24">Attention</TableHead>
@@ -304,8 +304,8 @@ export default function AdminServicesPage() {
               services.map((service) => (
                 <NavigableTableRow
                   key={service.id}
-                  href={`/admin/services/${service.slug}/categories`}
-                  label={`Open ${service.title} categories`}
+                  href={`/admin/services/${service.slug}/courses`}
+                  label={`Open ${service.title} courses`}
                 >
                   <TableCell className="max-w-sm whitespace-normal px-4 py-4">
                     <div className="flex items-center gap-2">
@@ -320,8 +320,8 @@ export default function AdminServicesPage() {
                   </TableCell>
                   <TableCell>
                     <p className="truncate font-mono">
-                      {service.categories.published} /{" "}
-                      {service.categories.total - service.categories.archived}
+                      {service.courses.published} /{" "}
+                      {service.courses.total - service.courses.archived}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       published / active
@@ -330,11 +330,11 @@ export default function AdminServicesPage() {
                   <TableCell>
                     <p
                       className="truncate font-mono"
-                      title={`${service.courses.openActive} / ${service.courses.closedActive} / ${service.courses.completed}`}
+                      title={`${service.intakes.openActive} / ${service.intakes.closedActive} / ${service.intakes.completed}`}
                     >
-                      {service.courses.openActive} /{" "}
-                      {service.courses.closedActive} /{" "}
-                      {service.courses.completed}
+                      {service.intakes.openActive} /{" "}
+                      {service.intakes.closedActive} /{" "}
+                      {service.intakes.completed}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       open / closed-active / completed
@@ -432,7 +432,7 @@ export default function AdminServicesPage() {
                         ) : null}
                         {canDelete &&
                         service.status === "ARCHIVED" &&
-                        service.categoryCount === 0 ? (
+                        service.courseCount === 0 ? (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -469,7 +469,7 @@ export default function AdminServicesPage() {
             </DialogTitle>
             <DialogDescription>
               Choose one supported delivery profile. Identity and policy lock
-              after the first category is created.
+              after the first course is created.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={save} className="space-y-4">
@@ -515,7 +515,7 @@ export default function AdminServicesPage() {
                 <Input
                   id="service-slug"
                   required
-                    disabled={editing !== null && editing !== "new" && editing.categoryCount > 0}
+                    disabled={editing !== null && editing !== "new" && editing.courseCount > 0}
                   value={form.slug}
                   onChange={(event) =>
                     setForm((current) => ({
@@ -562,7 +562,7 @@ export default function AdminServicesPage() {
               <select
                 id="service-profile"
                 className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                disabled={editing !== null && editing !== "new" && editing.categoryCount > 0}
+                disabled={editing !== null && editing !== "new" && editing.courseCount > 0}
                 value={form.profile}
                 onChange={(event) =>
                   setForm((current) => ({

@@ -70,13 +70,25 @@ export function createContentSecurityPolicy(
       }
       return origin.origin;
     });
+  // The browser uploads files directly to R2 via a presigned PUT URL on
+  // Cloudflare's own S3-compatible endpoint, bypassing our API server —
+  // connect-src must allow that host or every direct upload is blocked
+  // before it leaves the page, regardless of R2's own CORS policy (which
+  // governs Cloudflare's side, not the browser's outgoing CSP check). The
+  // account ID isn't a secret — it's already embedded in every presigned
+  // URL the browser receives.
+  const r2AccountId = environment.NEXT_PUBLIC_R2_ACCOUNT_ID?.trim();
+  const r2UploadOrigin = r2AccountId
+    ? `https://*.${r2AccountId}.r2.cloudflarestorage.com`
+    : "";
   return [
     "default-src 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
+    "frame-src https://www.youtube-nocookie.com",
     "form-action 'self'",
-    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}`,
+    `connect-src 'self'${apiOrigin ? ` ${apiOrigin}` : ""}${r2UploadOrigin ? ` ${r2UploadOrigin}` : ""}`,
     `img-src 'self' data: blob:${imageOrigins.length ? ` ${imageOrigins.join(" ")}` : ""}`,
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",

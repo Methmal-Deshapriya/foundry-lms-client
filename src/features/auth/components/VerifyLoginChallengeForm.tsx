@@ -8,7 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/ui/otp-input";
 import { isNormalizedApiError } from "@/lib/api";
 import { useVerifyLoginChallengeMutation } from "../authApi";
@@ -16,11 +15,11 @@ import { useVerifyLoginChallengeMutation } from "../authApi";
 function ChallengeDeadEnd({ title, message }: { title: string; message: string }) {
   return (
     <div className="w-full max-w-md space-y-4 text-center">
-      <h2 className="font-sans text-3xl font-bold text-[#0E1116]">{title}</h2>
-      <p className="font-alt text-[#5B6472]">{message}</p>
+      <h2 className="font-sans text-3xl font-bold text-[#191919]">{title}</h2>
+      <p className="font-alt text-[#71717A]">{message}</p>
       <Link
-        href="/?slide=auth&authView=sign-in"
-        className="inline-block font-semibold text-primary hover:text-primary/80"
+        href="/sign-in"
+        className="inline-block font-semibold text-[#191919] hover:text-[#E91717]"
       >
         Back to sign in
       </Link>
@@ -93,21 +92,21 @@ export default function VerifyLoginChallengeForm() {
   }
 
   return (
-    <div className="w-full max-w-md space-y-4">
-      <div className="space-y-1">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+    <div className="w-full max-w-md space-y-6">
+      <div className="space-y-2">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#FDECEC] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#C91414]">
           <ShieldCheck className="size-4" aria-hidden="true" />
           Administrator security
         </div>
-        <h2 className="font-sans text-3xl font-bold text-[#0E1116]">
+        <h2 className="font-sans text-3xl font-bold text-[#191919]">
           Verify Administrator Login
         </h2>
-        <p className="font-alt text-[#5B6472]">
+        <p className="font-alt text-[#71717A]">
           Enter the 6-digit security code sent to your administrator email.
         </p>
       </div>
 
-      <form className="space-y-3" onSubmit={handleSubmit(submit)}>
+      <form className="space-y-4" onSubmit={handleSubmit(submit)}>
         <div className="space-y-4">
           <Controller
             name="code"
@@ -124,14 +123,14 @@ export default function VerifyLoginChallengeForm() {
             )}
           />
           {errors.code ? (
-            <p className="text-center text-xs font-medium text-red-500" role="alert">
+            <p className="text-center text-xs font-medium text-[#C91414]" role="alert">
               {errors.code.message}
             </p>
           ) : null}
         </div>
 
-        <Button
-          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-linear-to-r from-blue-600 to-indigo-500 text-white hover:opacity-90"
+        <button
+          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#191919] font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A] disabled:cursor-not-allowed disabled:opacity-60"
           type="submit"
           disabled={isLoading}
         >
@@ -146,9 +145,8 @@ export default function VerifyLoginChallengeForm() {
               <ArrowRight className="size-4" aria-hidden="true" />
             </>
           )}
-        </Button>
+        </button>
       </form>
     </div>
   );
 }
-

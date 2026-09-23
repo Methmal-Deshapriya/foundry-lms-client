@@ -14,8 +14,8 @@ import { Loader2, RefreshCw, WifiOff } from "lucide-react";
  * AuthenticatedGuard Component
  *
  * Protects routes that require a user to be logged in.
- * If the user is NOT authenticated, it redirects them to the sign-in slide
- * on the landing page.
+ * If the user is NOT authenticated, it redirects them to the sign-in
+ * section on the landing page.
  */
 export default function AuthenticatedGuard({
   children,
@@ -30,7 +30,7 @@ export default function AuthenticatedGuard({
   useEffect(() => {
     // If we've checked the session and the user is NOT authenticated
     if (isAuthResolved && !isAuthenticated) {
-      router.replace("/?slide=auth&authView=sign-in");
+      router.replace("/sign-in");
     }
   }, [isAuthenticated, isAuthResolved, router]);
 

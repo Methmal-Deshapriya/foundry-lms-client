@@ -59,12 +59,10 @@ export function IntakeTable({
   course,
   intakes,
   serviceSlug,
-  categoryId,
 }: {
   course: AdminCourse;
   intakes: AdminIntake[];
   serviceSlug: string;
-  categoryId: string;
 }) {
   const router = useRouter();
   const user = useAppSelector(selectAuthUser);
@@ -73,9 +71,9 @@ export function IntakeTable({
   const [intakeDialog, setIntakeDialog] = useState<{ intake?: AdminIntake } | null>(null);
   const [updateStatus, statusState] = useUpdateIntakeStatusMutation();
   const [deleteIntake] = useDeleteIntakePermanentlyMutation();
-  const base = `/admin/services/${serviceSlug}/categories/${categoryId}/courses/${course.id}/intakes`;
-  const courseReadOnly = Boolean(course.archivedAt) || course.category.status === "ARCHIVED";
-  const evergreenLocked = course.category.service.courseMode === "EVERGREEN" && intakes.length > 0;
+  const base = `/admin/services/${serviceSlug}/courses/${course.id}/intakes`;
+  const courseReadOnly = Boolean(course.archivedAt) || course.status === "ARCHIVED";
+  const evergreenLocked = course.service.courseMode === "EVERGREEN" && intakes.length > 0;
 
   const move = async (intake: AdminIntake, status: IntakeStatus) => {
     try {

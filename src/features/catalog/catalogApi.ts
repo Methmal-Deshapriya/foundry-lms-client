@@ -4,12 +4,13 @@ import type {
   LearningServiceSlug,
   CourseLevel,
   CourseEnrollmentStatus,
-  PublicCategory,
   PublicExploreFilters,
   PublicExploreResponse,
   PublicLearningService,
+  PublicServiceCatalog,
 } from "./catalogTypes";
 import type { MyEnrollment } from "@/features/enrollments/enrollmentsTypes";
+import type { StoredObjectSummary } from "@/features/storage/storageApi";
 
 export type CatalogStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type IntakeStatus =
@@ -35,25 +36,7 @@ export interface LearningService {
   paymentRequirement: "REQUIRED" | "NOT_REQUIRED";
   status: LearningServiceStatus;
   sortOrder: number;
-  categoryCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AdminCategory {
-  id: string;
-  serviceId: string;
-  service: LearningService;
-  slug: string;
-  title: string;
-  description: string;
-  audienceLabel: string | null;
-  visualKey: string;
-  badgeLabel: string | null;
-  status: CatalogStatus;
-  sortOrder: number;
   courseCount: number;
-  intakeCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -61,7 +44,7 @@ export interface AdminCategory {
 /** The real-world program a student browses and enrolls in — see the 2026-08-30 course-to-program-intake rename plan. */
 export interface AdminCourse {
   id: string;
-  categoryId: string;
+  serviceId: string;
   slug: string;
   title: string;
   summary: string;
@@ -76,13 +59,17 @@ export interface AdminCourse {
   /** Flat discount for paying an intake's full price in one go, applied to every intake under this course. Set once at creation; irrelevant (0) for FREE services. */
   discountAmount: number;
   enrollmentStatus: CourseEnrollmentStatus;
+  /** Publish lifecycle — Course's own Draft/Published/Archived status, taking over what Category's status used to gate (see the 2026-09-22 category layer removal plan). */
+  status: CatalogStatus;
   highlights: string[];
   skills: string[];
   prerequisites: string[];
   thumbnailUrl: string | null;
+  thumbnailObjectId: string | null;
+  thumbnailObject: StoredObjectSummary | null;
   sortOrder: number;
   archivedAt: string | null;
-  category: AdminCategory;
+  service: LearningService;
   intakes: AdminIntake[];
   intakeCount: number;
   createdAt: string;
@@ -93,7 +80,7 @@ export interface AdminCourse {
 export interface AdminIntake {
   id: string;
   courseId: string;
-  categoryId: string;
+  serviceId: string;
   intakeKey: string;
   code: string;
   accessType: "FREE" | "PAID";
@@ -107,21 +94,14 @@ export interface AdminIntake {
   sessionCount: number;
   enrollmentCount: number;
   projectCount: number;
-  category: AdminCategory;
-  course: Omit<AdminCourse, "intakes" | "category">;
+  service: LearningService;
+  course: Omit<AdminCourse, "intakes" | "service">;
   createdAt: string;
   updatedAt: string;
 }
 
-export type CategoryInput = Pick<
-  AdminCategory,
-  "serviceId" | "slug" | "title" | "description" | "visualKey"
-> &
-  Partial<Pick<AdminCategory, "audienceLabel" | "badgeLabel" | "sortOrder">>;
-export type CategoryUpdateInput = Partial<Omit<CategoryInput, "serviceId">>;
-
 export interface CourseInput {
-  categoryId: string;
+  serviceId: string;
   slug: string;
   title: string;
   summary: string;
@@ -134,6 +114,7 @@ export interface CourseInput {
   skills?: string[];
   prerequisites?: string[];
   thumbnailUrl?: string | null;
+  thumbnailObjectId?: string | null;
   sortOrder?: number;
   intakeCodePrefix: string;
   certificateEnabled: boolean;
@@ -141,7 +122,7 @@ export interface CourseInput {
 }
 
 export type CourseUpdateInput = Partial<
-  Omit<CourseInput, "categoryId" | "intakeCodePrefix" | "certificateEnabled" | "discountAmount">
+  Omit<CourseInput, "serviceId" | "intakeCodePrefix" | "certificateEnabled" | "discountAmount">
 >;
 
 // Per the rename plan §3a: nearly everything about an intake is inherited
@@ -175,7 +156,7 @@ export interface PermanentDeleteResult {
 }
 
 export interface CatalogDeletionImpact {
-  resourceType: "CATEGORY" | "COURSE" | "INTAKE";
+  resourceType: "COURSE" | "INTAKE";
   resourceId: string;
   resourceStatus: CatalogStatus | IntakeStatus | "ACTIVE";
   deletable: boolean;
@@ -246,7 +227,7 @@ export interface AdminLearningServiceSummary {
   paymentRequirement: "REQUIRED" | "NOT_REQUIRED";
   status: LearningServiceStatus;
   sortOrder: number;
-  categoryCount: number;
+  courseCount: number;
   createdAt: string;
   updatedAt: string;
   serviceType: LearningServiceType;
@@ -255,13 +236,15 @@ export interface AdminLearningServiceSummary {
   description: string;
   instanceKind: CourseInstanceKind;
   enrollmentMode: "ADMIN" | "SELF";
-  categories: {
+  /** Course's own Draft/Published/Archived lifecycle counts — formerly Category's (see the 2026-09-22 category layer removal plan). */
+  courses: {
     total: number;
     published: number;
     draft: number;
     archived: number;
   };
-  courses: {
+  /** Intake run-lifecycle counts — named "courses" pre-2026-09-22 back when Category owned the publish-status concept. */
+  intakes: {
     total: number;
     openActive: number;
     closedActive: number;
@@ -289,12 +272,9 @@ export const catalogApi = baseApi.injectEndpoints({
       query: () => "/catalog/services",
       providesTags: ["Services"],
     }),
-    getPublicCategoriesForService: builder.query<
-      { categories: PublicCategory[] },
-      string
-    >({
-      query: (serviceSlug) => `/catalog/${serviceSlug}/categories`,
-      providesTags: ["Categories"],
+    getPublicCoursesForService: builder.query<PublicServiceCatalog, string>({
+      query: (serviceSlug) => `/catalog/${serviceSlug}/courses`,
+      providesTags: ["Courses"],
     }),
     getPublicExplore: builder.query<PublicExploreResponse, PublicExploreFilters>({
       query: (filters) => ({ url: "/catalog/explore", params: filters }),
@@ -315,7 +295,7 @@ export const catalogApi = baseApi.injectEndpoints({
       LearningService,
       Omit<
         LearningService,
-        "id" | "status" | "categoryCount" | "createdAt" | "updatedAt"
+        "id" | "status" | "courseCount" | "createdAt" | "updatedAt"
       >
     >({
       query: (body) => ({ url: "/services", method: "POST", body }),
@@ -345,7 +325,7 @@ export const catalogApi = baseApi.injectEndpoints({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["Services", "Categories", "Courses"],
+      invalidatesTags: ["Services", "Courses"],
     }),
     transitionLearningService: builder.mutation<
       LearningService,
@@ -360,78 +340,18 @@ export const catalogApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: { expectedStatus },
       }),
-      invalidatesTags: ["Services", "Categories", "Courses"],
+      invalidatesTags: ["Services", "Courses"],
     }),
     deleteLearningService: builder.mutation<{ id: string }, string>({
       query: (id) => ({ url: `/services/${id}`, method: "DELETE" }),
       invalidatesTags: ["Services"],
     }),
-    getAdminCategories: builder.query<
-      List<AdminCategory, "categories">,
-      { serviceId?: string } | void
-    >({
-      query: (params) => ({
-        url: "/categories",
-        params: { limit: 100, ...(params ?? {}) },
-      }),
-      providesTags: ["Categories"],
-    }),
-    getAdminCategory: builder.query<AdminCategory, string>({
-      query: (id) => `/categories/${id}`,
-      providesTags: ["Categories"],
-    }),
-    getCategoryDeletionImpact: builder.query<CatalogDeletionImpact, string>({
-      query: (id) => `/categories/${id}/deletion-impact`,
-    }),
-    createCategory: builder.mutation<AdminCategory, CategoryInput>({
-      query: (body) => ({ url: "/categories", method: "POST", body }),
-      invalidatesTags: ["Services", "Categories"],
-    }),
-    updateCategory: builder.mutation<
-      AdminCategory,
-      { id: string; body: CategoryUpdateInput }
-    >({
-      query: ({ id, body }) => ({
-        url: `/categories/${id}`,
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["Services", "Categories", "Courses"],
-    }),
-    publishCategory: builder.mutation<AdminCategory, string>({
-      query: (id) => ({ url: `/categories/${id}/publish`, method: "PATCH" }),
-      invalidatesTags: ["Services", "Categories"],
-    }),
-    unpublishCategory: builder.mutation<AdminCategory, string>({
-      query: (id) => ({ url: `/categories/${id}/unpublish`, method: "PATCH" }),
-      invalidatesTags: ["Services", "Categories", "Courses"],
-    }),
-    archiveCategory: builder.mutation<AdminCategory, string>({
-      query: (id) => ({ url: `/categories/${id}/archive`, method: "PATCH" }),
-      invalidatesTags: ["Services", "Categories", "Courses"],
-    }),
-    unarchiveCategory: builder.mutation<AdminCategory, string>({
-      query: (id) => ({ url: `/categories/${id}/unarchive`, method: "PATCH" }),
-      invalidatesTags: ["Services", "Categories", "Courses"],
-    }),
-    deleteCategoryPermanently: builder.mutation<PermanentDeleteResult, string>({
-      query: (id) => ({ url: `/categories/${id}`, method: "DELETE" }),
-      invalidatesTags: [
-        "Services",
-        "Categories",
-        "Courses",
-        "Sessions",
-        "Enrollments",
-        "Certificates",
-        "Projects",
-      ],
-    }),
 
     getCourses: builder.query<
       List<AdminCourse, "courses">,
       {
-        categoryId?: string;
         serviceId?: string;
+        status?: CatalogStatus;
         level?: CourseLevel;
         enrollmentStatus?: CourseEnrollmentStatus;
         includeArchived?: boolean;
@@ -456,7 +376,7 @@ export const catalogApi = baseApi.injectEndpoints({
     }),
     createCourse: builder.mutation<AdminCourse, CourseInput>({
       query: (body) => ({ url: "/courses", method: "POST", body }),
-      invalidatesTags: ["Courses", "Categories", "Services"],
+      invalidatesTags: ["Courses", "Services"],
     }),
     updateCourse: builder.mutation<
       AdminCourse,
@@ -469,6 +389,14 @@ export const catalogApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Courses"],
     }),
+    publishCourse: builder.mutation<AdminCourse, string>({
+      query: (id) => ({ url: `/courses/${id}/publish`, method: "PATCH" }),
+      invalidatesTags: ["Services", "Courses"],
+    }),
+    unpublishCourse: builder.mutation<AdminCourse, string>({
+      query: (id) => ({ url: `/courses/${id}/unpublish`, method: "PATCH" }),
+      invalidatesTags: ["Services", "Courses"],
+    }),
     archiveCourse: builder.mutation<AdminCourse, string>({
       query: (id) => ({ url: `/courses/${id}/archive`, method: "PATCH" }),
       invalidatesTags: ["Courses", "Services"],
@@ -479,14 +407,13 @@ export const catalogApi = baseApi.injectEndpoints({
     }),
     deleteCourse: builder.mutation<{ id: string }, string>({
       query: (id) => ({ url: `/courses/${id}`, method: "DELETE" }),
-      invalidatesTags: ["Courses", "Categories", "Services"],
+      invalidatesTags: ["Courses", "Services"],
     }),
 
     getIntakes: builder.query<
       List<AdminIntake, "intakes">,
       {
         serviceId?: string;
-        categoryId?: string;
         courseId?: string;
         status?: IntakeStatus;
         q?: string;
@@ -557,7 +484,6 @@ export const catalogApi = baseApi.injectEndpoints({
       invalidatesTags: [
         "Courses",
         "Intakes",
-        "Categories",
         "Sessions",
         "Enrollments",
         "Certificates",
@@ -576,7 +502,7 @@ export const catalogApi = baseApi.injectEndpoints({
 
 export const {
   useGetPublicLearningServicesQuery,
-  useGetPublicCategoriesForServiceQuery,
+  useGetPublicCoursesForServiceQuery,
   useGetPublicExploreQuery,
   useGetAdminLearningServiceSummariesQuery,
   useGetLearningServiceQuery,
@@ -584,22 +510,14 @@ export const {
   useUpdateLearningServiceMutation,
   useTransitionLearningServiceMutation,
   useDeleteLearningServiceMutation,
-  useGetAdminCategoriesQuery,
-  useGetAdminCategoryQuery,
-  useLazyGetCategoryDeletionImpactQuery,
-  useCreateCategoryMutation,
-  useUpdateCategoryMutation,
-  usePublishCategoryMutation,
-  useUnpublishCategoryMutation,
-  useArchiveCategoryMutation,
-  useUnarchiveCategoryMutation,
-  useDeleteCategoryPermanentlyMutation,
   useGetCoursesQuery,
   useGetCourseQuery,
   useLazyGetCourseDeletionImpactQuery,
   useGetCourseAnalyticsQuery,
   useCreateCourseMutation,
   useUpdateCourseMutation,
+  usePublishCourseMutation,
+  useUnpublishCourseMutation,
   useArchiveCourseMutation,
   useUnarchiveCourseMutation,
   useDeleteCourseMutation,

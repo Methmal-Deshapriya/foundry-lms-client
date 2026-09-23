@@ -12,9 +12,9 @@ export function ServiceCta({ ctaSection, accent }: Pick<PublicServiceConfig, "ct
   };
 
   return (
-    <Reveal className="bg-white/80 backdrop-blur-sm border border-black/10 rounded-3xl p-8 sm:p-12 text-center max-w-2xl mx-auto">
-      <h2 className="font-sans text-xl sm:text-2xl font-bold text-[#0E1116] mb-2">{ctaSection.title}</h2>
-      <p className="font-alt text-[#5B6472] text-sm sm:text-base mb-6 max-w-md mx-auto">{ctaSection.description}</p>
+    <Reveal className="bg-white border border-zinc-200 rounded-3xl p-8 sm:p-12 text-center max-w-2xl mx-auto">
+      <h2 className="font-sans text-xl sm:text-2xl font-bold text-[#191919] mb-2">{ctaSection.title}</h2>
+      <p className="font-alt text-[#71717A] text-sm sm:text-base mb-6 max-w-md mx-auto">{ctaSection.description}</p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
         <a
           href="#categories"
@@ -25,7 +25,7 @@ export function ServiceCta({ ctaSection, accent }: Pick<PublicServiceConfig, "ct
         </a>
         <Link
           href={ctaSection.secondaryHref}
-          className="inline-flex items-center justify-center h-12 px-6 rounded-full border border-black/15 font-alt text-sm sm:text-base font-semibold text-[#0E1116] hover:border-black/30 transition-colors"
+          className="inline-flex items-center justify-center h-12 px-6 rounded-full border border-zinc-200 font-alt text-sm sm:text-base font-semibold text-[#191919] hover:border-zinc-300 hover:bg-zinc-50 transition-colors"
         >
           {ctaSection.secondaryLabel}
         </Link>

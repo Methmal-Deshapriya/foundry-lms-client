@@ -1,23 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { BookOpen, ChevronRight, Loader2, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { CatalogIcon } from "@/components/marketing/catalog/visuals";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, formatLKR } from "@/lib/utils";
 import {
-  useGetPublicCategoriesForServiceQuery,
   useGetPublicExploreQuery,
   useGetPublicLearningServicesQuery,
 } from "@/features/catalog/catalogApi";
 import type {
   CourseLevel,
-  PublicCategory,
   PublicExploreCourseCard,
   PublicLearningService,
 } from "@/features/catalog/catalogTypes";
@@ -54,14 +51,14 @@ function FilterRow({
       onClick={onClick}
       className={cn(
         "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
-        active ? "bg-primary/10 font-medium text-primary" : "text-foreground hover:bg-muted",
+        active ? "bg-zinc-100 font-medium text-[#191919]" : "text-foreground hover:bg-muted",
       )}
     >
       {label}
       <span
         className={cn(
           "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-          active ? "border-primary bg-primary text-primary-foreground" : "border-input",
+          active ? "border-[#191919] bg-[#191919] text-white" : "border-input",
         )}
       >
         {active ? <span className="h-1.5 w-1.5 rounded-sm bg-current" /> : null}
@@ -79,9 +76,6 @@ function FiltersPanel({
   services,
   service,
   onServiceChange,
-  categoryOptions,
-  category,
-  onCategoryChange,
   level,
   onLevelChange,
   accessType,
@@ -96,9 +90,6 @@ function FiltersPanel({
   services: PublicLearningService[];
   service: string;
   onServiceChange: (slug: string) => void;
-  categoryOptions: PublicCategory[];
-  category: string;
-  onCategoryChange: (slug: string) => void;
   level: CourseLevel | "";
   onLevelChange: (level: CourseLevel | "") => void;
   accessType: "FREE" | "PAID" | "";
@@ -132,17 +123,6 @@ function FiltersPanel({
         </div>
       </FilterSection>
 
-      {service ? (
-        <FilterSection title="Category">
-          <div className="space-y-0.5">
-            <FilterRow label="All categories" active={category === ""} onClick={() => onCategoryChange("")} />
-            {categoryOptions.map((c) => (
-              <FilterRow key={c.slug} label={c.title} active={category === c.slug} onClick={() => onCategoryChange(c.slug)} />
-            ))}
-          </div>
-        </FilterSection>
-      ) : null}
-
       <FilterSection title="Difficulty level">
         <div className="space-y-0.5">
           {LEVEL_OPTIONS.map((l) => (
@@ -166,7 +146,7 @@ function FiltersPanel({
               className={cn(
                 "h-9 flex-1 rounded-lg border text-sm font-medium transition-colors",
                 accessType === option
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-[#191919] bg-zinc-100 text-[#191919]"
                   : "border-input text-muted-foreground hover:bg-muted",
               )}
             >
@@ -208,7 +188,6 @@ function FiltersPanel({
 export default function ExplorePage() {
   const [q, setQ] = useState("");
   const [service, setService] = useState("");
-  const [category, setCategory] = useState("");
   const [level, setLevel] = useState<CourseLevel | "">("");
   const [accessType, setAccessType] = useState<"FREE" | "PAID" | "">("");
   const [minPrice, setMinPrice] = useState("");
@@ -220,11 +199,9 @@ export default function ExplorePage() {
   const debouncedMaxPrice = useDebouncedValue(maxPrice, 400);
 
   const { data: servicesData } = useGetPublicLearningServicesQuery();
-  const { data: categoriesData } = useGetPublicCategoriesForServiceQuery(service, { skip: !service });
   const { data, isFetching, isError } = useGetPublicExploreQuery({
     q: debouncedQ || undefined,
     service: service || undefined,
-    category: category || undefined,
     level: level || undefined,
     accessType: accessType || undefined,
     minPrice: debouncedMinPrice ? Number(debouncedMinPrice) : undefined,
@@ -233,7 +210,6 @@ export default function ExplorePage() {
   });
 
   const services = servicesData?.services ?? [];
-  const categoryOptions = useMemo(() => categoriesData?.categories ?? [], [categoriesData]);
   const courses = data?.courses ?? [];
   const total = data?.pagination.total ?? 0;
   const hasFilters = Boolean(
@@ -243,16 +219,10 @@ export default function ExplorePage() {
   const clearFilters = () => {
     setQ("");
     setService("");
-    setCategory("");
     setLevel("");
     setAccessType("");
     setMinPrice("");
     setMaxPrice("");
-  };
-
-  const handleServiceChange = (slug: string) => {
-    setService(slug);
-    setCategory("");
   };
 
   const filtersPanelProps = {
@@ -260,10 +230,7 @@ export default function ExplorePage() {
     onClearFilters: clearFilters,
     services,
     service,
-    onServiceChange: handleServiceChange,
-    categoryOptions,
-    category,
-    onCategoryChange: setCategory,
+    onServiceChange: setService,
     level,
     onLevelChange: setLevel,
     accessType,
@@ -325,7 +292,7 @@ export default function ExplorePage() {
                 >
                   <SlidersHorizontal className="h-4 w-4" />
                   Filters
-                  {hasFilters ? <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" /> : null}
+                  {hasFilters ? <span className="size-1.5 rounded-full bg-[#E91717]" aria-hidden="true" /> : null}
                 </Button>
                 <div className="relative w-full">
                   <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -348,7 +315,7 @@ export default function ExplorePage() {
 
           {isFetching && courses.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
+              <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#191919]" />
               <p className="font-medium text-muted-foreground">Loading courses…</p>
             </div>
           ) : isError ? (
@@ -367,7 +334,7 @@ export default function ExplorePage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 @lg:grid-cols-2 @3xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
               {courses.map((course) => (
                 <ExploreCourseCard key={course.id} course={course} />
               ))}
@@ -382,28 +349,29 @@ export default function ExplorePage() {
 function ExploreCourseCard({ course }: { course: PublicExploreCourseCard }) {
   return (
     <Link
-      href={`/${course.serviceSlug}/${course.categorySlug}/${course.slug}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+      href={`/${course.serviceSlug}/${course.slug}`}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-lg"
     >
-      <div className="relative flex h-32 items-center justify-center overflow-hidden bg-linear-to-br from-primary/15 via-primary/5 to-transparent">
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-[#191919]">
         {course.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URLs; next/image's domain allowlist would need constant upkeep
           <img src={course.thumbnailUrl} alt="" className="h-full w-full object-cover" />
         ) : (
-          <CatalogIcon visualKey={course.categoryVisualKey} className="h-12 w-12 text-primary/70" />
+          <span className="line-clamp-2 px-4 text-center text-sm font-semibold text-white">{course.title}</span>
         )}
         <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur">
           {course.accessType === "FREE" ? "Free" : formatLKR(course.price)}
         </span>
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <p className="mb-1 truncate text-xs font-semibold uppercase tracking-wide text-primary">
-          {course.serviceTitle} · {course.categoryTitle}
-        </p>
-        <h2 className="mb-1.5 line-clamp-1 text-lg font-semibold text-foreground">{course.title}</h2>
-        <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{course.summary}</p>
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">{course.levelLabel}</span>
+      <div className="flex flex-1 flex-col p-4">
+        <h2 className="mb-1 line-clamp-1 text-base font-semibold text-foreground">{course.title}</h2>
+        <p className="mb-3 line-clamp-1 text-sm text-muted-foreground">{course.summary}</p>
+
+        {/* Tags left-aligned, "View course" pushed to the far right via
+            ml-auto — falls to its own line if the tags wrap, rather than a
+            separate divider-separated row. */}
+        <div className="mt-auto flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs text-[#191919]">{course.levelLabel}</span>
           {course.durationLabel && (
             <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
               {course.durationLabel}
@@ -414,11 +382,11 @@ function ExploreCourseCard({ course }: { course: PublicExploreCourseCard }) {
               {course.enrollmentStatus === "COMING_SOON" ? "Coming soon" : "Reopening soon"}
             </span>
           )}
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground transition-colors group-hover:text-[#191919]">
+            View course
+            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
         </div>
-        <span className="mt-auto flex items-center justify-end gap-1 border-t border-border pt-3 text-sm font-semibold text-primary">
-          View course
-          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </span>
       </div>
     </Link>
   );

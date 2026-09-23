@@ -58,7 +58,7 @@ export default function SessionItem({
   };
 
   return (
-    <article className="overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-colors hover:border-primary/20">
+    <article className="overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-colors hover:border-zinc-400">
       <SessionThumbnail
         title={session.title}
         completed={session.completed}
@@ -67,9 +67,9 @@ export default function SessionItem({
         onToggleComplete={handleToggleComplete}
       />
 
-      <div className="space-y-1.5 p-4">
+      <div className="space-y-1 p-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-tight text-muted-foreground">
+          <p className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground">
             Session {(session.orderIndex ?? 0) + 1}
           </p>
           {session.durationMinutes ? (
@@ -81,12 +81,12 @@ export default function SessionItem({
         </div>
 
         {session.description ? (
-          <p className="text-sm leading-relaxed text-foreground">
+          <p className="line-clamp-1 text-sm text-muted-foreground">
             {session.description}
           </p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="grid grid-cols-2 gap-1.5 pt-1.5">
           <ResourceLink href={session.recordingUrl} label="Recording" icon={Video} />
           <ResourceLink href={session.materialUrl} label="Materials" icon={FileText} />
           <ResourceLink href={session.quizUrl} label="Quiz" icon={HelpCircle} />
@@ -113,7 +113,7 @@ function ResourceLink({
       <div
         aria-disabled="true"
         title="Not available for this session"
-        className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-muted-foreground/50"
+        className="flex items-center gap-2 rounded-lg border border-dashed border-border px-2.5 py-1.5 text-muted-foreground/50"
       >
         <Icon className="h-4 w-4 shrink-0" />
         <span className="truncate text-xs font-semibold">{label}</span>
@@ -127,7 +127,7 @@ function ResourceLink({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+      className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1.5 text-muted-foreground transition-colors hover:border-zinc-400 hover:bg-zinc-50 hover:text-[#191919]"
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="truncate text-xs font-semibold text-foreground">{label}</span>

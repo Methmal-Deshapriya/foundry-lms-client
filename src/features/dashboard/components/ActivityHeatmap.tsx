@@ -1,14 +1,14 @@
 import { format } from "date-fns";
 import type { HeatmapDay } from "../dashboardTypes";
 
-const WEEKS = 26;
+const WEEKS = 52;
 const DAYS = WEEKS * 7;
 
 // Sequential, single-hue magnitude encoding (see the dataviz skill's
-// color-formula: sequential = one hue, light -> dark) — reuses the same
-// primary ramp MagnitudeBar already uses elsewhere on this dashboard,
-// rather than introducing GitHub's green.
-const LEVEL_CLASSES = ["bg-muted", "bg-primary/25", "bg-primary/50", "bg-primary/75", "bg-primary"];
+// color-formula: sequential = one hue, light -> dark) — same house black
+// used for the course progress bars elsewhere on this dashboard, rather
+// than introducing GitHub's green.
+const LEVEL_CLASSES = ["bg-muted", "bg-[#191919]/25", "bg-[#191919]/50", "bg-[#191919]/75", "bg-[#191919]"];
 
 function levelFor(count: number, max: number) {
   if (count <= 0) return 0;
@@ -21,12 +21,12 @@ function levelFor(count: number, max: number) {
 }
 
 /**
- * A 26-week (~6-month) learning-activity grid — the same idea as a GitHub
+ * A 52-week (full year) learning-activity grid — the same idea as a GitHub
  * contribution graph, scoped to session completions since that's the one
  * signal uniquely suited to "did you show up" that nothing else on this
  * dashboard already surfaces. Columns are plain 7-day chunks counting back
  * from today rather than calendar-aligned weeks, which keeps the query and
- * the render simple; the exact date is still in each cell's tooltip. At 26
+ * the render simple; the exact date is still in each cell's tooltip. At 52
  * columns this is wider than the card it lives in, so the grid scrolls
  * horizontally within itself rather than widening the page.
  */
@@ -62,7 +62,7 @@ export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapDay[] }) {
         <div>
           <h3 className="text-sm font-semibold text-foreground">Learning activity</h3>
           <p className="text-xs text-muted-foreground">
-            {totalSessions > 0 ? `${totalSessions} sessions over ${activeDays} days` : "Last 6 months"}
+            {totalSessions > 0 ? `${totalSessions} sessions over ${activeDays} days` : "Last 12 months"}
           </p>
         </div>
       </div>

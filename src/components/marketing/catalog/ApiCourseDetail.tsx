@@ -1,123 +1,201 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Clock, RefreshCw, Users } from "lucide-react";
+import {
+  Award,
+  BookOpen,
+  Calendar,
+  Check,
+  Clock,
+  Infinity as InfinityIcon,
+  RefreshCw,
+  Repeat,
+  Tag,
+  Users,
+} from "lucide-react";
 import { Reveal } from "@/components/ui/reveal";
 import type { PublicCourseDetail } from "@/features/catalog/catalogTypes";
-import { CatalogIcon } from "./visuals";
-import { CATALOG_GRADIENT_BG } from "./background";
 import { PageSlide } from "./PageSlide";
 
+function formatDate(value: string | null) {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatPrice(price: number, currency: string) {
+  return `${currency} ${price.toLocaleString()}`;
+}
+
 export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
-  const { category } = course;
-  const basePath = `/${category.serviceSlug}`;
+  const { service, openIntake } = course;
+  const startDate = openIntake ? formatDate(openIntake.startDate) : null;
+  const endDate = openIntake ? formatDate(openIntake.expectedEndDate) : null;
+
   return (
-    <PageSlide
-      background={CATALOG_GRADIENT_BG}
-      backHref={`${basePath}/${category.slug}`}
-      backLabel={category.title}
-      crumbs={[
-        { label: "Home", href: "/?slide=services" },
-        { label: category.serviceTitle, href: basePath },
-        { label: category.title, href: `${basePath}/${category.slug}` },
-        {
-          label: course.title,
-          href: `${basePath}/${category.slug}/${course.slug}`,
-          current: true,
-        },
-      ]}
-    >
-      <div className="w-full max-w-3xl mx-auto px-2">
+    <PageSlide background="#FAFAFA">
+      <div className="w-full max-w-5xl mx-auto px-2">
         <Reveal>
+          <p className="font-alt flex items-center gap-2 text-xs font-semibold tracking-widest text-[#71717A] uppercase mb-3">
+            <span className="text-[#E91717]">—</span> {service.title}
+          </p>
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-12 w-12 rounded-xl flex items-center justify-center text-blue-600 bg-blue-100">
-              <CatalogIcon visualKey={category.visualKey} className="h-6 w-6" />
+            <div className="h-12 w-12 shrink-0 rounded-xl flex items-center justify-center text-[#191919] bg-zinc-100">
+              <BookOpen className="h-6 w-6" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#0E1116]">
+            <h1 className="font-sans text-2xl sm:text-3xl font-bold text-[#191919] leading-tight tracking-tight">
               {course.title}
             </h1>
           </div>
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            <span className="text-xs text-blue-600 bg-blue-50 rounded-full px-2.5 py-1">
-              {course.levelLabel}
-            </span>
-            {course.durationLabel && (
-              <span className="text-xs text-[#5B6472] bg-[#F5F6FA] rounded-full px-2.5 py-1">
-                {course.durationLabel}
-              </span>
-            )}
-            <span className="text-xs text-[#5B6472] bg-[#F5F6FA] rounded-full px-2.5 py-1">
-              {course.accessType === "FREE"
-                ? "Free enrollment"
-                : "Paid enrollment"}
-            </span>
-          </div>
-          <p className="font-alt text-[#5B6472] leading-relaxed mb-8">
-            {course.description}
+          <p className="font-alt text-[#71717A] text-sm sm:text-base max-w-2xl">
+            {course.summary}
           </p>
-          <div className="bg-white/80 border border-black/10 rounded-2xl p-6 mb-8">
-            <h2 className="font-semibold text-lg text-[#0E1116] mb-4">
-              What you&apos;ll cover
-            </h2>
-            <ul className="space-y-3">
-              {course.highlights.map((item) => (
-                <li key={item} className="flex gap-2.5 text-sm text-[#5B6472]">
-                  <Check className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          {course.prerequisites.length > 0 && (
-            <div className="mb-8">
-              <h2 className="font-semibold text-[#0E1116] mb-2">
-                Prerequisites
-              </h2>
-              <p className="text-sm text-[#5B6472]">
-                {course.prerequisites.join(" · ")}
-              </p>
-            </div>
-          )}
-          {course.enrollmentStatus === "OPEN" && course.openIntake ? (
-            <div className="space-y-2">
-              {course.accessType === "FREE" ? (
-                <Link
-                  href={`/?slide=auth&enrollCourse=${course.openIntake.id}`}
-                  className="inline-flex h-11 items-center rounded-full bg-blue-600 px-6 font-semibold text-white hover:bg-blue-700"
-                >
-                  Sign in and add to My Courses
-                </Link>
-              ) : (
-                <Link
-                  href={`/?slide=auth&requestCourse=${course.id}`}
-                  className="inline-flex h-11 items-center rounded-full bg-blue-600 px-6 font-semibold text-white hover:bg-blue-700"
-                >
-                  Enroll now
-                </Link>
-              )}
-              <p className="flex items-center gap-1.5 text-xs text-[#5B6472]">
-                <Users className="h-3.5 w-3.5" />
-                {course.openIntake.seatsRemaining === null
-                  ? "Unlimited seats"
-                  : course.openIntake.seatsRemaining > 0
-                    ? `${course.openIntake.seatsRemaining} seat${course.openIntake.seatsRemaining === 1 ? "" : "s"} left`
-                    : "Full"}
-              </p>
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-2 h-11 rounded-full bg-[#F5F6FA] px-6 font-alt text-sm font-semibold text-[#5B6472]">
-              {course.enrollmentStatus === "COMING_SOON" ? (
-                <>
-                  <Clock className="h-4 w-4" /> Coming soon
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4" /> Reopening soon
-                </>
-              )}
-            </div>
-          )}
         </Reveal>
+
+        <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px] lg:gap-10 lg:items-start">
+          {/* Main content */}
+          <Reveal className="min-w-0">
+            {course.thumbnailUrl && (
+              <div className="relative mb-8 aspect-video w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+                {/* eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URL; next/image's domain allowlist would need constant upkeep */}
+                <img src={course.thumbnailUrl} alt={course.title} className="h-full w-full object-cover" />
+              </div>
+            )}
+
+            <div className="mb-8">
+              <h2 className="font-sans font-semibold text-lg text-[#191919] mb-3">Overview</h2>
+              <p className="font-alt text-[#71717A] leading-relaxed">{course.description}</p>
+            </div>
+
+            <div className="bg-white border border-zinc-200 rounded-2xl p-6 mb-8">
+              <h2 className="font-sans font-semibold text-lg text-[#191919] mb-4">
+                What you&apos;ll cover
+              </h2>
+              <ul className="space-y-3">
+                {course.highlights.map((item) => (
+                  <li key={item} className="flex gap-2.5 font-alt text-sm text-[#71717A]">
+                    <Check className="h-4 w-4 text-[#191919] shrink-0 mt-0.5" aria-hidden="true" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {course.skills.length > 0 && (
+              <div className="mb-8">
+                <h2 className="font-sans font-semibold text-lg text-[#191919] mb-3">
+                  Skills you&apos;ll build
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {course.skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="font-alt text-xs text-[#191919] bg-zinc-100 rounded-full px-3 py-1.5"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {course.prerequisites.length > 0 && (
+              <div className="mb-8">
+                <h2 className="font-sans font-semibold text-lg text-[#191919] mb-2">Prerequisites</h2>
+                <p className="font-alt text-sm text-[#71717A]">
+                  {course.prerequisites.join(" · ")}
+                </p>
+              </div>
+            )}
+          </Reveal>
+
+          {/* Enrollment summary card */}
+          <Reveal className="lg:sticky lg:top-24">
+            <div className="bg-white border border-zinc-200 rounded-2xl p-6">
+              <p className="font-sans text-2xl font-bold text-[#191919] mb-4">
+                {course.accessType === "FREE" ? "Free" : formatPrice(course.price, course.currency)}
+              </p>
+
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-center gap-2.5 font-alt text-sm text-[#71717A]">
+                  <Tag className="h-4 w-4 text-[#191919] shrink-0" aria-hidden="true" />
+                  {course.levelLabel}
+                </li>
+                {course.durationLabel && (
+                  <li className="flex items-center gap-2.5 font-alt text-sm text-[#71717A]">
+                    <Clock className="h-4 w-4 text-[#191919] shrink-0" aria-hidden="true" />
+                    {course.durationLabel}
+                  </li>
+                )}
+                <li className="flex items-center gap-2.5 font-alt text-sm text-[#71717A]">
+                  {course.instanceKind === "EVERGREEN" ? (
+                    <InfinityIcon className="h-4 w-4 text-[#191919] shrink-0" aria-hidden="true" />
+                  ) : (
+                    <Repeat className="h-4 w-4 text-[#191919] shrink-0" aria-hidden="true" />
+                  )}
+                  {course.instanceKind === "EVERGREEN" ? "Self-paced" : "Seasonal intake"}
+                </li>
+                {course.certificateEnabled && (
+                  <li className="flex items-center gap-2.5 font-alt text-sm text-[#71717A]">
+                    <Award className="h-4 w-4 text-[#191919] shrink-0" aria-hidden="true" />
+                    Certificate included
+                  </li>
+                )}
+                {(startDate || endDate) && (
+                  <li className="flex items-center gap-2.5 font-alt text-sm text-[#71717A]">
+                    <Calendar className="h-4 w-4 text-[#191919] shrink-0" aria-hidden="true" />
+                    {startDate && endDate
+                      ? `${startDate} – ${endDate}`
+                      : (startDate ?? endDate)}
+                  </li>
+                )}
+              </ul>
+
+              {course.enrollmentStatus === "OPEN" && openIntake ? (
+                <div className="space-y-3">
+                  {course.accessType === "FREE" ? (
+                    <Link
+                      href={`/sign-in?enrollCourse=${openIntake.id}`}
+                      className="flex h-12 w-full items-center justify-center rounded-full bg-[#191919] px-6 font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A]"
+                    >
+                      Sign in and add to My Courses
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/sign-in?requestCourse=${course.id}`}
+                      className="flex h-12 w-full items-center justify-center rounded-full bg-[#191919] px-6 font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A]"
+                    >
+                      Enroll now
+                    </Link>
+                  )}
+                  <p className="flex items-center justify-center gap-1.5 font-alt text-xs text-[#71717A]">
+                    <Users className="h-3.5 w-3.5" aria-hidden="true" />
+                    {openIntake.seatsRemaining === null
+                      ? "Unlimited seats"
+                      : openIntake.seatsRemaining > 0
+                        ? `${openIntake.seatsRemaining} seat${openIntake.seatsRemaining === 1 ? "" : "s"} left`
+                        : "Full"}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-100 px-6 font-alt text-sm font-semibold text-[#71717A]">
+                  {course.enrollmentStatus === "COMING_SOON" ? (
+                    <>
+                      <Clock className="h-4 w-4" aria-hidden="true" /> Coming soon
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reopening soon
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </Reveal>
+        </div>
       </div>
     </PageSlide>
   );

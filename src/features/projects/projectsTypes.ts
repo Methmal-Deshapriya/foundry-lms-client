@@ -1,3 +1,5 @@
+import type { StoredObjectSummary } from "@/features/storage/storageApi";
+
 export type ProjectStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export type StudentProject = {
@@ -8,6 +10,8 @@ export type StudentProject = {
   title: string;
   description?: string | null;
   thumbnailUrl?: string | null;
+  thumbnailObjectId?: string | null;
+  thumbnailObject?: StoredObjectSummary | null;
   projectUrl?: string | null;
   githubUrl?: string | null;
   demoUrl?: string | null;
@@ -37,6 +41,7 @@ export type SubmitProjectRequest = {
   title: string;
   description?: string | null;
   thumbnailUrl?: string | null;
+  thumbnailObjectId?: string | null;
   projectUrl?: string | null;
   githubUrl?: string | null;
   demoUrl?: string | null;

@@ -4,7 +4,6 @@ import { SERVICE_ACCENT } from "@/components/marketing/public-service/accent";
 
 export const itBootcampsServiceConfig: PublicServiceConfig = {
   basePath: "/bootcamps",
-  breadcrumbLabel: "Bootcamps",
   accent: SERVICE_ACCENT,
   hero: {
     eyebrow: "Bootcamps",
@@ -13,8 +12,10 @@ export const itBootcampsServiceConfig: PublicServiceConfig = {
     description:
       "Explore structured learning pathways designed to help you understand core concepts, practise relevant skills, and build real projects.",
     illustration: {
-      src: "/assets/bootcamps-hero.png",
-      alt: "Illustration of a laptop with code and app icons, representing IT bootcamps",
+      src: "/bootcamp.png",
+      alt: "A student learning to code at a laptop, representing IT bootcamps",
+      width: 1374,
+      height: 1145,
     },
     indicators: [
       { icon: Layers, label: "4 learning tracks" },

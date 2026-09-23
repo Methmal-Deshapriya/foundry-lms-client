@@ -15,24 +15,7 @@ export interface PublicLearningService {
   enrollmentMode: "ADMIN" | "SELF";
   paymentRequirement: "REQUIRED" | "NOT_REQUIRED";
   sortOrder: number;
-  categoryCount: number;
-}
-
-export interface PublicCategory {
-  id: string;
-  serviceId: string;
-  serviceType: LearningServiceType;
-  serviceSlug: LearningServiceSlug;
-  serviceTitle: string;
-  slug: string;
-  title: string;
-  description: string;
-  audienceLabel: string;
-  visualKey: string;
-  badgeLabel: string | null;
-  sortOrder: number;
   courseCount: number;
-  levelSummary: string | null;
 }
 
 export interface PublicCourseCard {
@@ -54,10 +37,6 @@ export interface PublicCourseCard {
   enrollmentStatus: CourseEnrollmentStatus;
 }
 
-export interface PublicCategoryDetail extends PublicCategory {
-  courses: PublicCourseCard[];
-}
-
 /** The course's currently OPEN_ACTIVE intake, if any — the target for Enroll/self-enroll. */
 export interface PublicOpenIntake {
   id: string;
@@ -74,26 +53,23 @@ export interface PublicCourseDetail extends PublicCourseCard {
   skills: string[];
   prerequisites: string[];
   thumbnailUrl: string | null;
-  category: PublicCategory;
+  service: { slug: LearningServiceSlug; title: string };
   openIntake: PublicOpenIntake | null;
 }
 
+/** Level-2 public page data — every published course directly under a service (the Category layer was removed 2026-09-22). */
 export interface PublicServiceCatalog {
   serviceId: string;
   serviceType: LearningServiceType;
   serviceSlug: LearningServiceSlug;
-  categoryCount: number;
-  categories: PublicCategory[];
+  courses: PublicCourseCard[];
 }
 
 /** A course card on the cross-service Explore page — carries its own
- * service/category slugs since (unlike a single-category page) the page
- * doesn't already know which one a given card belongs to. */
+ * service slug/title since (unlike a single-service page) the page doesn't
+ * already know which one a given card belongs to. */
 export interface PublicExploreCourseCard extends PublicCourseCard {
   thumbnailUrl: string | null;
-  categorySlug: string;
-  categoryTitle: string;
-  categoryVisualKey: string;
   serviceSlug: LearningServiceSlug;
   serviceTitle: string;
 }
@@ -112,7 +88,6 @@ export interface PublicExploreResponse {
 
 export interface PublicExploreFilters {
   service?: string;
-  category?: string;
   level?: CourseLevel;
   accessType?: "FREE" | "PAID";
   minPrice?: number;

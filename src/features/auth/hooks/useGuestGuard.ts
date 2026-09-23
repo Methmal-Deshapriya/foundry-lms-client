@@ -11,8 +11,8 @@ import { selectAuthRole, selectIsAuthenticated, selectIsAuthResolved } from "../
  *
  * Redirects to the role-appropriate dashboard once the session resolves as
  * authenticated. Shared by GuestGuard (wraps forgot-password/reset-password/
- * verify-email routes) and AuthSlide (the landing page's sign-up/sign-in
- * slide, which isn't a route so can't use a route-level guard component).
+ * verify-email/sign-in/sign-up routes) and the home page itself, which
+ * isn't nested under GuestGuard's route group.
  */
 export function useGuestGuard() {
   const router = useRouter();

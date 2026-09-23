@@ -2,7 +2,7 @@
 
 import { Fragment, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Check, Github, Globe, Image as ImageIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Github, Globe, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useGetMyEnrollmentsQuery } from "@/features/enrollments/enrollmentsApi";
 import { useSubmitProjectMutation } from "@/features/projects/projectsApi";
 import { getApiErrorMessage } from "@/lib/api";
+import { ObjectUploadField } from "@/features/storage/components/ObjectUploadField";
 
 const WIZARD_STEPS = [
   { step: 1 as const, label: "Basics" },
@@ -25,7 +26,7 @@ const EMPTY_FORM = {
   enrollmentId: "",
   title: "",
   description: "",
-  thumbnailUrl: "",
+  thumbnailObjectId: null as string | null,
   projectUrl: "",
   githubUrl: "",
   demoUrl: "",
@@ -83,7 +84,7 @@ export function SubmitProjectDialog({
         intakeId: selectedEnrollment.intakeId,
         title: form.title,
         description: form.description || undefined,
-        thumbnailUrl: form.thumbnailUrl || undefined,
+        thumbnailObjectId: form.thumbnailObjectId ?? undefined,
         projectUrl: form.projectUrl || undefined,
         githubUrl: form.githubUrl || undefined,
         demoUrl: form.demoUrl || undefined,
@@ -221,17 +222,14 @@ export function SubmitProjectDialog({
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="thumbnailUrl" className="flex items-center gap-1.5">
-                    <ImageIcon className="size-3.5" /> Thumbnail image URL (optional)
-                  </Label>
-                  <Input
-                    id="thumbnailUrl"
-                    placeholder="https://..."
-                    value={form.thumbnailUrl}
-                    onChange={(event) => setForm({ ...form, thumbnailUrl: event.target.value })}
-                  />
-                </div>
+                <ObjectUploadField
+                  label="Thumbnail image (optional)"
+                  purpose="PROJECT_THUMBNAIL"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  value={form.thumbnailObjectId}
+                  onChange={(id) => setForm({ ...form, thumbnailObjectId: id })}
+                  helpText="Shown on your project card and its public detail page."
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="technologies">Technologies</Label>

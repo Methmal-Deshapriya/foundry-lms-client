@@ -39,7 +39,6 @@ export interface MyEnrollment {
   // from Intake — see the rename plan §6.
   course: PublicCourseCard & {
     thumbnailUrl: string | null;
-    categoryVisualKey: string;
     intakeId: string;
     intakeKey: string;
     code: string;

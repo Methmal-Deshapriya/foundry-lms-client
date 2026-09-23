@@ -2,14 +2,12 @@ import type { LucideIcon } from "lucide-react";
 
 export interface PublicServiceConfig {
   basePath: string;
-  breadcrumbLabel: string;
 
-  /** Tailwind classes — the one accent color this service carries throughout. */
+  /** Tailwind classes — the one accent this service carries throughout (house black, not per-service color). */
   accent: {
-    text: string; // e.g. "text-blue-600"
-    gradient: string; // e.g. "from-blue-600 to-indigo-500"
-    softBg: string; // e.g. "bg-blue-100"
-    button: string; // e.g. "bg-blue-600 hover:bg-blue-700"
+    text: string; // e.g. "text-[#191919]"
+    softBg: string; // e.g. "bg-zinc-100"
+    button: string; // e.g. "bg-[#191919] hover:bg-[#27272A]"
   };
 
   hero: {
@@ -17,7 +15,8 @@ export interface PublicServiceConfig {
     title: string;
     highlight?: string;
     description: string;
-    illustration?: { src: string; alt: string };
+    /** width/height are the image's actual pixel dimensions — used as the aspect-ratio hint so the image never stretches. */
+    illustration?: { src: string; alt: string; width: number; height: number };
     indicators: { icon: LucideIcon; label: string }[];
   };
 
@@ -33,8 +32,6 @@ export interface PublicServiceConfig {
       description: string;
       href: string;
       icon: LucideIcon;
-      accentText: string;
-      iconGradient: string;
       badge?: string;
       /** Plain lines only — e.g. ["3 courses", "Beginner to Intermediate"] */
       metadata: string[];

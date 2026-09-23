@@ -26,8 +26,8 @@ export default function SessionThumbnail({
   onToggleComplete,
 }: SessionThumbnailProps) {
   return (
-    <div className="relative flex h-32 items-center justify-center bg-linear-to-b from-blue-600/10 via-indigo-500/5 to-transparent px-10 text-center">
-      <p className="line-clamp-2 text-base font-bold text-foreground">{title}</p>
+    <div className="relative flex aspect-video items-center justify-center bg-[#191919] px-6 text-center">
+      <p className="line-clamp-2 text-sm font-bold text-white">{title}</p>
 
       <button
         type="button"

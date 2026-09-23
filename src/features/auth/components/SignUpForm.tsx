@@ -9,12 +9,12 @@ import { useRegisterMutation } from "../authApi";
 import type { RegisterRequest } from "../authTypes";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { DISTRICTS, AL_STREAMS } from "@/lib/constants";
 import { toast } from "sonner";
 import { Loader2, User, Phone, MapPin, GraduationCap, Home, Mail, Lock, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { isNormalizedApiError } from "@/lib/api";
 
 // 1. Define Validation Schema (Matches backend registerSchema + confirm password)
@@ -50,23 +50,30 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 // look (overrides the Input component's defaults via class-merging).
 // pl-10 leaves room for the leading icon every field carries.
 const inputClassName =
-  "h-12 rounded-xl border-input bg-muted/50 pl-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary";
+  "h-12 rounded-xl border border-zinc-200 bg-white pl-10 text-[#191919] placeholder:text-[#A1A1AA] focus-visible:outline-none focus-visible:border-[#191919]";
 
-const fieldIconClassName = "absolute left-3 top-3.5 h-4 w-4 text-muted-foreground pointer-events-none";
+const fieldIconClassName = "absolute left-3 top-3.5 h-4 w-4 text-[#71717A] pointer-events-none";
+
+// Select/DatePicker triggers keep their shared internal behavior (dropdown
+// panel, calendar) but get the same zinc/black border+background as inputClassName.
+const controlClassName =
+  "h-12 rounded-xl border-zinc-200 bg-white text-[#191919] focus-visible:border-[#191919]";
 
 /**
  * SignUpForm Component
  *
  * Handles user registration (all 10 required fields) with validation and
- * error feedback. Rendered as the swappable left-panel content inside
- * AuthSlide, which owns the shared two-column shell/branding panel —
- * `onSignInClick` swaps to the sign-in view in place rather than
- * navigating to a separate route.
+ * error feedback. Rendered on its own route (/sign-up) inside
+ * AuthPageShell, which owns the shared centered layout/wordmark shared
+ * with /sign-in and the rest of the auth route group.
  */
-export default function SignUpForm({ onSignInClick }: { onSignInClick: () => void }) {
+export default function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const enrollmentCourseId = searchParams.get("enrollCourse");
+  const signInHref = enrollmentCourseId
+    ? `/sign-in?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
+    : "/sign-in";
   const [registerUser, { isLoading }] = useRegisterMutation();
 
   // 2. Initialize Form
@@ -140,15 +147,10 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
   };
 
   return (
-    <div className="w-full space-y-4">
-      <div className="space-y-1">
-        <h2 className="font-sans text-3xl font-bold text-[#0E1116]">
-          New to{" "}
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-500">
-            Foundry?
-          </span>
-        </h2>
-        <p className="font-alt text-[#5B6472]">Start your journey with Foundry Academy</p>
+    <div className="w-full max-w-2xl space-y-4">
+      <div className="space-y-2">
+        <h2 className="font-sans text-3xl font-bold text-[#191919]">New to Foundry?</h2>
+        <p className="font-alt text-[#71717A]">Start your journey with Foundry Academy</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
@@ -169,7 +171,7 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               />
             </div>
             {errors.firstName && (
-              <p className="text-xs font-medium text-red-500">{errors.firstName.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.firstName.message}</p>
             )}
           </div>
 
@@ -189,7 +191,7 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               />
             </div>
             {errors.lastName && (
-              <p className="text-xs font-medium text-red-500">{errors.lastName.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.lastName.message}</p>
             )}
           </div>
 
@@ -209,7 +211,7 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               />
             </div>
             {errors.phone && (
-              <p className="text-xs font-medium text-red-500">{errors.phone.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.phone.message}</p>
             )}
           </div>
 
@@ -227,11 +229,12 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
                   onBlur={field.onBlur}
                   error={!!errors.dateOfBirth}
                   disabled={isLoading}
+                  className={controlClassName}
                 />
               )}
             />
             {errors.dateOfBirth && (
-              <p className="text-xs font-medium text-red-500">
+              <p className="text-xs font-medium text-[#C91414]">
                 {errors.dateOfBirth.message}
               </p>
             )}
@@ -254,11 +257,12 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
                   icon={MapPin}
                   error={!!errors.district}
                   disabled={isLoading}
+                  className={controlClassName}
                 />
               )}
             />
             {errors.district && (
-              <p className="text-xs font-medium text-red-500">{errors.district.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.district.message}</p>
             )}
           </div>
 
@@ -279,11 +283,12 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
                   icon={GraduationCap}
                   error={!!errors.alStream}
                   disabled={isLoading}
+                  className={controlClassName}
                 />
               )}
             />
             {errors.alStream && (
-              <p className="text-xs font-medium text-red-500">{errors.alStream.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.alStream.message}</p>
             )}
           </div>
 
@@ -303,7 +308,7 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               />
             </div>
             {errors.address && (
-              <p className="text-xs font-medium text-red-500">{errors.address.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.address.message}</p>
             )}
           </div>
 
@@ -323,7 +328,7 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               />
             </div>
             {errors.email && (
-              <p className="text-xs font-medium text-red-500">{errors.email.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.email.message}</p>
             )}
           </div>
 
@@ -343,7 +348,7 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               />
             </div>
             {errors.password && (
-              <p className="text-xs font-medium text-red-500">{errors.password.message}</p>
+              <p className="text-xs font-medium text-[#C91414]">{errors.password.message}</p>
             )}
           </div>
 
@@ -363,7 +368,7 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               />
             </div>
             {errors.confirmPassword && (
-              <p className="text-xs font-medium text-red-500">
+              <p className="text-xs font-medium text-[#C91414]">
                 {errors.confirmPassword.message}
               </p>
             )}
@@ -371,10 +376,10 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
         </div>
 
         {/* Submit Button */}
-        <Button
+        <button
           type="submit"
-          className="w-full h-12 rounded-full bg-linear-to-r from-blue-600 to-indigo-500 hover:opacity-90 text-white mt-6 flex items-center justify-center gap-2"
           disabled={isLoading}
+          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#191919] font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? (
             <>
@@ -387,17 +392,13 @@ export default function SignUpForm({ onSignInClick }: { onSignInClick: () => voi
               <ArrowRight className="h-4 w-4" />
             </>
           )}
-        </Button>
+        </button>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center font-alt text-sm text-[#71717A]">
           Already have an account?{" "}
-          <button
-            type="button"
-            onClick={onSignInClick}
-            className="font-semibold text-primary hover:text-primary/80"
-          >
+          <Link href={signInHref} className="font-semibold text-[#191919] hover:text-[#E91717]">
             Sign in
-          </button>
+          </Link>
         </div>
       </form>
     </div>

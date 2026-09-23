@@ -11,12 +11,14 @@ import { Select } from "@/components/ui/select";
 import { TagInput } from "@/components/ui/tag-input";
 import { cn, formatLKR } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api";
+import { ObjectUploadField } from "@/features/storage/components/ObjectUploadField";
+import type { StoredObjectSummary } from "@/features/storage/storageApi";
 import {
   useCreateCourseMutation,
   useUpdateCourseMutation,
-  type AdminCategory,
   type AdminCourse,
   type CourseInput,
+  type LearningService,
 } from "../catalogApi";
 
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -54,17 +56,17 @@ const LAST_STEP: WizardStep = WIZARD_STEPS[WIZARD_STEPS.length - 1].step;
  * course exists.
  */
 export function CourseForm({
-  category,
+  service,
   initial,
   onSuccess,
   onCancel,
 }: {
-  category: AdminCategory;
+  service: LearningService;
   initial?: AdminCourse;
   onSuccess?: () => void;
   onCancel?: () => void;
 }) {
-  const isFree = category.service.accessType === "FREE";
+  const isFree = service.accessType === "FREE";
   const isEditing = Boolean(initial);
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -81,6 +83,8 @@ export function CourseForm({
     initial?.durationUnit ?? (isFree ? "SESSION" : "WEEK"),
   );
   const [price, setPrice] = useState(initial ? initial.price.toString() : isFree ? "0" : "");
+  const [thumbnailObjectId, setThumbnailObjectId] = useState<string | null>(initial?.thumbnailObjectId ?? null);
+  const [thumbnailObject, setThumbnailObject] = useState<StoredObjectSummary | null>(initial?.thumbnailObject ?? null);
   const [highlights, setHighlights] = useState<string[]>(initial?.highlights ?? []);
   const [skills, setSkills] = useState<string[]>(initial?.skills ?? []);
   const [prerequisites, setPrerequisites] = useState<string[]>(initial?.prerequisites ?? []);
@@ -107,6 +111,7 @@ export function CourseForm({
       skills,
       prerequisites,
       thumbnailUrl: null,
+      thumbnailObjectId,
       sortOrder: 0,
     };
     try {
@@ -115,10 +120,10 @@ export function CourseForm({
         toast.success("Course updated");
       } else {
         const body: CourseInput = {
-          categoryId: category.id,
+          serviceId: service.id,
           intakeCodePrefix,
           certificateEnabled: certificateEnabled as boolean,
-          ...(category.service.accessType === "PAID" ? { discountAmount: Number(discountAmount) || 0 } : {}),
+          ...(service.accessType === "PAID" ? { discountAmount: Number(discountAmount) || 0 } : {}),
           ...content,
         };
         await create(body).unwrap();
@@ -202,6 +207,19 @@ export function CourseForm({
             onChange={(event) => setDescription(event.target.value)}
           />
         </div>
+
+        <ObjectUploadField
+          label="Course thumbnail"
+          purpose="COURSE_THUMBNAIL"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          value={thumbnailObjectId}
+          initialObject={thumbnailObject}
+          onChange={(id, object) => {
+            setThumbnailObjectId(id);
+            setThumbnailObject(object);
+          }}
+          helpText="Public catalog image. JPEG, PNG, WebP, or AVIF; maximum 10 MB."
+        />
 
         <div className="grid gap-4 md:grid-cols-4">
           <div className="space-y-2">
@@ -409,6 +427,18 @@ export function CourseForm({
                 />
               </div>
             </div>
+            <ObjectUploadField
+              label="Course thumbnail"
+              purpose="COURSE_THUMBNAIL"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              value={thumbnailObjectId}
+              initialObject={thumbnailObject}
+              onChange={(id, object) => {
+                setThumbnailObjectId(id);
+                setThumbnailObject(object);
+              }}
+              helpText="Public catalog image. JPEG, PNG, WebP, or AVIF; maximum 10 MB."
+            />
           </div>
         ) : null}
 
@@ -432,7 +462,7 @@ export function CourseForm({
               />
               <p className="text-xs text-muted-foreground">Cannot be changed after creation.</p>
             </div>
-            {category.service.accessType === "PAID" ? (
+            {service.accessType === "PAID" ? (
               <div className="space-y-2">
                 <Label htmlFor="course-discount-amount">
                   One-time-payment discount (LKR) off the {formatLKR(Number(price) || 0)} price
@@ -493,13 +523,13 @@ export function CourseForm({
         {wizardStep === 7 ? (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-xs">{category.service.accessType === "FREE" ? "Free" : "Paid"}</Badge>
+              <Badge variant="outline" className="text-xs">{service.accessType === "FREE" ? "Free" : "Paid"}</Badge>
               <Badge variant="outline" className="text-xs">{level}</Badge>
               {durationLabel ? <span className="text-xs text-muted-foreground">{durationLabel}</span> : null}
             </div>
             <div>
               <p className="text-sm font-semibold">{title || "Untitled course"}</p>
-              <p className="text-xs text-muted-foreground">/{category.slug}/{slug || "…"} · {intakeCodePrefix || "…"}-{"{intake key}"}</p>
+              <p className="text-xs text-muted-foreground">/{service.slug}/{slug || "…"} · {intakeCodePrefix || "…"}-{"{intake key}"}</p>
               {summary ? <p className="mt-2 text-sm text-muted-foreground">{summary}</p> : null}
             </div>
             <div className="space-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
@@ -507,7 +537,7 @@ export function CourseForm({
                 <span className="text-muted-foreground">Price</span>
                 <span className="font-medium">{isFree ? "Free" : `LKR ${price || 0}`}</span>
               </div>
-              {category.service.accessType === "PAID" && Number(discountAmount) > 0 ? (
+              {service.accessType === "PAID" && Number(discountAmount) > 0 ? (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Full-payment discount</span>
                   <span className="font-medium">LKR {discountAmount}</span>

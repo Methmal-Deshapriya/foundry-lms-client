@@ -200,7 +200,6 @@ export default function CourseCurriculumManager({
 }: {
   intakeId: string;
   serviceSlug?: string;
-  categoryId?: string;
   readOnly?: boolean;
 }) {
   const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(() => new Set());

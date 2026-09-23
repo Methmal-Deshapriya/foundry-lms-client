@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
 import { useGetMyEnrollmentsQuery } from "@/features/enrollments/enrollmentsApi";
 import EnrollmentCard from "@/features/enrollments/components/EnrollmentCard";
-import { Loader2, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
@@ -14,12 +13,7 @@ import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
  * Displays all courses the current student is enrolled in.
  */
 export default function MyCoursesPage() {
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [history, setHistory] = useState<Array<string | undefined>>([]);
-  const { data, isLoading, isError, isFetching } = useGetMyEnrollmentsQuery({
-    limit: 20,
-    cursor,
-  });
+  const { data, isLoading, isError } = useGetMyEnrollmentsQuery({ limit: 20 });
   const enrollments = data?.enrollments ?? [];
 
   return (
@@ -36,7 +30,7 @@ export default function MyCoursesPage() {
         {/* State Handling */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
+            <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#191919]" />
             <p className="font-medium text-muted-foreground">Loading your classroom...</p>
           </div>
         ) : isError ? (
@@ -49,34 +43,10 @@ export default function MyCoursesPage() {
             </p>
           </div>
         ) : enrollments.length > 0 ? (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              {enrollments.map((enrollment) => (
-                <EnrollmentCard key={enrollment.id} enrollment={enrollment} />
-              ))}
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                disabled={history.length === 0 || isFetching}
-                onClick={() => {
-                  setCursor(history.at(-1));
-                  setHistory((items) => items.slice(0, -1));
-                }}
-              >
-                <ChevronLeft className="h-4 w-4" /> Previous
-              </Button>
-              <Button
-                variant="outline"
-                disabled={!data?.pagination.hasMore || !data.pagination.nextCursor || isFetching}
-                onClick={() => {
-                  setHistory((items) => [...items, cursor]);
-                  setCursor(data?.pagination.nextCursor ?? undefined);
-                }}
-              >
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="grid grid-cols-1 gap-6">
+            {enrollments.map((enrollment) => (
+              <EnrollmentCard key={enrollment.id} enrollment={enrollment} />
+            ))}
           </div>
         ) : (
           <div className="bg-card border border-dashed border-border rounded-3xl p-20 text-center">
@@ -92,7 +62,7 @@ export default function MyCoursesPage() {
             </p>
             <Button
               asChild
-              className="h-12 rounded-xl bg-primary px-8 text-lg text-white hover:bg-primary/90"
+              className="h-12 rounded-xl bg-[#191919] bg-none px-8 text-lg text-white hover:bg-[#27272A]"
             >
               <Link href="/explore">Explore courses</Link>
             </Button>

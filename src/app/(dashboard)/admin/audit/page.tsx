@@ -17,7 +17,6 @@ const ACTION_OPTIONS = [
   { value: "", label: "all" },
   { value: "USER_PROMOTED", label: "user_promoted" },
   { value: "USER_DEMOTED", label: "user_demoted" },
-  { value: "CATEGORY_CREATED", label: "category_created" },
   { value: "COURSE_CREATED", label: "course_created" },
   { value: "COURSE_PUBLISHED", label: "course_published" },
   { value: "COURSE_ARCHIVED", label: "course_archived" },

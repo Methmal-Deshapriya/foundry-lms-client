@@ -7,7 +7,6 @@ export type RecentEnrollmentSummary = {
   updatedAt: string;
   courseTitle: string | null;
   thumbnailUrl: string | null;
-  categoryVisualKey: string | null;
   intakeCode: string | null;
   progress: { completedCount: number; availableSessionCount: number; progressPercent: number } | null;
 };
@@ -59,17 +58,16 @@ export type TopCourse = { courseId: string; title: string; count: number };
 export type ServiceCount = { service: string; count: number };
 
 /** One intake/cohort card for the "services delivered" side of the admin
- * dashboard (page 2) — `serviceSlug`/`categoryId`/`courseId` aren't shown,
- * they exist only to build the 4-segment admin intake workspace URL
- * (/admin/services/{serviceSlug}/categories/{categoryId}/courses/{courseId}
- * /intakes/{id}) directly from this card, skipping the normal
- * service → category → course click-through. See dashboard.repository.js's
- * INTAKE_CARD_SELECT/mapIntakeRow. */
+ * dashboard (page 2) — `serviceSlug`/`serviceId`/`courseId` aren't shown,
+ * they exist only to build the admin intake workspace URL
+ * (/admin/services/{serviceSlug}/courses/{courseId}/intakes/{id}) directly
+ * from this card, skipping the normal service → course click-through. See
+ * dashboard.repository.js's INTAKE_CARD_SELECT/mapIntakeRow. */
 export type DashboardIntakeCard = {
   id: string;
   code: string;
   courseId: string;
-  categoryId: string;
+  serviceId: string;
   serviceSlug: string | null;
   title: string;
   status: IntakeStatus;
@@ -93,17 +91,17 @@ export type DashboardIntakeCard = {
 };
 
 /** One pending enrollment request for the "services delivered" side of the
- * admin dashboard (page 2) — `categoryId`/`serviceSlug` exist only to build
+ * admin dashboard (page 2) — `serviceId`/`serviceSlug` exist only to build
  * the intake workspace URL this request is worked from
- * (/admin/services/{serviceSlug}/categories/{categoryId}/courses/{courseId}
- * /intakes/{intakeId}?tab=enrollment-requests&requestId={id}), same reasoning
- * as DashboardIntakeCard. See dashboard.repository.js's
+ * (/admin/services/{serviceSlug}/courses/{courseId}/intakes/{intakeId}
+ * ?tab=enrollment-requests&requestId={id}), same reasoning as
+ * DashboardIntakeCard. See dashboard.repository.js's
  * ENROLLMENT_REQUEST_CARD_SELECT/mapEnrollmentRequestRow. */
 export type DashboardEnrollmentRequest = {
   id: string;
   intakeId: string;
   courseId: string;
-  categoryId: string | null;
+  serviceId: string | null;
   serviceSlug: string | null;
   courseTitle: string;
   studentName: string;

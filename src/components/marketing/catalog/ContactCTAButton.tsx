@@ -19,7 +19,7 @@ export function ContactCTAButton({
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-alt text-sm sm:text-base font-semibold transition-colors"
+      className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-[#191919] hover:bg-[#27272A] text-white font-alt text-sm sm:text-base font-semibold transition-colors"
     >
       {label}
     </button>

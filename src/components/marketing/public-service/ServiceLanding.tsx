@@ -1,11 +1,11 @@
 "use client";
 
+import { BookOpen, GraduationCap, Sparkles, Users } from "lucide-react";
 import type {
   LearningServiceSlug,
-  PublicCategory,
+  PublicCourseCard,
   PublicLearningService,
 } from "@/features/catalog/catalogTypes";
-import { catalogVisual } from "../catalog/visuals";
 import { PublicServicePage } from "./PublicServicePage";
 import { itBootcampsServiceConfig } from "@/data/publicServices/itBootcamps";
 import { pretechServiceConfig } from "@/data/publicServices/pretech";
@@ -18,30 +18,26 @@ const CONFIGS: Record<string, PublicServiceConfig> = {
   "free-learning": contributionsServiceConfig,
 };
 
-const COLORS = [
-  ["from-violet-500 to-violet-600", "text-violet-600"],
-  ["from-blue-500 to-blue-600", "text-blue-600"],
-  ["from-cyan-500 to-cyan-600", "text-cyan-600"],
-  ["from-orange-500 to-orange-600", "text-orange-600"],
-];
+// One fixed icon per service — matches the home page's own Services.tsx,
+// which assigns one icon per service rather than a per-item icon (the
+// Category layer used to carry a per-item visualKey; removed 2026-09-22).
+const SERVICE_ICONS: Record<string, typeof GraduationCap> = {
+  bootcamps: GraduationCap,
+  "pretech-courses": BookOpen,
+  "free-learning": Users,
+};
 
 export function ServiceLanding({
   service,
-  categories,
+  courses,
   definition,
 }: {
   service: LearningServiceSlug;
-  categories: PublicCategory[];
+  courses: PublicCourseCard[];
   definition?: PublicLearningService;
 }) {
   const source = CONFIGS[service] ?? {
     ...itBootcampsServiceConfig,
-    breadcrumbLabel:
-      definition?.title ??
-      service
-        .split("-")
-        .map((part) => part[0]?.toUpperCase() + part.slice(1))
-        .join(" "),
     hero: {
       ...itBootcampsServiceConfig.hero,
       eyebrow: "Learning service",
@@ -54,10 +50,11 @@ export function ServiceLanding({
     categorySection: {
       ...itBootcampsServiceConfig.categorySection,
       title: "Choose a",
-      highlight: "learning category",
-      itemLabel: "categories",
+      highlight: "course",
+      itemLabel: "courses",
     },
   };
+  const Icon = SERVICE_ICONS[service] ?? Sparkles;
   const config = {
     ...source,
     basePath: `/${service}`,
@@ -65,33 +62,34 @@ export function ServiceLanding({
       ...source.hero,
       indicators: source.hero.indicators.map((indicator, index) =>
         index === 0
-          ? { ...indicator, label: `${categories.length} learning categories` }
+          ? {
+              ...indicator,
+              label: `${courses.length} ${courses.length === 1 ? "course" : "courses"}`,
+            }
           : indicator,
       ),
     },
     categorySection: {
       ...source.categorySection,
-      items: categories.map((category, index) => {
-        const [iconGradient, accentText] = COLORS[index % COLORS.length];
-        return {
-          id: category.id,
-          title: category.title,
-          description: category.description,
-          href: `/${service}/${category.slug}`,
-          icon: catalogVisual(category.visualKey),
-          iconGradient,
-          accentText,
-          badge:
-            category.badgeLabel ??
-            (category.courseCount === 0 ? "Coming soon" : undefined),
-          metadata: [
-            category.courseCount === 0
-              ? "Courses coming soon"
-              : `${category.courseCount} ${category.courseCount === 1 ? "course" : "courses"}`,
-            category.levelSummary ?? category.audienceLabel,
-          ],
-        };
-      }),
+      items: courses.map((course) => ({
+        id: course.id,
+        title: course.title,
+        description: course.summary,
+        href: `/${service}/${course.slug}`,
+        icon: Icon,
+        badge:
+          course.enrollmentStatus === "COMING_SOON"
+            ? "Coming soon"
+            : course.enrollmentStatus === "REOPENING_SOON"
+              ? "Reopening soon"
+              : undefined,
+        metadata: [
+          course.durationLabel
+            ? `${course.levelLabel} · ${course.durationLabel}`
+            : course.levelLabel,
+          course.accessType === "FREE" ? "Free enrollment" : "Paid enrollment",
+        ],
+      })),
     },
   };
   return <PublicServicePage config={config} />;

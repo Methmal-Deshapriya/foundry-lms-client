@@ -1,6 +1,5 @@
 import type {
   LearningServiceSlug,
-  PublicCategoryDetail,
   PublicCourseDetail,
   PublicLearningService,
   PublicServiceCatalog,
@@ -35,23 +34,14 @@ async function fetchCatalog<T>(path: string): Promise<T | null> {
 }
 
 export const getPublicServiceCatalog = (service: LearningServiceSlug) =>
-  fetchCatalog<PublicServiceCatalog>(`/catalog/${service}/categories`);
-
-export const getPublicCategory = (
-  service: LearningServiceSlug,
-  categorySlug: string,
-) =>
-  fetchCatalog<PublicCategoryDetail>(
-    `/catalog/${service}/categories/${categorySlug}`,
-  );
+  fetchCatalog<PublicServiceCatalog>(`/catalog/${service}/courses`);
 
 export const getPublicCourse = (
   service: LearningServiceSlug,
-  categorySlug: string,
   courseSlug: string,
 ) =>
   fetchCatalog<PublicCourseDetail>(
-    `/catalog/${service}/categories/${categorySlug}/courses/${courseSlug}`,
+    `/catalog/${service}/courses/${courseSlug}`,
   );
 
 export const getPublicLearningServices = () =>

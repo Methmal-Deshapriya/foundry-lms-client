@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLoginMutation } from "../authApi";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -26,20 +25,23 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 // Matches SignUpForm's input styling so both views look identical apart
 // from the fields themselves.
 const inputClassName =
-  "h-12 rounded-xl border-input bg-muted/50 pl-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary";
+  "h-12 rounded-xl border border-zinc-200 bg-white pl-10 text-[#191919] placeholder:text-[#A1A1AA] focus-visible:outline-none focus-visible:border-[#191919]";
 
 /**
  * SignInForm Component
  *
- * Handles user login with validation and error feedback. Rendered as the
- * swappable left-panel content inside AuthSlide, which owns the shared
- * two-column shell/branding panel — `onSignUpClick` swaps to the sign-up
- * view in place rather than navigating to a separate route.
+ * Handles user login with validation and error feedback. Rendered on its
+ * own route (/sign-in) inside AuthPageShell, which owns the shared
+ * centered layout/wordmark shared with /sign-up and the rest of the auth
+ * route group.
  */
-export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => void }) {
+export default function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const enrollmentCourseId = searchParams.get("enrollCourse");
+  const signUpHref = enrollmentCourseId
+    ? `/sign-up?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
+    : "/sign-up";
   const [login, { isLoading }] = useLoginMutation();
 
   // 2. Initialize Form
@@ -101,10 +103,10 @@ export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => voi
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full max-w-md space-y-6">
       <div className="space-y-2">
-        <h2 className="font-sans text-3xl font-bold text-[#0E1116]">Sign In</h2>
-        <p className="font-alt text-[#5B6472]">Access your learning dashboard</p>
+        <h2 className="font-sans text-3xl font-bold text-[#191919]">Sign In</h2>
+        <p className="font-alt text-[#71717A]">Access your learning dashboard</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -112,7 +114,7 @@ export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => voi
         <div className="space-y-2.5">
           <Label htmlFor="email">Email Address</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-[#71717A]" />
             <Input
               id="email"
               type="email"
@@ -124,7 +126,7 @@ export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => voi
             />
           </div>
           {errors.email && (
-            <p className="text-xs font-medium text-red-500">{errors.email.message}</p>
+            <p className="text-xs font-medium text-[#C91414]">{errors.email.message}</p>
           )}
         </div>
 
@@ -134,13 +136,13 @@ export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => voi
             <Label htmlFor="password">Password</Label>
             <Link
               href="/forgot-password"
-              className="text-xs font-medium text-primary hover:text-primary"
+              className="font-alt text-xs font-medium text-[#71717A] hover:text-[#191919]"
             >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-3.5 h-4 w-4 text-[#71717A]" />
             <Input
               id="password"
               type="password"
@@ -152,15 +154,15 @@ export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => voi
             />
           </div>
           {errors.password && (
-            <p className="text-xs font-medium text-red-500">{errors.password.message}</p>
+            <p className="text-xs font-medium text-[#C91414]">{errors.password.message}</p>
           )}
         </div>
 
         {/* Submit Button */}
-        <Button
+        <button
           type="submit"
-          className="w-full h-12 rounded-full bg-linear-to-r from-blue-600 to-indigo-500 hover:opacity-90 text-white mt-6 flex items-center justify-center gap-2"
           disabled={isLoading}
+          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#191919] font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? (
             <>
@@ -173,17 +175,13 @@ export default function SignInForm({ onSignUpClick }: { onSignUpClick: () => voi
               <ArrowRight className="h-4 w-4" />
             </>
           )}
-        </Button>
+        </button>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center font-alt text-sm text-[#71717A]">
           Don&apos;t have an account?{" "}
-          <button
-            type="button"
-            onClick={onSignUpClick}
-            className="font-semibold text-primary hover:text-primary"
-          >
+          <Link href={signUpHref} className="font-semibold text-[#191919] hover:text-[#E91717]">
             Sign up for free
-          </button>
+          </Link>
         </div>
       </form>
     </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, ExternalLink, Loader2, MoreHorizontal, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, MoreHorizontal, XCircle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -222,11 +222,6 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/projects/${project.id}`}>
-                            <ExternalLink /> View project
-                          </Link>
-                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           disabled={isReviewing || project.status === "APPROVED"}
@@ -355,11 +350,6 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
                   ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/projects/${detailProject.id}`}>
-                      <ExternalLink className="mr-2 size-4" aria-hidden="true" /> Open project
-                    </Link>
-                  </Button>
                   {detailProject.githubUrl ? (
                     <Button asChild variant="outline" size="sm">
                       <Link href={detailProject.githubUrl} target="_blank">

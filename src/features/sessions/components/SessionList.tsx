@@ -31,7 +31,7 @@ export default function SessionList({
     // two fixed-width siblings a viewport breakpoint can't see, so the
     // column count needs to track this container's own width instead.
     <div className="@container">
-      <div className="grid grid-cols-1 items-start gap-4 @sm:grid-cols-2 @xl:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4 @6xl:grid-cols-5">
         {sessions.map((session) => (
           <SessionItem
             key={session.courseSessionId}

@@ -4,7 +4,6 @@ import { SERVICE_ACCENT } from "@/components/marketing/public-service/accent";
 
 export const pretechServiceConfig: PublicServiceConfig = {
   basePath: "/pretech-courses",
-  breadcrumbLabel: "PreTech",
   accent: SERVICE_ACCENT,
   hero: {
     eyebrow: "PreTech",
@@ -13,8 +12,10 @@ export const pretechServiceConfig: PublicServiceConfig = {
     description:
       "Structured preparation in the core subjects every BICT, BBST and BET student needs — built to make your first year feel familiar, not overwhelming.",
     illustration: {
-      src: "/assets/pretech-hero.png",
-      alt: "Illustration of a tablet with maths and physics formulas, a periodic table, books, and a calculator, representing PreTech subjects",
+      src: "/pretech.webp",
+      alt: "A student preparing for university with PreTech coursework",
+      width: 1536,
+      height: 1024,
     },
     indicators: [
       { icon: Layers, label: "4 core subjects" },

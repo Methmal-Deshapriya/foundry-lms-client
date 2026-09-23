@@ -35,4 +35,21 @@ describe("production client configuration", () => {
       }),
     ).toThrow("must use HTTPS");
   });
+
+  it("allows the R2 upload origin in connect-src when NEXT_PUBLIC_R2_ACCOUNT_ID is set", () => {
+    expect(
+      createContentSecurityPolicy("https://api.example.test", {
+        NODE_ENV: "production",
+        NEXT_PUBLIC_R2_ACCOUNT_ID: "abc123",
+      }),
+    ).toContain(
+      "connect-src 'self' https://api.example.test https://*.abc123.r2.cloudflarestorage.com",
+    );
+  });
+
+  it("omits the R2 upload origin from connect-src when NEXT_PUBLIC_R2_ACCOUNT_ID is unset", () => {
+    expect(
+      createContentSecurityPolicy("https://api.example.test", { NODE_ENV: "production" }),
+    ).toContain("connect-src 'self' https://api.example.test;");
+  });
 });

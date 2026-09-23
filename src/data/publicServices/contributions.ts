@@ -4,7 +4,6 @@ import { SERVICE_ACCENT } from "@/components/marketing/public-service/accent";
 
 export const contributionsServiceConfig: PublicServiceConfig = {
   basePath: "/free-learning",
-  breadcrumbLabel: "Free Learning",
   accent: SERVICE_ACCENT,
   hero: {
     eyebrow: "Free Learning",
@@ -12,6 +11,12 @@ export const contributionsServiceConfig: PublicServiceConfig = {
     highlight: "start learning",
     description:
       "Free, open sessions covering the basics every tech career rests on — no application, no cost, just a place to start.",
+    illustration: {
+      src: "/freelearning.webp",
+      alt: "A student taking a self-paced Free Learning course",
+      width: 1536,
+      height: 1024,
+    },
     indicators: [
       { icon: Layers, label: "4 learning areas" },
       { icon: Users, label: "Open to everyone" },

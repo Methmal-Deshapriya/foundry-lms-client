@@ -13,10 +13,10 @@ export function ServiceFaq({ faqSection, accent }: Pick<PublicServiceConfig, "fa
   return (
     <section className="mb-16 sm:mb-24">
       <Reveal className="max-w-2xl mx-auto text-center mb-6 sm:mb-8">
-        <h2 className="font-sans text-xl sm:text-2xl font-bold text-[#0E1116]">{faqSection.title}</h2>
+        <h2 className="font-sans text-xl sm:text-2xl font-bold text-[#191919]">{faqSection.title}</h2>
       </Reveal>
 
-      <Reveal className="max-w-3xl mx-auto divide-y divide-black/10 border-t border-b border-black/10">
+      <Reveal className="max-w-3xl mx-auto divide-y divide-zinc-200 border-t border-b border-zinc-200">
         {faqSection.items.map((item, i) => {
           const isOpen = openIndex === i;
           const panelId = `faq-panel-${i}`;
@@ -29,7 +29,7 @@ export function ServiceFaq({ faqSection, accent }: Pick<PublicServiceConfig, "fa
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => setOpenIndex(isOpen ? null : i)}
-                className="w-full flex items-center justify-between gap-4 py-4 sm:py-5 text-left font-sans font-semibold text-sm sm:text-base text-[#0E1116] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                className="w-full flex items-center justify-between gap-4 py-4 sm:py-5 text-left font-sans font-semibold text-sm sm:text-base text-[#191919] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#191919]"
               >
                 {item.question}
                 <ChevronDown
@@ -41,7 +41,7 @@ export function ServiceFaq({ faqSection, accent }: Pick<PublicServiceConfig, "fa
               {shouldReduceMotion ? (
                 isOpen && (
                   <div id={panelId} role="region" aria-labelledby={triggerId} className="pb-4 sm:pb-5 -mt-1">
-                    <p className="font-alt text-sm text-[#5B6472] leading-relaxed">{item.answer}</p>
+                    <p className="font-alt text-sm text-[#71717A] leading-relaxed">{item.answer}</p>
                   </div>
                 )
               ) : (
@@ -57,7 +57,7 @@ export function ServiceFaq({ faqSection, accent }: Pick<PublicServiceConfig, "fa
                       transition={{ duration: 0.25, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <p className="font-alt text-sm text-[#5B6472] leading-relaxed pb-4 sm:pb-5 -mt-1">
+                      <p className="font-alt text-sm text-[#71717A] leading-relaxed pb-4 sm:pb-5 -mt-1">
                         {item.answer}
                       </p>
                     </motion.div>

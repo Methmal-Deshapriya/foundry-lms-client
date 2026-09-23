@@ -88,8 +88,8 @@ export function OtpInput({ value, onChange, onBlur, length = 6, disabled, error,
           onPaste={handlePaste}
           onBlur={onBlur}
           className={cn(
-            "h-14 w-12 sm:h-16 sm:w-14 rounded-xl border border-input bg-muted/50 text-center text-xl font-semibold text-[#0E1116] transition-colors focus-visible:outline-none focus-visible:border-primary",
-            error && "border-red-500 focus-visible:border-red-500"
+            "h-14 w-12 rounded-xl border border-zinc-200 bg-white text-center text-xl font-semibold text-[#191919] transition-colors focus-visible:border-[#191919] focus-visible:outline-none sm:h-16 sm:w-14",
+            error && "border-[#C91414] focus-visible:border-[#C91414]"
           )}
         />
       ))}

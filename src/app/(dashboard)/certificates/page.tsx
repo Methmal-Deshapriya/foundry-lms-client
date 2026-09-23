@@ -1,43 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import Link from "next/link";
-import {
-  Award,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  ShieldCheck,
-  ShieldX,
-} from "lucide-react";
+import { Award, Loader2 } from "lucide-react";
 import { useGetMyCertificatesQuery } from "@/features/certificates/certificatesApi";
+import { CertificateCard } from "@/features/certificates/components/CertificateCard";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-
-const STATUS_STYLES: Record<string, string> = {
-  ISSUED: "bg-emerald-50 text-emerald-700",
-  REVOKED: "bg-red-50 text-red-700",
-};
 
 export default function MyCertificatesPage() {
-  const router = useRouter();
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [history, setHistory] = useState<Array<string | undefined>>([]);
-  const { data, isLoading, isError, isFetching } = useGetMyCertificatesQuery({
-    limit: 20,
-    cursor,
-  });
+  const { data, isLoading, isError } = useGetMyCertificatesQuery({ limit: 20 });
   const certificates = data?.certificates ?? [];
 
   return (
@@ -52,7 +23,7 @@ export default function MyCertificatesPage() {
 
         {isLoading ? (
           <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" aria-hidden="true" />
+            <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#191919]" aria-hidden="true" />
             <p className="font-medium text-muted-foreground">Loading your certificates...</p>
           </div>
         ) : isError ? (
@@ -61,86 +32,10 @@ export default function MyCertificatesPage() {
             <p className="text-sm text-red-700">Failed to load certificates. Please try again.</p>
           </div>
         ) : certificates.length > 0 ? (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-lg border border-border bg-card">
-              <Table>
-                <TableHeader className="bg-muted/40">
-                  <TableRow>
-                    <TableHead className="px-4">Course</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Issued</TableHead>
-                    <TableHead className="pr-4">Certificate Code</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {certificates.map((cert) => (
-                    <TableRow
-                      key={cert.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      tabIndex={0}
-                      onClick={() => router.push(`/certificates/verify/${cert.certificateCode}`)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          router.push(`/certificates/verify/${cert.certificateCode}`);
-                        }
-                      }}
-                    >
-                      <TableCell className="max-w-40 px-4 font-medium text-foreground sm:max-w-60">
-                        <span className="block truncate" title={cert.courseName}>
-                          {cert.courseName}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold",
-                            STATUS_STYLES[cert.status],
-                          )}
-                        >
-                          {cert.status === "ISSUED" ? (
-                            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                          ) : (
-                            <ShieldX className="h-3.5 w-3.5" aria-hidden="true" />
-                          )}
-                          {cert.status === "ISSUED" ? "Valid" : "Revoked"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {format(new Date(cert.issuedDate), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="max-w-36 pr-4 font-mono text-xs text-muted-foreground">
-                        <span className="block truncate" title={cert.certificateCode}>
-                          {cert.certificateCode}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                disabled={history.length === 0 || isFetching}
-                onClick={() => {
-                  setCursor(history.at(-1));
-                  setHistory((items) => items.slice(0, -1));
-                }}
-              >
-                <ChevronLeft className="h-4 w-4" /> Previous
-              </Button>
-              <Button
-                variant="outline"
-                disabled={!data?.pagination.hasMore || !data.pagination.nextCursor || isFetching}
-                onClick={() => {
-                  setHistory((items) => [...items, cursor]);
-                  setCursor(data?.pagination.nextCursor ?? undefined);
-                }}
-              >
-                Next <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            {certificates.map((cert) => (
+              <CertificateCard key={cert.id} certificate={cert} />
+            ))}
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-border bg-card p-16 text-center">

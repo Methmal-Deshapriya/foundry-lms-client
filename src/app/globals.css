@@ -99,17 +99,17 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  /* Sidebar — matches the public site's light, clean look (not a colored
-     block); theme-aware like every other token, unlike the old fixed-navy
-     version. */
-  --sidebar: #FAFAFA;
-  --sidebar-foreground: #0E1116;
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-white);
+  /* Sidebar — pure white rail with black text, one shade lighter than the
+     #FAFAFA main shell background behind it (see SidebarInset in
+     (dashboard)/layout.tsx) so the two surfaces read as distinct panels. */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #191919;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #191919;
   --sidebar-accent: #F5F6FA;
-  --sidebar-accent-foreground: #0E1116;
+  --sidebar-accent-foreground: #191919;
   --sidebar-border: rgb(0 0 0 / 0.1);
-  --sidebar-ring: var(--color-blue-600);
+  --sidebar-ring: #191919;
 }
 
 @layer base {
@@ -122,6 +122,15 @@
        scrollbars, form controls) layered on top of our light UI. */
     color-scheme: light;
   }
+  /* No global scroll-behavior: smooth here on purpose — even scoped to
+     :has(:target), it risked intercepting Next.js's own scroll-to-top call
+     on a plain page navigation (e.g. a Services card to /bootcamps),
+     animating what should be an instant, complete jump and letting the new
+     page's layout settling cut it short. The handful of same-page
+     `/#section`-style links glide instead via an explicit
+     scrollIntoView({ behavior: "smooth" }) on click (see
+     MarketingNavbar.tsx / WelcomeSlide.tsx), which can't affect unrelated
+     route changes. */
   body {
     @apply bg-background text-foreground;
   }
@@ -188,4 +197,30 @@
 }
 .table-hscroll:hover::-webkit-scrollbar-thumb:hover {
   background-color: rgba(37, 99, 235, 0.5);
+}
+
+/* Marquee (see components/ui/marquee.tsx) — a track holding two identical
+   copies of its content side by side, sliding left by exactly one copy's
+   width (100% + the gap) so the loop point is invisible. `reverse` just
+   plays the same keyframe backwards for the opposite direction, rather
+   than needing a second keyframe. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--marquee-gap, 1.25rem)));
+  }
+}
+.animate-marquee {
+  animation: marquee linear infinite;
+}
+.animate-marquee-reverse {
+  animation: marquee linear infinite reverse;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-reverse {
+    animation: none;
+  }
 }

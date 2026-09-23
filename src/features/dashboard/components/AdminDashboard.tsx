@@ -487,10 +487,10 @@ function formatStatusLabel(status: string) {
 }
 
 function intakeHref(intake: DashboardIntakeCard) {
-  // All four segments are required by the route, even though only
-  // courseId/intakeId are actually used to fetch data on that page — see
+  // All three route segments are required, even though only courseId/
+  // intakeId are actually used to fetch data on that page — see
   // dashboard.repository.js's INTAKE_CARD_SELECT comment.
-  return `/admin/services/${intake.serviceSlug}/categories/${intake.categoryId}/courses/${intake.courseId}/intakes/${intake.id}`;
+  return `/admin/services/${intake.serviceSlug}/courses/${intake.courseId}/intakes/${intake.id}`;
 }
 
 function intakeDateRange(intake: DashboardIntakeCard) {
@@ -610,10 +610,10 @@ function IntakesCard({
 }
 
 function enrollmentRequestHref(request: DashboardEnrollmentRequest) {
-  // Same 4-segment intake workspace URL as intakeHref, plus the query params
-  // that open straight to this specific request's detail sheet there — see
+  // Same intake workspace URL as intakeHref, plus the query params that
+  // open straight to this specific request's detail sheet there — see
   // EnrollmentRequestsTab.tsx, which reads `tab`/`requestId` off the URL.
-  return `/admin/services/${request.serviceSlug}/categories/${request.categoryId}/courses/${request.courseId}/intakes/${request.intakeId}?tab=enrollment-requests&requestId=${request.id}`;
+  return `/admin/services/${request.serviceSlug}/courses/${request.courseId}/intakes/${request.intakeId}?tab=enrollment-requests&requestId=${request.id}`;
 }
 
 // Oldest-pending-first jump-off list — the counterpart to "Course delivery"

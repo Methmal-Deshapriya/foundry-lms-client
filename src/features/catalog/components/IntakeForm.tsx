@@ -30,7 +30,7 @@ export function IntakeForm({
   onSuccess?: () => void;
   onCancel?: () => void;
 }) {
-  const isFree = course.category.service.accessType === "FREE";
+  const isFree = course.service.accessType === "FREE";
   const isEditing = Boolean(initial);
   const { data: defaults } = useGetIntakeDefaultsQuery(course.id, { skip: isEditing });
   const [intakeKey, setIntakeKey] = useState("");
@@ -88,10 +88,10 @@ export function IntakeForm({
           intake code from this and the intake key below.
         </p>
         <p className="mt-2 text-muted-foreground">
-          Inherited from {course.category.service.title}:{" "}
-          {course.category.service.accessType.toLowerCase()} access,{" "}
-          {course.category.service.courseMode.toLowerCase()} delivery,{" "}
-          {course.category.service.enrollmentMode.toLowerCase()} enrollment.
+          Inherited from {course.service.title}:{" "}
+          {course.service.accessType.toLowerCase()} access,{" "}
+          {course.service.courseMode.toLowerCase()} delivery,{" "}
+          {course.service.enrollmentMode.toLowerCase()} enrollment.
         </p>
       </div>
 
@@ -115,7 +115,7 @@ export function IntakeForm({
         </div>
       ) : null}
 
-      {course.category.service.courseMode === "SEASONAL" ? (
+      {course.service.courseMode === "SEASONAL" ? (
         <div className="grid gap-4 md:grid-cols-4">
           <div className="space-y-2">
             <Label htmlFor="intake-start">Start date</Label>

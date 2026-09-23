@@ -33,13 +33,11 @@ export default function DashboardSidebar({ ...props }: React.ComponentProps<type
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-[#191919]">
                   <span className="text-sm font-extrabold">F</span>
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-extrabold tracking-tight">
-                    Foundry<span className="text-primary">Academy</span>
-                  </span>
+                  <span className="truncate font-extrabold tracking-tight text-[#191919]">FoundryAcademy</span>
                 </div>
               </Link>
             </SidebarMenuButton>

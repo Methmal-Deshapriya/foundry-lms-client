@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ChevronRight, LockKeyhole } from "lucide-react";
 import type { MyEnrollment } from "../enrollmentsTypes";
 import { Progress } from "@/components/ui/progress";
-import { CatalogIcon } from "@/components/marketing/catalog/visuals";
 
 interface EnrollmentCardProps {
   enrollment: MyEnrollment;
@@ -43,23 +42,21 @@ export default function EnrollmentCard({ enrollment }: EnrollmentCardProps) {
   return (
     <Wrapper
       {...wrapperProps}
-      className={`group block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg ${isAccessible ? "cursor-pointer" : ""}`}
+      className={`group block overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-lg ${isAccessible ? "cursor-pointer" : ""}`}
     >
-      <div className="flex md:h-28">
-        <div className="relative hidden shrink-0 items-center justify-center overflow-hidden bg-linear-to-br from-primary/15 via-primary/5 to-transparent md:flex md:w-28">
+      <div className="flex md:h-36">
+        <div className="relative hidden shrink-0 items-center justify-center overflow-hidden bg-[#191919] md:flex md:w-64">
           {course.thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URLs; next/image's domain allowlist would need constant upkeep
             <img src={course.thumbnailUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <CatalogIcon visualKey={course.categoryVisualKey} className="h-8 w-8 text-primary/70" />
+            <span className="line-clamp-2 px-4 text-center text-sm font-semibold text-white">{course.title}</span>
           )}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 px-4 py-3">
           <div className="min-w-0">
-            <h3 className="truncate text-base font-bold text-foreground transition-colors group-hover:text-primary">
-              {course.title}
-            </h3>
+            <h3 className="truncate text-base font-bold text-foreground">{course.title}</h3>
             <p className="line-clamp-1 text-sm text-muted-foreground">{course.summary}</p>
           </div>
 

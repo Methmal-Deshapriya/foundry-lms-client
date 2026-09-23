@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useVerifyOtpMutation, useResendOtpMutation } from "../authApi";
-import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/ui/otp-input";
 import { toast } from "sonner";
 import { Loader2, ArrowRight } from "lucide-react";
@@ -101,13 +100,13 @@ export default function VerifyEmailForm() {
   if (!email) {
     return (
       <div className="w-full max-w-md space-y-4 text-center">
-        <h2 className="font-sans text-3xl font-bold text-[#0E1116]">Missing email</h2>
-        <p className="font-alt text-[#5B6472]">
+        <h2 className="font-sans text-3xl font-bold text-[#191919]">Missing email</h2>
+        <p className="font-alt text-[#71717A]">
           We couldn&apos;t tell which account to verify. Please sign up again.
         </p>
         <Link
-          href="/?slide=auth&authView=sign-up"
-          className="inline-block font-semibold text-primary hover:text-primary/80"
+          href="/sign-up"
+          className="inline-block font-semibold text-[#191919] hover:text-[#E91717]"
         >
           Back to sign up
         </Link>
@@ -116,15 +115,15 @@ export default function VerifyEmailForm() {
   }
 
   return (
-    <div className="w-full max-w-md space-y-4">
-      <div className="space-y-1">
-        <h2 className="font-sans text-3xl font-bold text-[#0E1116]">Verify Your Email</h2>
-        <p className="font-alt text-[#5B6472]">
-          Enter the 6-digit code sent to <span className="font-medium text-[#0E1116]">{email}</span>
+    <div className="w-full max-w-md space-y-6">
+      <div className="space-y-2">
+        <h2 className="font-sans text-3xl font-bold text-[#191919]">Verify Your Email</h2>
+        <p className="font-alt text-[#71717A]">
+          Enter the 6-digit code sent to <span className="font-medium text-[#191919]">{email}</span>
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Code Field */}
         <div className="space-y-4">
           <Controller
@@ -141,16 +140,16 @@ export default function VerifyEmailForm() {
             )}
           />
           {errors.code && (
-            <p className="text-center text-xs font-medium text-red-500">
+            <p className="text-center text-xs font-medium text-[#C91414]">
               {errors.code.message}
             </p>
           )}
         </div>
 
         {/* Submit Button */}
-        <Button
+        <button
           type="submit"
-          className="w-full h-12 rounded-full bg-linear-to-r from-blue-600 to-indigo-500 hover:opacity-90 text-white mt-6 flex items-center justify-center gap-2"
+          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#191919] font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A] disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isVerifying}
         >
           {isVerifying ? (
@@ -164,15 +163,15 @@ export default function VerifyEmailForm() {
               <ArrowRight className="h-4 w-4" />
             </>
           )}
-        </Button>
+        </button>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center font-alt text-sm text-[#71717A]">
           Didn&apos;t get a code?{" "}
           <button
             type="button"
             onClick={handleResend}
             disabled={isResending || cooldown > 0}
-            className="font-semibold text-primary hover:text-primary/80 disabled:text-muted-foreground disabled:cursor-not-allowed"
+            className="font-semibold text-[#191919] hover:text-[#E91717] disabled:cursor-not-allowed disabled:text-[#A1A1AA]"
           >
             {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
           </button>

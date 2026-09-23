@@ -1,4 +1,6 @@
 import type { PublicCourseCard } from "@/features/catalog/catalogTypes";
+import type { EnrollmentStatus } from "@/features/enrollments/enrollmentsTypes";
+import type { StoredObjectSummary } from "@/features/storage/storageApi";
 
 export type SessionStatus = "DRAFT" | "READY" | "ARCHIVED";
 export type CourseSessionDeliveryStatus =
@@ -12,6 +14,8 @@ export interface SessionContent {
   description?: string | null;
   recordingUrl?: string | null;
   materialUrl?: string | null;
+  recordingObjectId?: string | null;
+  materialObjectId?: string | null;
   quizUrl?: string | null;
   feedbackUrl?: string | null;
   durationMinutes?: number | null;
@@ -24,9 +28,8 @@ export interface SessionUsageCourse {
   courseId: string;
   courseTitle: string;
   intakeCode: string;
-  // categoryId/serviceSlug exist only to build the click-through link to the
-  // intake's workspace page — not for display.
-  categoryId: string;
+  // serviceSlug exists only to build the click-through link to the intake's
+  // workspace page — not for display.
   serviceSlug: string;
   orderIndex: number | null;
   retiredAt: string | null;
@@ -39,6 +42,8 @@ export interface LibrarySession extends SessionContent {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  recordingObject: StoredObjectSummary | null;
+  materialObject: StoredObjectSummary | null;
   usage: {
     intakeCount: number;
     activeIntakeCount: number;
@@ -74,7 +79,6 @@ export interface CurriculumResponse {
     code: string;
     status: string;
     accessType: "FREE" | "PAID";
-    category: { id: string; title: string; serviceType: string };
   };
   curriculum: CourseSession[];
 }
@@ -109,7 +113,7 @@ export interface ClassroomSession {
 export interface ClassroomResponse {
   enrollment: {
     id: string;
-    status: string;
+    status: EnrollmentStatus;
     source: "ADMIN" | "SELF";
     deliveryMode: "PAID" | "FREE";
     enrolledAt: string;
@@ -122,8 +126,6 @@ export interface ClassroomResponse {
       skills: string[];
       prerequisites: string[];
       thumbnailUrl: string | null;
-      categoryTitle: string;
-      categoryVisualKey: string;
       serviceTitle: string;
       intakeKey: string;
       code: string;

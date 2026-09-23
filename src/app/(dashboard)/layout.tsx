@@ -15,7 +15,7 @@ export default function DashboardLayout({
     <AuthenticatedGuard>
       <SidebarProvider>
         <DashboardSidebar />
-        <SidebarInset>
+        <SidebarInset className="bg-[#FAFAFA]">
           <DashboardHeaderProvider>
             <DashboardHeader />
             <PageToolbarSlot />
