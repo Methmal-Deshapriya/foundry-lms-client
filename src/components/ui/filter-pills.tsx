@@ -24,7 +24,15 @@ export function FilterPills<TKey extends string>({
   ariaLabel: string;
 }) {
   return (
-    <div className="flex shrink-0 flex-wrap gap-2" role="group" aria-label={ariaLabel}>
+    // max-w-full (not shrink-0): shrink-0 let this box always render at its
+    // full natural (all-pills-on-one-line) width, which meant it could only
+    // ever overflow its row — never actually wrap internally — since a box
+    // free to be as wide as it wants never runs out of room from its own
+    // perspective. Capping the box at 100% of its container forces pills to
+    // wrap onto additional lines once they don't fit, instead of the row
+    // just clipping or (previously) relying on the whole page to scroll
+    // sideways to reveal the rest.
+    <div className="flex max-w-full flex-wrap gap-2" role="group" aria-label={ariaLabel}>
       {options.map(({ key, label, count, activeClassName }) => {
         const isActive = active === key;
         return (

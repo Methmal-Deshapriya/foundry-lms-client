@@ -14,7 +14,10 @@ import {
   Users,
 } from "lucide-react";
 import { Reveal } from "@/components/ui/reveal";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import type { PublicCourseDetail } from "@/features/catalog/catalogTypes";
+import { CertificatePreview } from "./CertificatePreview";
+import { CourseExplainerVideo } from "./CourseExplainerVideo";
 import { PageSlide } from "./PageSlide";
 
 function formatDate(value: string | null) {
@@ -58,17 +61,37 @@ export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px] lg:gap-10 lg:items-start">
           {/* Main content */}
           <Reveal className="min-w-0">
-            {course.thumbnailUrl && (
-              <div className="relative mb-8 aspect-video w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
-                {/* eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URL; next/image's domain allowlist would need constant upkeep */}
-                <img src={course.thumbnailUrl} alt={course.title} className="h-full w-full object-cover" />
-              </div>
-            )}
+            <div className="relative mb-8 aspect-video w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50">
+              <ThumbnailImage src={course.thumbnailUrl} alt={course.title} label={course.title} className="h-full w-full object-cover" />
+            </div>
 
             <div className="mb-8">
               <h2 className="font-sans font-semibold text-lg text-[#191919] mb-3">Overview</h2>
               <p className="font-alt text-[#71717A] leading-relaxed">{course.description}</p>
             </div>
+
+            {course.targetAudience && (
+              <div className="mb-8 flex items-start gap-3 rounded-2xl border border-zinc-200 bg-white p-5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[#191919]">
+                  <Users className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="font-sans text-sm font-semibold text-[#191919]">Who this is for</p>
+                  <p className="font-alt mt-1 text-sm text-[#71717A]">{course.targetAudience}</p>
+                </div>
+              </div>
+            )}
+
+            {course.explainerVideoUrl && (
+              <div className="mb-8">
+                <h2 className="font-sans font-semibold text-lg text-[#191919] mb-3">Watch the course overview</h2>
+                <CourseExplainerVideo
+                  videoUrl={course.explainerVideoUrl}
+                  thumbnailUrl={course.explainerVideoThumbnailUrl}
+                  title={course.title}
+                />
+              </div>
+            )}
 
             <div className="bg-white border border-zinc-200 rounded-2xl p-6 mb-8">
               <h2 className="font-sans font-semibold text-lg text-[#191919] mb-4">
@@ -83,6 +106,25 @@ export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
                 ))}
               </ul>
             </div>
+
+            {course.whyPursueSteps.length > 0 && (
+              <div className="mb-8">
+                <h2 className="font-sans font-semibold text-lg text-[#191919] mb-4">Why pursue this course</h2>
+                <div className="space-y-5">
+                  {course.whyPursueSteps.map((step, index) => (
+                    <div key={step.title} className="flex gap-4">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#191919] font-sans text-sm font-bold text-white">
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className="font-sans text-sm font-semibold text-[#191919]">{step.title}</p>
+                        <p className="font-alt mt-1 text-sm text-[#71717A]">{step.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {course.skills.length > 0 && (
               <div className="mb-8">
@@ -108,6 +150,13 @@ export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
                 <p className="font-alt text-sm text-[#71717A]">
                   {course.prerequisites.join(" · ")}
                 </p>
+              </div>
+            )}
+
+            {course.certificateEnabled && (
+              <div className="mb-8">
+                <h2 className="font-sans font-semibold text-lg text-[#191919] mb-4">What you&apos;ll earn</h2>
+                <CertificatePreview courseTitle={course.title} />
               </div>
             )}
           </Reveal>

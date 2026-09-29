@@ -96,7 +96,7 @@ const STATUS_PILLS: {
   countKey: keyof SessionLibrarySummary;
   activeClassName: string;
 }[] = [
-  { key: "", label: "All", countKey: "all", activeClassName: "border-primary bg-primary/10 text-primary" },
+  { key: "", label: "All", countKey: "all", activeClassName: "border-zinc-300 bg-zinc-100 text-[#191919]" },
   {
     key: "READY",
     label: "Ready",
@@ -623,7 +623,7 @@ export default function SessionLibraryManager() {
           </div>
         </div>
         {canManage ? (
-          <Button className="shrink-0" onClick={() => { reset(); setFormOpen(true); }}>
+          <Button className="shrink-0 bg-[#191919] bg-none hover:bg-[#27272A]" onClick={() => { reset(); setFormOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" /> New session resource
           </Button>
         ) : null}
@@ -662,7 +662,7 @@ export default function SessionLibraryManager() {
                   />
                 </TableHead>
               ) : null}
-              <TableHead className="w-auto">Resource</TableHead>
+              <TableHead className="w-64">Resource</TableHead>
               <TableHead className="w-24">Status</TableHead>
               <TableHead className="hidden w-20 sm:table-cell">Duration</TableHead>
               <TableHead className="hidden w-32 md:table-cell">Tags</TableHead>
@@ -716,7 +716,7 @@ export default function SessionLibraryManager() {
                         />
                       </TableCell>
                     ) : null}
-                    <TableCell className="max-w-0 py-4">
+                    <TableCell className="w-64 py-4">
                       <p className="truncate font-semibold" title={session.title}>
                         {session.title}
                       </p>
@@ -831,6 +831,7 @@ export default function SessionLibraryManager() {
             </Label>
             <Select
               id="session-page-size"
+              accent="black"
               className="h-9 w-28 rounded-md py-0 pl-3 pr-8 text-sm"
               options={PAGE_SIZE_LABELS}
               value={`${pageSize} / page`}
@@ -865,7 +866,7 @@ export default function SessionLibraryManager() {
       ) : null}
 
       <Sheet open={Boolean(detailSession)} onOpenChange={(open) => !open && setDetailSession(null)}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
+        <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {detailSession ? (
             <>
               <SheetHeader>
@@ -921,7 +922,7 @@ export default function SessionLibraryManager() {
 
                 {canManage && detailSession.status === "READY" ? (
                   <Button
-                    className="w-full"
+                    className="w-full bg-[#191919] bg-none hover:bg-[#27272A]"
                     onClick={() => {
                       setAttachTarget(detailSession);
                       setDetailSession(null);
@@ -931,7 +932,7 @@ export default function SessionLibraryManager() {
                   </Button>
                 ) : canDelete && detailSession.status === "ARCHIVED" && detailSession.usage.courseCount === 0 ? (
                   <Button
-                    className="w-full bg-linear-to-r from-red-600 to-rose-500 text-white hover:opacity-90"
+                    className="w-full bg-[#E91717] text-white hover:bg-[#C91414]"
                     onClick={() => {
                       setDeleteConfirmation("");
                       setDeleteTarget(detailSession);
@@ -994,7 +995,7 @@ export default function SessionLibraryManager() {
       </Sheet>
 
       <Dialog open={formOpen} onOpenChange={(open) => (open ? setFormOpen(true) : reset())}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[92vh] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit library resource" : "Create library resource"}</DialogTitle>
             <DialogDescription>
@@ -1008,9 +1009,9 @@ export default function SessionLibraryManager() {
                       className={cn(
                         "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
                         wizardStep === step
-                          ? "bg-linear-to-r from-blue-600 to-indigo-500 text-white"
+                          ? "bg-[#191919] text-white"
                           : wizardStep > step
-                            ? "bg-primary/10 text-primary"
+                            ? "bg-zinc-100 text-[#191919]"
                             : "bg-muted text-muted-foreground",
                       )}
                     >
@@ -1026,7 +1027,7 @@ export default function SessionLibraryManager() {
                     </span>
                   </div>
                   {index < WIZARD_STEPS.length - 1 ? (
-                    <div className={cn("h-px flex-1", wizardStep > step ? "bg-primary/40" : "bg-border")} />
+                    <div className={cn("h-px flex-1", wizardStep > step ? "bg-[#191919]/40" : "bg-border")} />
                   ) : null}
                 </Fragment>
               ))}
@@ -1071,6 +1072,7 @@ export default function SessionLibraryManager() {
                   <div className="space-y-2">
                     <Label htmlFor="session-status">Status</Label>
                     <Select
+                      accent="black"
                       id="session-status"
                       className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                       options={isEditingUsed ? [STATUS_SELECT_LABELS.READY] : [STATUS_SELECT_LABELS.DRAFT, STATUS_SELECT_LABELS.READY]}
@@ -1241,11 +1243,19 @@ export default function SessionLibraryManager() {
                 )}
               </Button>
               {wizardStep < 3 ? (
-                <Button type="submit" disabled={wizardStep === 1 ? !isStep1Valid : !isStep2Valid}>
+                <Button
+                  type="submit"
+                  className="bg-[#191919] bg-none hover:bg-[#27272A]"
+                  disabled={wizardStep === 1 ? !isStep1Valid : !isStep2Valid}
+                >
                   Next <ArrowRight className="ml-2 size-4" aria-hidden="true" />
                 </Button>
               ) : (
-                <Button disabled={createState.isLoading || updateState.isLoading} type="submit">
+                <Button
+                  disabled={createState.isLoading || updateState.isLoading}
+                  type="submit"
+                  className="bg-[#191919] bg-none hover:bg-[#27272A]"
+                >
                   {(createState.isLoading || updateState.isLoading) ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
@@ -1267,7 +1277,11 @@ export default function SessionLibraryManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={archiveState.isLoading} onClick={confirmArchive}>
+            <AlertDialogAction
+              disabled={archiveState.isLoading}
+              onClick={confirmArchive}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
+            >
               Archive
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1289,6 +1303,7 @@ export default function SessionLibraryManager() {
             <AlertDialogAction
               disabled={updateState.isLoading}
               onClick={() => void confirmPendingSave()}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
             >
               {updateState.isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save changes
@@ -1307,7 +1322,11 @@ export default function SessionLibraryManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={bulkArchiveState.isLoading} onClick={confirmBulkArchive}>
+            <AlertDialogAction
+              disabled={bulkArchiveState.isLoading}
+              onClick={confirmBulkArchive}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
+            >
               Archive selected
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1419,7 +1438,11 @@ export default function SessionLibraryManager() {
                 ))
               )}
             </div>
-            <Button disabled={attachCourseIds.size === 0 || attaching} onClick={confirmAttach}>
+            <Button
+              disabled={attachCourseIds.size === 0 || attaching}
+              onClick={confirmAttach}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
+            >
               {attaching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
               {attachCourseIds.size > 1 ? `Attach to ${attachCourseIds.size} intakes` : "Attach session"}
             </Button>

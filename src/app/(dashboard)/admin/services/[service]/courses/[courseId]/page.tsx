@@ -6,7 +6,6 @@ import {
   Archive,
   ArchiveRestore,
   Award,
-  BookOpen,
   CheckCircle2,
   DollarSign,
   ExternalLink,
@@ -39,6 +38,13 @@ import { AdminCatalogBreadcrumbs } from "@/features/catalog/components/AdminCata
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
 import { CatalogStatusBadge } from "@/features/catalog/components/CatalogStatusBadge";
 import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile";
+import { CHART_BODY_HEIGHT, PaymentsProjectsSummary } from "@/features/catalog/components/admin/PaymentsProjectsSummary";
+import { Bar, BarChart, XAxis } from "recharts";
+import { StatusDonutCard } from "@/components/dataviz/StatusDonutCard";
+import { Section } from "@/components/dataviz/StatPrimitives";
+import { ENROLLMENT_STATUS_COLORS, TREND_COLOR } from "@/components/dataviz/chartColors";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { CourseForm } from "@/features/catalog/components/CourseForm";
 import { IntakeTable } from "@/features/catalog/components/IntakeTable";
 import {
@@ -57,11 +63,16 @@ import { hasPermission, PERMISSIONS } from "@/lib/access";
 import { getApiErrorMessage } from "@/lib/api";
 import { Icons } from "@/lib/icons";
 import { COURSE_ENROLLMENT_STATUS_STYLES } from "@/lib/statusColors";
-import { formatLKR } from "@/lib/utils";
+import { cn, formatLKR } from "@/lib/utils";
+import { AL_STREAMS } from "@/lib/constants";
 
 function enrollmentStatusLabel(status: string) {
   return status.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
+
+const AL_STREAM_CHART_CONFIG = {
+  count: { label: "Students", color: TREND_COLOR },
+} satisfies ChartConfig;
 
 export default function CourseDetailPage() {
   const router = useRouter();
@@ -102,6 +113,11 @@ export default function CourseDetailPage() {
   const publicHref = `/${service.slug}/${course.slug}`;
   const isArchived = course.status === "ARCHIVED";
   const canDeleteThisCourse = canDelete && isArchived && course.intakeCount === 0;
+  // Only 5 possible streams, so always list every stream — including ones
+  // with zero enrolled students — rather than only the ones with data.
+  const alStreamCounts = new Map(analytics?.alStreams.map((row) => [row.stream, row.count]));
+  const alStreamRows = AL_STREAMS.map((stream) => ({ stream, count: alStreamCounts.get(stream) ?? 0 }));
+  const alStreamTotal = alStreamRows.reduce((sum, row) => sum + row.count, 0);
 
   const togglePublish = async () => {
     try {
@@ -154,6 +170,11 @@ export default function CourseDetailPage() {
             </Badge>
             <Badge variant="outline" className="text-xs">{course.level}</Badge>
             <CatalogStatusBadge status={course.status} />
+            {course.certificateEnabled ? (
+              <Badge variant="outline" className="gap-1 text-xs">
+                <Award className="size-3.5" aria-hidden="true" /> CERTIFICATE
+              </Badge>
+            ) : null}
           </>
         }
         action={
@@ -199,99 +220,88 @@ export default function CourseDetailPage() {
         }
       />
 
-      {/* A grid, not flex-wrap: 4 tiles at min-w-40/flex-1 wrap unevenly
-          (e.g. 3-then-1) in the pre-sidebar viewport range — the same
-          pattern fixed on the admin/student dashboards. 2x2 below `sm`,
-          one row from `sm` up; min-w-0 overrides the shared component's
-          own 160px floor so a narrow-phone cell can still shrink enough. */}
+      {/* Grid, not flex-wrap: fixed-width tiles in a flex-wrap row wrap
+          unevenly (e.g. 3-then-1) at whatever width happens to fall short by
+          one tile — a real grid always divides evenly into its column
+          count at every width instead. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <CourseKpiTile className="min-w-0" icon={Users} label="Total learners" value={totalLearners} secondary="Across every intake" />
-        <CourseKpiTile className="min-w-0" icon={Layers} label="Intakes" value={course.intakeCount} secondary="Ever run" />
+        <CourseKpiTile size="sm" className="w-full min-w-0" icon={Users} label="Total learners" value={totalLearners} />
+        <CourseKpiTile size="sm" className="w-full min-w-0" icon={Layers} label="Intakes" value={course.intakeCount} />
         <CourseKpiTile
-          className="min-w-0"
+          size="sm"
+          className="w-full min-w-0"
           icon={DollarSign}
           label="Total revenue"
           value={analytics ? formatLKR(analytics.revenue.total) : "—"}
-          secondary="All-time, this program"
         />
         <CourseKpiTile
-          className="min-w-0"
+          size="sm"
+          className="w-full min-w-0"
           icon={CheckCircle2}
           label="Completion rate"
           value={analytics?.successRate.completedPct != null ? `${analytics.successRate.completedPct}%` : "—"}
-          secondary={
-            analytics && course.certificateEnabled
-              ? `${analytics.successRate.certificatesIssued} / ${analytics.successRate.certificateEligible} certified`
-              : undefined
-          }
         />
       </div>
 
-      {/* lg not md: md (768px) is exactly where the dashboard's own sidebar
-          appears, so switching to 2 columns in that same instant compounds
-          into a sharper squeeze than a graduated step-down. */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-4 rounded-md border border-input bg-card p-4">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Program details</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{course.description}</p>
-          </div>
-          {(
-            [
-              ["Highlights", course.highlights],
-              ["Skills", course.skills],
-              ["Prerequisites", course.prerequisites],
-            ] as const
-          ).map(([label, list]) =>
-            list.length > 0 ? (
-              <div key={label} className="space-y-1.5">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {list.map((item) => (
-                    <Badge key={item} variant="secondary" className="text-xs">
-                      {item}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ) : null,
-          )}
+      {/* No card around the thumbnail and no Highlights/Skills/Prerequisites/
+          Full payment table beside it anymore — that table never held up
+          across screen widths and wasn't essential info. Just the thumbnail
+          and the A/L stream card now, sharing one row — but only at lg+
+          (1024px). Between roughly 640-1023px there's enough room for the
+          thumbnail's fixed aspect-video width to look right, but not enough
+          left over for the A/L stream chart's 5 bars to render without
+          getting cut off/overflowing — so both stay full-width and stacked
+          all the way up through that range, and only go side-by-side once
+          lg actually has room for both. The thumbnail's height (lg:h-64) is
+          a fixed value close to the A/L stream card's own natural height
+          (title + description + chart) rather than derived via flex-stretch
+          — a stretched (implicit) height doesn't reliably drive
+          aspect-video's width calculation the way an explicit height class
+          does, which previously rendered as a badly squeezed thumbnail. */}
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-md lg:h-64 lg:w-auto">
+          <ThumbnailImage src={course.thumbnailUrl} alt={course.title} label={course.title} className="h-full w-full object-cover" />
+          <span className="absolute bottom-2 left-2 rounded-full bg-[#191919] px-2.5 py-1 text-xs font-semibold text-white">
+            {service.accessType === "FREE" ? "Free" : formatLKR(course.price)}
+          </span>
         </div>
 
-        <div className="space-y-3 rounded-md border border-input bg-card p-4">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <Award className="size-4 text-muted-foreground" aria-hidden="true" /> Policy
-          </h2>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Price</span>
-              <span className="font-medium">{service.accessType === "FREE" ? "Free" : formatLKR(course.price)}</span>
-            </div>
-            {service.accessType === "PAID" && course.discountAmount > 0 ? (
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Full-payment discount</span>
-                <span className="font-medium">{formatLKR(course.discountAmount)}</span>
-              </div>
-            ) : null}
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Certificate policy</span>
-              <span className="font-medium">{course.certificateEnabled ? "Issues certificates" : "No certificates"}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-muted-foreground">Intake code prefix</span>
-              <span className="font-mono font-medium">{course.intakeCodePrefix}</span>
-            </div>
-          </div>
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <BookOpen className="size-3.5" aria-hidden="true" /> All locked after creation — every intake inherits them.
+        <Section title="A/L stream" className="w-full flex-1">
+          <p className="text-xs text-muted-foreground">
+            {alStreamTotal > 0 ? `${alStreamTotal} students with a known stream.` : "No enrolled students yet."}
           </p>
-        </div>
+          <ChartContainer config={AL_STREAM_CHART_CONFIG} className={cn(CHART_BODY_HEIGHT, "w-full")}>
+            <BarChart data={alStreamRows} barCategoryGap="30%">
+              <XAxis dataKey="stream" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+              <Bar dataKey="count" radius={4} maxBarSize={40} fill={TREND_COLOR} />
+            </BarChart>
+          </ChartContainer>
+        </Section>
       </div>
+
+      {analytics ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatusDonutCard
+            title="Enrollment status"
+            className="w-full"
+            bodyClassName={CHART_BODY_HEIGHT}
+            order={["ACTIVE", "COMPLETED", "CANCELLED"] as const}
+            counts={{ ACTIVE: analytics.enrollments.active, COMPLETED: analytics.enrollments.completed, CANCELLED: analytics.enrollments.cancelled }}
+            colors={ENROLLMENT_STATUS_COLORS}
+          />
+          <PaymentsProjectsSummary
+            payments={analytics.payments}
+            projects={analytics.projects}
+            certificates={{ issued: analytics.successRate.certificatesIssued, eligible: analytics.successRate.certificateEligible }}
+          />
+        </div>
+      ) : null}
 
       <IntakeTable course={course} intakes={intakes} serviceSlug={service.slug} />
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent className="max-h-[92vh] sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit course</DialogTitle>
             <DialogDescription>

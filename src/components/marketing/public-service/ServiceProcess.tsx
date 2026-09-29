@@ -6,6 +6,8 @@ export function ServiceProcess({
   processSection,
   accent,
 }: Pick<PublicServiceConfig, "processSection" | "accent">) {
+  if (processSection.steps.length === 0) return null;
+
   return (
     <section className="mb-16 sm:mb-24">
       <Reveal className="max-w-2xl mb-8 sm:mb-10">

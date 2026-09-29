@@ -145,10 +145,17 @@ function CurriculumCard({
           <p className="truncate font-semibold" title={item.session.title}>
             {item.session.title}
           </p>
-          <p className="text-xs text-muted-foreground">
+          {/* Duration is the least essential line here — hide it first when
+              the row is too narrow to show everything, rather than letting
+              the badge/menu get squeezed or the row overflow. */}
+          <p className="hidden text-xs text-muted-foreground sm:block">
             {item.session.durationMinutes ? `${item.session.durationMinutes} minutes` : "Duration not set"}
           </p>
         </div>
+        <Badge variant="outline" className={cn("hidden shrink-0 sm:inline-flex", statusClass[item.deliveryStatus])}>
+          {item.deliveryStatus.replace("_", " ")}
+        </Badge>
+        <span className="hidden shrink-0 font-mono text-xs text-muted-foreground sm:inline">{item.usage.completionCount} done</span>
         {readOnly ? (
           <span className="shrink-0 text-xs text-muted-foreground">Read only</span>
         ) : (
@@ -178,18 +185,12 @@ function CurriculumCard({
           </DropdownMenu>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2 pl-9 text-xs text-muted-foreground">
-        <Badge variant="outline" className={cn("shrink-0", statusClass[item.deliveryStatus])}>
-          {item.deliveryStatus.replace("_", " ")}
-        </Badge>
-        {item.availableAt ? (
-          <span className="flex shrink-0 items-center gap-1">
-            <Clock className="size-3" aria-hidden="true" />
-            {format(new Date(item.availableAt), "MMM d, yyyy · h:mm a")}
-          </span>
-        ) : null}
-        <span className="shrink-0 font-mono">{item.usage.completionCount} done</span>
-      </div>
+      {item.availableAt ? (
+        <div className="flex items-center gap-1 pl-9 text-xs text-muted-foreground">
+          <Clock className="size-3" aria-hidden="true" />
+          {format(new Date(item.availableAt), "MMM d, yyyy · h:mm a")}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -365,16 +366,16 @@ export default function CourseCurriculumManager({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Input
           aria-label="Highlight sessions by title"
           value={q}
           onChange={(event) => setQ(event.target.value)}
           placeholder="Highlight by session title"
-          className="h-9 w-64 shrink-0"
+          className="h-9 w-full sm:w-64 sm:shrink-0"
         />
         {!readOnly ? (
-          <Button className="shrink-0" onClick={() => setAttachDialogOpen(true)}>
+          <Button className="w-full sm:w-auto sm:shrink-0 bg-[#191919] bg-none hover:bg-[#27272A]" onClick={() => setAttachDialogOpen(true)}>
             <Link2 /> Attach session
           </Button>
         ) : null}
@@ -539,7 +540,11 @@ export default function CourseCurriculumManager({
                 ))
               )}
             </div>
-            <Button disabled={selectedSessionIds.size === 0 || attaching} onClick={attachSelected}>
+            <Button
+              disabled={selectedSessionIds.size === 0 || attaching}
+              onClick={attachSelected}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
+            >
               {attaching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
               {selectedSessionIds.size > 1 ? `Attach ${selectedSessionIds.size} sessions` : "Attach session"}
             </Button>
@@ -579,7 +584,7 @@ export default function CourseCurriculumManager({
       />
 
       <Sheet open={Boolean(detailItem)} onOpenChange={(open) => !open && setDetailItem(null)}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
+        <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {detailItem ? (
             <>
               <SheetHeader>

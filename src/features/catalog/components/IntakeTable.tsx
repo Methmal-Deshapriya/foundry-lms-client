@@ -55,6 +55,70 @@ function statusLabel(status: IntakeStatus) {
   return status.replace("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+// Shared between the desktop table row and the narrow-screen card below.
+function IntakeActionsMenu({
+  intake,
+  courseReadOnly,
+  canPublish,
+  canDelete,
+  isChangingStatus,
+  onEdit,
+  onMove,
+  onDelete,
+}: {
+  intake: AdminIntake;
+  courseReadOnly: boolean;
+  canPublish: boolean;
+  canDelete: boolean;
+  isChangingStatus: boolean;
+  onEdit: () => void;
+  onMove: (target: IntakeStatus) => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={`Actions for ${intake.code}`} data-no-row-navigation>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          disabled={courseReadOnly || ["COMPLETED", "CANCELLED", "ARCHIVED"].includes(intake.status)}
+          onSelect={onEdit}
+        >
+          <Pencil /> Edit intake setup
+        </DropdownMenuItem>
+        {transitions[intake.status].map((target) => (
+          <DropdownMenuItem
+            key={target}
+            disabled={
+              (courseReadOnly && target === "OPEN_ACTIVE") ||
+              isChangingStatus ||
+              (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED"].includes(target) && !canPublish)
+            }
+            onSelect={() => onMove(target)}
+          >
+            {statusLabel(target)}
+          </DropdownMenuItem>
+        ))}
+        {canDelete &&
+        intake.status === "ARCHIVED" &&
+        intake.sessionCount === 0 &&
+        intake.enrollmentCount === 0 &&
+        intake.projectCount === 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+              <Trash2 /> Delete permanently
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function IntakeTable({
   course,
   intakes,
@@ -84,9 +148,18 @@ export function IntakeTable({
     }
   };
 
+  const removeIntake = async (intake: AdminIntake) => {
+    try {
+      await deleteIntake(intake.id).unwrap();
+      toast.success("Intake deleted");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Could not delete intake"));
+    }
+  };
+
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold">Intakes</h2>
           <p className="text-sm text-muted-foreground">
@@ -96,6 +169,7 @@ export function IntakeTable({
         <Button
           disabled={courseReadOnly || evergreenLocked}
           onClick={() => setIntakeDialog({})}
+          className="w-full bg-[#191919] bg-none hover:bg-[#27272A] sm:w-auto"
         >
           <Plus /> New intake
         </Button>
@@ -105,7 +179,7 @@ export function IntakeTable({
         <Table className="table-fixed">
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Intake</TableHead>
+              <TableHead className="w-40 px-4">Intake</TableHead>
               <TableHead className="w-28">Dates</TableHead>
               <TableHead className="w-24">Curriculum</TableHead>
               <TableHead className="w-24">Learners</TableHead>
@@ -117,7 +191,12 @@ export function IntakeTable({
             {intakes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-32 text-center">
-                  <Button variant="link" disabled={courseReadOnly} onClick={() => setIntakeDialog({})}>
+                  <Button
+                    variant="link"
+                    className="text-[#191919] hover:text-[#27272A]"
+                    disabled={courseReadOnly}
+                    onClick={() => setIntakeDialog({})}
+                  >
                     + Create the first intake
                   </Button>
                 </TableCell>
@@ -133,7 +212,7 @@ export function IntakeTable({
                     if (event.key === "Enter") router.push(`${base}/${intake.id}`);
                   }}
                 >
-                  <TableCell className="max-w-0 py-4">
+                  <TableCell className="w-40 py-4">
                     <p className="truncate font-semibold" title={intake.intakeKey}>
                       {intake.intakeKey}
                     </p>
@@ -161,54 +240,16 @@ export function IntakeTable({
                     <Badge className={INTAKE_STATUS_STYLES[intake.status]}>{statusLabel(intake.status)}</Badge>
                   </TableCell>
                   <TableCell className="pr-4 text-right" onClick={(event) => event.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label={`Actions for ${intake.code}`}>
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          disabled={courseReadOnly || ["COMPLETED", "CANCELLED", "ARCHIVED"].includes(intake.status)}
-                          onSelect={() => setIntakeDialog({ intake })}
-                        >
-                          <Pencil /> Edit intake setup
-                        </DropdownMenuItem>
-                        {transitions[intake.status].map((target) => (
-                          <DropdownMenuItem
-                            key={target}
-                            disabled={
-                              (courseReadOnly && target === "OPEN_ACTIVE") ||
-                              statusState.isLoading ||
-                              (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED"].includes(target) && !canPublish)
-                            }
-                            onSelect={() => move(intake, target)}
-                          >
-                            {statusLabel(target)}
-                          </DropdownMenuItem>
-                        ))}
-                        {canDelete &&
-                        intake.status === "ARCHIVED" &&
-                        intake.sessionCount === 0 &&
-                        intake.enrollmentCount === 0 &&
-                        intake.projectCount === 0 ? (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onSelect={() =>
-                                deleteIntake(intake.id)
-                                  .unwrap()
-                                  .then(() => toast.success("Intake deleted"))
-                                  .catch((error) => toast.error(getApiErrorMessage(error, "Could not delete intake")))
-                              }
-                            >
-                              <Trash2 /> Delete permanently
-                            </DropdownMenuItem>
-                          </>
-                        ) : null}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <IntakeActionsMenu
+                      intake={intake}
+                      courseReadOnly={courseReadOnly}
+                      canPublish={canPublish}
+                      canDelete={canDelete}
+                      isChangingStatus={statusState.isLoading}
+                      onEdit={() => setIntakeDialog({ intake })}
+                      onMove={(target) => move(intake, target)}
+                      onDelete={() => removeIntake(intake)}
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -217,8 +258,9 @@ export function IntakeTable({
         </Table>
       </div>
 
+
       <Dialog open={Boolean(intakeDialog)} onOpenChange={(open) => !open && setIntakeDialog(null)}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent className="max-h-[92vh] sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>{intakeDialog?.intake ? "Edit intake setup" : "Create a new intake"}</DialogTitle>
             <DialogDescription>

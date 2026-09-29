@@ -11,14 +11,44 @@ import {
   Users,
 } from "lucide-react";
 import { useGetPublicLearningServicesQuery } from "@/features/catalog/catalogApi";
+import { ThumbnailFallback } from "@/components/ui/thumbnail-fallback";
+import { useFallbackImage } from "@/hooks/use-fallback-image";
 
 const ICONS = [GraduationCap, BookOpen, Users];
 
+// The 3 services that predate this page's admin-uploaded card images had a
+// bundled local asset baked into the frontend instead. They're kept here as
+// a fallback for exactly those 3 slugs — used whenever cardImageUrl is
+// empty (never uploaded) or fails to load at runtime (e.g. an R2 outage),
+// see useFallbackImage below.
 const SERVICE_IMAGES: Record<string, { src: string; alt: string }> = {
   bootcamps: { src: "/bootcamps1.webp", alt: "A student coding on a laptop for the Bootcamps program" },
   "pretech-courses": { src: "/pretech1.webp", alt: "A graduating student ready for university with the PreTech Courses program" },
   "free-learning": { src: "/freelearning1.webp", alt: "A student taking a self-paced Free Learning course on a tablet" },
 };
+
+function ServiceCardImage({
+  cardImageUrl,
+  slug,
+  title,
+}: {
+  cardImageUrl: string | null;
+  slug: string;
+  title: string;
+}) {
+  const legacy = SERVICE_IMAGES[slug];
+  const image = useFallbackImage(cardImageUrl, legacy?.src);
+  if (!image) return <ThumbnailFallback label={title} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- external, admin-supplied R2 URL (or a locally bundled fallback); next/image's domain allowlist would need constant upkeep
+    <img
+      src={image.src}
+      alt={legacy?.alt ?? `${title} card image`}
+      onError={image.onError}
+      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+    />
+  );
+}
 
 export function Services() {
   const { data, isLoading, isError } = useGetPublicLearningServicesQuery();
@@ -26,9 +56,10 @@ export function Services() {
   const cards = learningServices.map((service, index) => ({
     href: `/${service.slug}`,
     icon: ICONS[index % ICONS.length],
-    image: SERVICE_IMAGES[service.slug],
+    slug: service.slug,
+    cardImageUrl: service.cardImageUrl,
     title: service.title,
-    description: service.description,
+    description: service.summary || service.description,
     tags: [
       service.accessType === "FREE" ? "Free access" : "Paid access",
       service.courseMode === "EVERGREEN" ? "Self-paced" : "Seasonal intakes",
@@ -83,23 +114,15 @@ export function Services() {
         ) : null}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-          {cards.map(({ href, icon: Icon, image, title, description, tags }) => (
+          {cards.map(({ href, icon: Icon, slug, cardImageUrl, title, description, tags }) => (
             <Link
               key={href}
               href={href}
               className="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all hover:border-zinc-300 hover:shadow-lg"
             >
-              {image && (
-                <div className="relative aspect-video w-full overflow-hidden bg-zinc-50">
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    sizes="(min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-              )}
+              <div className="relative aspect-video w-full overflow-hidden bg-zinc-50">
+                <ServiceCardImage cardImageUrl={cardImageUrl} slug={slug} title={title} />
+              </div>
               <div className="flex flex-1 flex-col p-5 sm:p-6">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-[#191919]">

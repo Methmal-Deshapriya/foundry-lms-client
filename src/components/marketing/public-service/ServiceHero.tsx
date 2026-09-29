@@ -1,7 +1,22 @@
 import React from "react";
-import Image from "next/image";
 import { Reveal } from "@/components/ui/reveal";
+import { ThumbnailFallback } from "@/components/ui/thumbnail-fallback";
+import { useFallbackImage } from "@/hooks/use-fallback-image";
 import type { PublicServiceConfig } from "./types";
+
+function HeroIllustration({ illustration, label }: { illustration: NonNullable<PublicServiceConfig["hero"]["illustration"]>; label: string }) {
+  const image = useFallbackImage(illustration.src, illustration.fallbackSrc);
+  if (!image) return <ThumbnailFallback label={label} className="rounded-2xl" />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- external, admin-supplied R2 URL (or a locally bundled fallback) with unknown dimensions; next/image needs both a domain allowlist and known dimensions
+    <img
+      src={image.src}
+      alt={image.src === illustration.fallbackSrc ? (illustration.fallbackAlt ?? illustration.alt) : illustration.alt}
+      onError={image.onError}
+      className="w-full h-auto rounded-2xl object-cover"
+    />
+  );
+}
 
 export function ServiceHero({ hero, accent }: Pick<PublicServiceConfig, "hero" | "accent">) {
   const hasIllustration = Boolean(hero.illustration);
@@ -45,14 +60,7 @@ export function ServiceHero({ hero, accent }: Pick<PublicServiceConfig, "hero" |
 
       {hero.illustration && (
         <div className="hidden lg:block relative">
-          <Image
-            src={hero.illustration.src}
-            alt={hero.illustration.alt}
-            width={hero.illustration.width}
-            height={hero.illustration.height}
-            className="w-full h-auto"
-            priority
-          />
+          <HeroIllustration illustration={hero.illustration} label={hero.eyebrow} />
         </div>
       )}
     </Reveal>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { ListChecks, Plus } from "lucide-react";
+import { CheckCircle2, DollarSign, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -122,56 +122,54 @@ export default function IntakeWorkspacePage() {
                 </Badge>
               }
               action={
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  {transitions[intake.status].map((status) => (
-                    <Button
-                      key={status}
-                      size="sm"
-                      variant={status === "CANCELLED" || status === "ARCHIVED" ? "destructive" : "outline"}
-                      disabled={
-                        (catalogLocked && status === "OPEN_ACTIVE") ||
-                        statusState.isLoading ||
-                        (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED"].includes(status) && !canPublish)
-                      }
-                      onClick={() => move(status)}
-                    >
-                      Move to {status.replace("_", " ").toLowerCase()}
-                    </Button>
-                  ))}
-                </div>
+                transitions[intake.status].length > 0 ? (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                    {transitions[intake.status].map((status) => (
+                      <Button
+                        key={status}
+                        size="sm"
+                        variant={status === "CANCELLED" || status === "ARCHIVED" ? "destructive" : "outline"}
+                        className="w-full sm:w-auto"
+                        disabled={
+                          (catalogLocked && status === "OPEN_ACTIVE") ||
+                          statusState.isLoading ||
+                          (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED"].includes(status) && !canPublish)
+                        }
+                        onClick={() => move(status)}
+                      >
+                        Move to {status.replace("_", " ").toLowerCase()}
+                      </Button>
+                    ))}
+                  </div>
+                ) : undefined
               }
             />
 
-            {/* A grid, not flex-wrap: 3 tiles at min-w-40/flex-1 wrap
-                unevenly (2-then-1) right around the width the sidebar
-                appears — the same pattern fixed on the other catalog
-                pages. min-w-0 overrides the shared component's own 160px
-                floor so a narrow-phone cell can still shrink enough. */}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {/* Grid, not flex-wrap: fixed-width tiles in a flex-wrap row
+                wrap unevenly (e.g. 3-then-1) at whatever width happens to
+                fall short by one tile — a real grid always divides evenly
+                into its column count at every width instead. */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <CourseKpiTile
-                className="min-w-0"
+                size="sm"
+                className="w-full min-w-0"
+                icon={Users}
                 label="Enrolled"
                 value={analytics ? `${enrolledCount} / ${analytics.enrollments.capacity ?? "∞"}` : "—"}
-                secondary={
-                  analytics && analytics.enrollments.cancelled > 0
-                    ? `+${analytics.enrollments.cancelled} cancelled`
-                    : undefined
-                }
               />
               <CourseKpiTile
-                className="min-w-0"
+                size="sm"
+                className="w-full min-w-0"
+                icon={DollarSign}
                 label="Revenue"
                 value={analytics ? formatLKR(analytics.revenue.total) : "—"}
               />
               <CourseKpiTile
-                className="min-w-0"
+                size="sm"
+                className="w-full min-w-0"
+                icon={CheckCircle2}
                 label="Success rate"
                 value={analytics?.successRate.completedPct != null ? `${analytics.successRate.completedPct}%` : "—"}
-                secondary={
-                  analytics && intake.certificateEnabled
-                    ? `${analytics.successRate.certificatesIssued} / ${analytics.successRate.certificateEligible} certified`
-                    : undefined
-                }
               />
             </div>
           </div>
@@ -188,15 +186,19 @@ export default function IntakeWorkspacePage() {
           </TabsList>
         </PageToolbarPortal>
 
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold">Performance overview</h2>
+            <p className="text-sm text-muted-foreground">
+              Enrollment status, revenue, payments, and completion trends for this intake.
+            </p>
+          </div>
           <CourseOverviewAnalytics intakeId={intake.id} />
         </TabsContent>
 
         <TabsContent value="sessions" className="space-y-6">
           <div>
-            <h2 className="flex items-center gap-2 text-xl font-semibold">
-              <ListChecks className="size-5 text-primary" aria-hidden="true" /> Curriculum and delivery
-            </h2>
+            <h2 className="text-xl font-semibold">Curriculum and delivery</h2>
             <p className="text-sm text-muted-foreground">
               Every attached row has its own order and learner visibility for this intake.
             </p>
@@ -205,7 +207,7 @@ export default function IntakeWorkspacePage() {
         </TabsContent>
 
         <TabsContent value="enrollments" className="space-y-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Learner roster</h2>
               <p className="text-sm text-muted-foreground">
@@ -213,7 +215,7 @@ export default function IntakeWorkspacePage() {
               </p>
             </div>
             {intake.accessType === "PAID" && intake.status === "OPEN_ACTIVE" ? (
-              <Button onClick={() => setEnrollDialog(true)}>
+              <Button onClick={() => setEnrollDialog(true)} className="w-full bg-[#191919] bg-none hover:bg-[#27272A] sm:w-auto">
                 <Plus /> Enroll learners
               </Button>
             ) : null}
@@ -242,17 +244,29 @@ export default function IntakeWorkspacePage() {
           </TabsContent>
         ) : null}
 
-        <TabsContent value="certificates">
+        <TabsContent value="certificates" className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold">Certificate issuance</h2>
+            <p className="text-sm text-muted-foreground">
+              Track who&apos;s eligible and issue or revoke certificates for this intake&apos;s completed learners.
+            </p>
+          </div>
           <CourseCertificatesTab intakeId={intake.id} />
         </TabsContent>
 
-        <TabsContent value="projects">
+        <TabsContent value="projects" className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold">Student projects</h2>
+            <p className="text-sm text-muted-foreground">
+              Review and approve project submissions from this intake&apos;s learners.
+            </p>
+          </div>
           <CourseProjectsTab intakeId={intake.id} />
         </TabsContent>
       </Tabs>
 
       <Dialog open={enrollDialog} onOpenChange={setEnrollDialog}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent className="max-h-[90vh] sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Enroll paid learners</DialogTitle>
             <DialogDescription>

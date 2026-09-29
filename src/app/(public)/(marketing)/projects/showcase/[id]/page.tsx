@@ -6,6 +6,7 @@ import { ExternalLink, Github, Globe, Loader2 } from "lucide-react";
 import { useGetPublicProjectDetailsQuery, useGetPublicShowcaseQuery } from "@/features/projects/projectsApi";
 import type { StudentProject } from "@/features/projects/projectsTypes";
 import { PageSlide } from "@/components/marketing/catalog/PageSlide";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 
 /**
  * Public project detail — the "anyone can view this" counterpart to the
@@ -64,16 +65,7 @@ export default function PublicProjectShowcasePage({
         {studentName ? <p className="mt-2 text-[#71717A]">By {studentName}</p> : null}
 
         <div className="mt-8 aspect-video w-full overflow-hidden rounded-lg">
-          {project.thumbnailUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary student-supplied URL; next/image's domain allowlist would need constant upkeep
-            <img src={project.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[#191919]">
-              <span className="line-clamp-2 px-6 text-center text-lg font-semibold text-white">
-                {project.title}
-              </span>
-            </div>
-          )}
+          <ThumbnailImage src={project.thumbnailUrl} alt="" label={project.title} className="h-full w-full object-cover" />
         </div>
 
         {project.description ? (
@@ -166,19 +158,13 @@ function ShowcaseProjectCard({ project }: { project: StudentProject }) {
       href={`/projects/showcase/${project.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-lg"
     >
-      <div className="relative aspect-video w-full overflow-hidden bg-[#191919]">
-        {project.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary student-supplied URL; next/image's domain allowlist would need constant upkeep
-          <img
-            src={project.thumbnailUrl}
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center px-4">
-            <span className="line-clamp-2 text-center text-sm font-semibold text-white">{project.title}</span>
-          </div>
-        )}
+      <div className="relative aspect-video w-full overflow-hidden">
+        <ThumbnailImage
+          src={project.thumbnailUrl}
+          alt=""
+          label={project.title}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="line-clamp-1 text-base font-semibold text-[#191919]">{project.title}</h3>

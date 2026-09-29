@@ -10,6 +10,8 @@ export function ServiceFaq({ faqSection, accent }: Pick<PublicServiceConfig, "fa
   const [openIndex, setOpenIndex] = React.useState<number | null>(null);
   const shouldReduceMotion = useReducedMotion();
 
+  if (faqSection.items.length === 0) return null;
+
   return (
     <section className="mb-16 sm:mb-24">
       <Reveal className="max-w-2xl mx-auto text-center mb-6 sm:mb-8">

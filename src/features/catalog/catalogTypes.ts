@@ -16,6 +16,15 @@ export interface PublicLearningService {
   paymentRequirement: "REQUIRED" | "NOT_REQUIRED";
   sortOrder: number;
   courseCount: number;
+  /** Short home-page-card blurb — falls back to `description` when empty (legacy rows only; required going forward). */
+  summary: string | null;
+  heroHeadline: string | null;
+  /** Exactly 2 bespoke marketing tags shown on the detail-page hero, alongside the auto course-count badge. */
+  heroTags: string[];
+  cardImageUrl: string | null;
+  heroImageUrl: string | null;
+  processSteps: { title: string; description: string }[];
+  faqItems: { question: string; answer: string }[];
 }
 
 export interface PublicCourseCard {
@@ -53,6 +62,13 @@ export interface PublicCourseDetail extends PublicCourseCard {
   skills: string[];
   prerequisites: string[];
   thumbnailUrl: string | null;
+  /** "Who this course is for" — a short descriptive sentence. */
+  targetAudience: string | null;
+  /** "Why pursue this course" — rendered as numbered steps. */
+  whyPursueSteps: { title: string; description: string }[];
+  /** YouTube URL, played the same way as the landing page's AboutVideo. */
+  explainerVideoUrl: string | null;
+  explainerVideoThumbnailUrl: string | null;
   service: { slug: LearningServiceSlug; title: string };
   openIntake: PublicOpenIntake | null;
 }

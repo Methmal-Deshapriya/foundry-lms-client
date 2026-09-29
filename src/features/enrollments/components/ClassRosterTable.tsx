@@ -77,7 +77,7 @@ const STATUS_PILLS: { key: EnrollmentStatus | ""; label: string; countKey: keyof
   { key: "CANCELLED", label: "Cancelled", countKey: "cancelled" },
 ];
 const PILL_ACTIVE_CLASS: Record<EnrollmentStatus | "", string> = {
-  "": "border-primary bg-primary/10 text-primary",
+  "": "border-zinc-300 bg-zinc-100 text-[#191919]",
   ACTIVE: "border-sky-500/20 bg-sky-500/10 text-sky-700",
   COMPLETED: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700",
   CANCELLED: "border-destructive/20 bg-destructive/10 text-destructive",
@@ -124,6 +124,74 @@ function certificateCellState(entry: ClassRosterEntry, certificateEnabled: boole
 
 function label(value: string) {
   return value.charAt(0) + value.slice(1).toLowerCase().replace("_", " ");
+}
+
+// Shared between the desktop table row and the narrow-screen card below.
+function RosterActionsMenu({
+  entry,
+  nextStatuses,
+  canRecordPayment,
+  canIssueCertificate,
+  isIssuing,
+  onChangeStatus,
+  onRecordPayment,
+  onIssueCertificate,
+}: {
+  entry: ClassRosterEntry;
+  nextStatuses: EnrollmentStatus[];
+  canRecordPayment: boolean;
+  canIssueCertificate: boolean;
+  isIssuing: boolean;
+  onChangeStatus: (status: EnrollmentStatus) => void;
+  onRecordPayment: () => void;
+  onIssueCertificate: () => void;
+}) {
+  const hasActions = nextStatuses.length > 0 || canRecordPayment || canIssueCertificate;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Actions for ${entry.user?.firstName} ${entry.user?.lastName}`}
+          data-no-row-navigation
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {hasActions ? (
+          <>
+            {nextStatuses.map((status) => {
+              const Icon = STATUS_ACTION_ICON[status];
+              return (
+                <DropdownMenuItem
+                  key={status}
+                  variant={status === "CANCELLED" ? "destructive" : "default"}
+                  onSelect={() => onChangeStatus(status)}
+                >
+                  <Icon /> {STATUS_ACTION_LABEL[status]}
+                </DropdownMenuItem>
+              );
+            })}
+            {nextStatuses.length > 0 && (canRecordPayment || canIssueCertificate) ? <DropdownMenuSeparator /> : null}
+            {canRecordPayment ? (
+              <DropdownMenuItem onSelect={onRecordPayment}>
+                <Wallet /> Record remaining payment
+              </DropdownMenuItem>
+            ) : null}
+            {canIssueCertificate ? (
+              <DropdownMenuItem onSelect={onIssueCertificate} disabled={isIssuing}>
+                <Award /> Issue certificate
+              </DropdownMenuItem>
+            ) : null}
+          </>
+        ) : (
+          <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export default function ClassRosterTable({
@@ -260,7 +328,7 @@ export default function ClassRosterTable({
           </TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Student</TableHead>
+              <TableHead className="w-40 px-4">Student</TableHead>
               <TableHead className="w-36">Enrollment status</TableHead>
               <TableHead className="w-28">Payment</TableHead>
               <TableHead className="w-28">Certificate</TableHead>
@@ -299,7 +367,6 @@ export default function ClassRosterTable({
                   (entry.paymentStatus === "COMPLETED" || entry.paymentStatus === "NOT_REQUIRED") &&
                   entry.certificate?.status !== "ISSUED";
                 const certificateCell = certificateCellState(entry, certificateEnabled);
-                const hasActions = nextStatuses.length > 0 || canRecordPayment || canIssueCertificate;
 
                 return (
                   <TableRow
@@ -319,9 +386,9 @@ export default function ClassRosterTable({
                       }
                     }}
                   >
-                    <TableCell className="max-w-0 px-4 py-4">
+                    <TableCell className="w-40 px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[#191919]">
                           <User className="size-4" aria-hidden="true" />
                         </div>
                         <div className="min-w-0">
@@ -358,50 +425,16 @@ export default function ClassRosterTable({
                     </TableCell>
 
                     <TableCell className="pr-4 text-right" data-no-row-navigation>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Actions for ${entry.user?.firstName} ${entry.user?.lastName}`}
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {hasActions ? (
-                            <>
-                              {nextStatuses.map((status) => {
-                                const Icon = STATUS_ACTION_ICON[status];
-                                return (
-                                  <DropdownMenuItem
-                                    key={status}
-                                    variant={status === "CANCELLED" ? "destructive" : "default"}
-                                    onSelect={() => changeStatus(entry, status)}
-                                  >
-                                    <Icon /> {STATUS_ACTION_LABEL[status]}
-                                  </DropdownMenuItem>
-                                );
-                              })}
-                              {nextStatuses.length > 0 && (canRecordPayment || canIssueCertificate) ? (
-                                <DropdownMenuSeparator />
-                              ) : null}
-                              {canRecordPayment ? (
-                                <DropdownMenuItem onSelect={() => setCompletePaymentTarget(entry)}>
-                                  <Wallet /> Record remaining payment
-                                </DropdownMenuItem>
-                              ) : null}
-                              {canIssueCertificate ? (
-                                <DropdownMenuItem onSelect={() => setCertificateTarget(entry)} disabled={isIssuing}>
-                                  <Award /> Issue certificate
-                                </DropdownMenuItem>
-                              ) : null}
-                            </>
-                          ) : (
-                            <DropdownMenuItem disabled>No actions available</DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <RosterActionsMenu
+                        entry={entry}
+                        nextStatuses={nextStatuses}
+                        canRecordPayment={canRecordPayment}
+                        canIssueCertificate={canIssueCertificate}
+                        isIssuing={isIssuing}
+                        onChangeStatus={(status) => changeStatus(entry, status)}
+                        onRecordPayment={() => setCompletePaymentTarget(entry)}
+                        onIssueCertificate={() => setCertificateTarget(entry)}
+                      />
                     </TableCell>
                   </TableRow>
                 );
@@ -410,6 +443,7 @@ export default function ClassRosterTable({
           </TableBody>
         </Table>
       </div>
+
 
       {data && data.pagination.total > 0 ? (
         <OffsetPagination
@@ -437,7 +471,11 @@ export default function ClassRosterTable({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmIssueCertificate} disabled={isIssuing}>
+            <AlertDialogAction
+              onClick={confirmIssueCertificate}
+              disabled={isIssuing}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
+            >
               {isIssuing ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
               Issue certificate
             </AlertDialogAction>
@@ -455,7 +493,11 @@ export default function ClassRosterTable({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCompletePayment} disabled={isCompletingPayment}>
+            <AlertDialogAction
+              onClick={confirmCompletePayment}
+              disabled={isCompletingPayment}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
+            >
               {isCompletingPayment ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
               Record payment
             </AlertDialogAction>
@@ -464,7 +506,7 @@ export default function ClassRosterTable({
       </AlertDialog>
 
       <Sheet open={Boolean(detailEntry)} onOpenChange={(open) => !open && setDetailEntry(null)}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
+        <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {liveDetailEntry ? (
             <>
               <SheetHeader>
@@ -527,7 +569,12 @@ export default function ClassRosterTable({
                     {liveDetailEntry.status === "COMPLETED" ? (
                       <p className="text-xs text-muted-foreground">Locked once the enrollment is completed.</p>
                     ) : (
-                      <Button size="sm" onClick={saveEvidence} disabled={isUpdating}>
+                      <Button
+                        size="sm"
+                        onClick={saveEvidence}
+                        disabled={isUpdating}
+                        className="bg-[#191919] bg-none hover:bg-[#27272A]"
+                      >
                         {isUpdating ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
                         Save evidence
                       </Button>

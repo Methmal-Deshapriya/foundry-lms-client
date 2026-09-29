@@ -159,8 +159,8 @@ export function DateRangePicker({
                     "flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-colors",
                     !inMonth && "text-muted-foreground/50",
                     dayDisabled && "cursor-not-allowed opacity-30",
-                    inRange && !isStart && !isEnd && "rounded-none bg-primary/15 text-foreground",
-                    (isStart || isEnd) && "bg-primary font-semibold text-primary-foreground",
+                    inRange && !isStart && !isEnd && "rounded-none bg-zinc-100 text-foreground",
+                    (isStart || isEnd) && "bg-[#191919] font-semibold text-white",
                     !dayDisabled && !inRange && !isStart && !isEnd && "text-foreground hover:bg-muted",
                   )}
                 >

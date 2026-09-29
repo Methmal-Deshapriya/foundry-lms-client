@@ -61,12 +61,23 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+          // flex flex-col + overflow-hidden (not overflow-y-auto) here — the
+          // rounded corners live on this element, and a browser's native
+          // scrollbar doesn't respect a parent's border-radius when the
+          // scroll container is the same rounded element. The actual
+          // scrolling happens on the inner wrapper below instead: flex-1
+          // with no min-height forces it to size from available space
+          // (bounded by this element's own, possibly caller-supplied,
+          // max-h-*) rather than its own content, so IT overflows and
+          // scrolls internally — never poking a scrollbar past the corner.
+          // A caller's own `overflow-y-auto` is harmless if still passed;
+          // this element no longer has scrollable content to apply it to.
+          "fixed top-[50%] left-[50%] z-50 flex w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col overflow-hidden rounded-lg border bg-background shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className
         )}
         {...props}
       >
-        {children}
+        <div className="flex-1 space-y-4 overflow-y-auto p-6">{children}</div>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"

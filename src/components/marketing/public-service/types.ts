@@ -15,8 +15,13 @@ export interface PublicServiceConfig {
     title: string;
     highlight?: string;
     description: string;
-    /** width/height are the image's actual pixel dimensions — used as the aspect-ratio hint so the image never stretches. */
-    illustration?: { src: string; alt: string; width: number; height: number };
+    /**
+     * `src` is the primary (usually R2-backed, admin-uploaded) image;
+     * `fallbackSrc` is an optional locally-bundled asset ServiceHero swaps
+     * to if `src` is empty or fails to load at runtime (e.g. an R2 outage) —
+     * see useFallbackImage / ServiceHero.tsx.
+     */
+    illustration?: { src: string; alt: string; fallbackSrc?: string; fallbackAlt?: string };
     indicators: { icon: LucideIcon; label: string }[];
   };
 

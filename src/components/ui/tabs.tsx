@@ -12,7 +12,15 @@ function Tabs({
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
-      className={cn("flex flex-col gap-4", className)}
+      // min-w-0: this is a flex container, and TabsContent below is a flex
+      // item of it — flex items default to min-width:auto (never narrower
+      // than their content), so a wide table inside one tab's content would
+      // otherwise force this whole component wider than the viewport. The
+      // nearest scrolling ancestor (the dashboard's <main>) would then
+      // scroll the ENTIRE tab panel sideways — header, search box, buttons
+      // and all — instead of just the table's own internal horizontal
+      // scrollbar handling its own overflow.
+      className={cn("flex min-w-0 flex-col gap-4", className)}
       {...props}
     />
   )
@@ -30,7 +38,12 @@ function TabsList({
     // scrolls horizontally instead, which never has that problem.
     <TabsPrimitive.List
       data-slot="tabs-list"
-      className={cn("catalog-scrollbar flex flex-nowrap items-end gap-1 overflow-x-auto border-b border-input", className)}
+      // table-hscroll (not catalog-scrollbar), same as the shared Table
+      // component's horizontal-overflow scrollbar — catalog-scrollbar is
+      // tinted blue for the public/auth theme; this is an admin surface,
+      // and table-hscroll is already the correct black-tinted thin bar for
+      // a horizontally-scrolling row.
+      className={cn("table-hscroll flex flex-nowrap items-end gap-1 overflow-x-auto border-b border-input", className)}
       {...props}
     />
   )
@@ -70,7 +83,9 @@ function TabsContent({
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"
-      className={cn("outline-none", className)}
+      // min-w-0 — see the comment on Tabs above; this is the flex item that
+      // actually holds each tab's (potentially very wide) content.
+      className={cn("min-w-0 outline-none", className)}
       {...props}
     />
   )

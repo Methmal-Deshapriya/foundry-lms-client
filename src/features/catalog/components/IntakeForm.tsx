@@ -144,7 +144,11 @@ export function IntakeForm({
       ) : null}
 
       <div className="flex gap-2">
-        <Button type="submit" disabled={createState.isLoading || updateState.isLoading}>
+        <Button
+          type="submit"
+          disabled={createState.isLoading || updateState.isLoading}
+          className="bg-[#191919] bg-none hover:bg-[#27272A]"
+        >
           {initial ? "Save setup" : "Create intake"}
         </Button>
         {onCancel ? <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button> : null}

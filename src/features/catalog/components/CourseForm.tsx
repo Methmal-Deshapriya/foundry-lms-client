@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,10 +35,11 @@ const WIZARD_STEPS = [
   { step: 1 as const, label: "Basics" },
   { step: 2 as const, label: "Content" },
   { step: 3 as const, label: "Policy" },
-  { step: 4 as const, label: "Highlights" },
-  { step: 5 as const, label: "Skills" },
-  { step: 6 as const, label: "Prerequisites" },
-  { step: 7 as const, label: "Preview" },
+  { step: 4 as const, label: "More info" },
+  { step: 5 as const, label: "Highlights" },
+  { step: 6 as const, label: "Skills" },
+  { step: 7 as const, label: "Prerequisites" },
+  { step: 8 as const, label: "Preview" },
 ];
 type WizardStep = (typeof WIZARD_STEPS)[number]["step"];
 const LAST_STEP: WizardStep = WIZARD_STEPS[WIZARD_STEPS.length - 1].step;
@@ -88,6 +89,17 @@ export function CourseForm({
   const [highlights, setHighlights] = useState<string[]>(initial?.highlights ?? []);
   const [skills, setSkills] = useState<string[]>(initial?.skills ?? []);
   const [prerequisites, setPrerequisites] = useState<string[]>(initial?.prerequisites ?? []);
+  const [targetAudience, setTargetAudience] = useState(initial?.targetAudience ?? "");
+  const [whyPursueSteps, setWhyPursueSteps] = useState<{ title: string; description: string }[]>(
+    initial?.whyPursueSteps ?? [],
+  );
+  const [explainerVideoUrl, setExplainerVideoUrl] = useState(initial?.explainerVideoUrl ?? "");
+  const [explainerVideoThumbnailObjectId, setExplainerVideoThumbnailObjectId] = useState<string | null>(
+    initial?.explainerVideoThumbnailObjectId ?? null,
+  );
+  const [explainerVideoThumbnailObject, setExplainerVideoThumbnailObject] = useState<StoredObjectSummary | null>(
+    initial?.explainerVideoThumbnailObject ?? null,
+  );
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [create, createState] = useCreateCourseMutation();
   const [update, updateState] = useUpdateCourseMutation();
@@ -98,6 +110,7 @@ export function CourseForm({
   const isPolicyValid = certificateEnabled !== null;
 
   const performSave = async () => {
+    const trimmedVideoUrl = explainerVideoUrl.trim();
     const content = {
       title,
       slug,
@@ -112,6 +125,12 @@ export function CourseForm({
       prerequisites,
       thumbnailUrl: null,
       thumbnailObjectId,
+      targetAudience: targetAudience.trim() ? targetAudience.trim() : null,
+      whyPursueSteps,
+      explainerVideoUrl: trimmedVideoUrl ? trimmedVideoUrl : null,
+      // A thumbnail with no video is meaningless — clearing the URL drops
+      // the thumbnail too, matching the backend's own dependency check.
+      explainerVideoThumbnailObjectId: trimmedVideoUrl ? explainerVideoThumbnailObjectId : null,
       sortOrder: 0,
     };
     try {
@@ -166,6 +185,99 @@ export function CourseForm({
 
   const isSaving = createState.isLoading || updateState.isLoading;
   const durationLabel = durationValue ? `${durationValue} ${durationUnit.toLowerCase()}${Number(durationValue) === 1 ? "" : "s"}` : null;
+
+  const updateWhyPursueStep = (index: number, field: "title" | "description", value: string) =>
+    setWhyPursueSteps((current) => current.map((step, i) => (i === index ? { ...step, [field]: value } : step)));
+
+  const moreInfoFields = (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="course-target-audience">Who this course is for</Label>
+        <p className="text-xs text-muted-foreground">Shown on the public page. Optional, can be changed later.</p>
+        <textarea
+          id="course-target-audience"
+          maxLength={300}
+          className="min-h-20 w-full rounded-md border bg-background p-3 text-sm focus-visible:outline-none"
+          value={targetAudience}
+          onChange={(event) => setTargetAudience(event.target.value)}
+          placeholder="e.g. Beginners with no prior programming experience who want to break into tech"
+        />
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <Label>Why pursue this course</Label>
+            <p className="text-xs text-muted-foreground">Rendered as numbered steps on the public page. Optional.</p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setWhyPursueSteps((current) => [...current, { title: "", description: "" }])}
+          >
+            <Plus /> Add reason
+          </Button>
+        </div>
+        {whyPursueSteps.map((step, index) => (
+          <div className="space-y-2 rounded-md border border-dashed p-3" key={index}>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor={`why-pursue-title-${index}`}>Reason {index + 1}</Label>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                aria-label={`Remove reason ${index + 1}`}
+                onClick={() => setWhyPursueSteps((current) => current.filter((_, i) => i !== index))}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+            <Input
+              id={`why-pursue-title-${index}`}
+              maxLength={120}
+              value={step.title}
+              onChange={(event) => updateWhyPursueStep(index, "title", event.target.value)}
+              placeholder="Title"
+            />
+            <textarea
+              maxLength={300}
+              className="min-h-16 w-full rounded-md border bg-background p-3 text-sm focus-visible:outline-none"
+              value={step.description}
+              onChange={(event) => updateWhyPursueStep(index, "description", event.target.value)}
+              placeholder="Description"
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="course-explainer-video-url">Explainer video URL (YouTube)</Label>
+        <p className="text-xs text-muted-foreground">Played the same way as the homepage video. Optional.</p>
+        <Input
+          id="course-explainer-video-url"
+          type="url"
+          value={explainerVideoUrl}
+          onChange={(event) => setExplainerVideoUrl(event.target.value)}
+          placeholder="https://www.youtube.com/watch?v=..."
+        />
+      </div>
+      {explainerVideoUrl.trim() ? (
+        <ObjectUploadField
+          label="Explainer video thumbnail"
+          purpose="COURSE_EXPLAINER_VIDEO_THUMBNAIL"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          value={explainerVideoThumbnailObjectId}
+          initialObject={explainerVideoThumbnailObject}
+          onChange={(id, object) => {
+            setExplainerVideoThumbnailObjectId(id);
+            setExplainerVideoThumbnailObject(object);
+          }}
+          helpText="Optional. Exactly 1280×720px. Falls back to a black screen if not set."
+        />
+      ) : null}
+    </div>
+  );
 
   if (isEditing) {
     return (
@@ -225,6 +337,7 @@ export function CourseForm({
           <div className="space-y-2">
             <Label htmlFor="course-level">Level</Label>
             <Select
+              accent="black"
               id="course-level"
               className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
               options={LEVEL_OPTIONS}
@@ -239,6 +352,7 @@ export function CourseForm({
           <div className="space-y-2">
             <Label htmlFor="duration-unit">Unit</Label>
             <Select
+              accent="black"
               id="duration-unit"
               className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
               options={DURATION_UNIT_OPTIONS}
@@ -275,8 +389,10 @@ export function CourseForm({
           <TagInput value={prerequisites} onChange={setPrerequisites} placeholder="e.g. Basic Python" />
         </div>
 
+        {moreInfoFields}
+
         <div className="flex gap-2">
-          <Button type="submit" disabled={isSaving}>
+          <Button type="submit" disabled={isSaving} className="bg-[#191919] bg-none hover:bg-[#27272A]">
             {isSaving ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
             Save course
           </Button>
@@ -287,37 +403,35 @@ export function CourseForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <div className="-mx-1 overflow-x-auto px-1">
-          <div className="flex w-max items-center gap-1">
-            {WIZARD_STEPS.map(({ step }, index) => (
-              <Fragment key={step}>
-                <span
-                  className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-                    wizardStep === step
-                      ? "bg-linear-to-r from-blue-600 to-indigo-500 text-white"
-                      : wizardStep > step
-                        ? "bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {wizardStep > step ? <Check className="size-3.5" aria-hidden="true" /> : step}
-                </span>
-                {index < WIZARD_STEPS.length - 1 ? (
-                  <div className={cn("h-px w-8 shrink-0", wizardStep > step ? "bg-primary/40" : "bg-border")} />
-                ) : null}
-              </Fragment>
-            ))}
-          </div>
+        <div className="flex w-full items-center">
+          {WIZARD_STEPS.map(({ step }, index) => (
+            <Fragment key={step}>
+              <span
+                className={cn(
+                  "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
+                  wizardStep === step
+                    ? "bg-[#191919] text-white"
+                    : wizardStep > step
+                      ? "bg-zinc-100 text-[#191919]"
+                      : "bg-muted text-muted-foreground",
+                )}
+              >
+                {wizardStep > step ? <Check className="size-3.5" aria-hidden="true" /> : step}
+              </span>
+              {index < WIZARD_STEPS.length - 1 ? (
+                <div className={cn("mx-1 h-px flex-1", wizardStep > step ? "bg-[#191919]/40" : "bg-border")} />
+              ) : null}
+            </Fragment>
+          ))}
         </div>
-        <p className="mt-2 text-sm font-medium text-foreground">
+        <p className="mt-4 text-sm font-medium text-foreground">
           Step {wizardStep} of {LAST_STEP} — {WIZARD_STEPS[wizardStep - 1].label}
         </p>
       </div>
 
-      <form onSubmit={submitWizard} className="space-y-6 pt-2">
+      <form onSubmit={submitWizard} className="space-y-6">
         {wizardStep === 1 ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -391,6 +505,7 @@ export function CourseForm({
               <div className="space-y-2">
                 <Label htmlFor="course-level">Level</Label>
                 <Select
+                  accent="black"
                   id="course-level"
                   className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                   options={LEVEL_OPTIONS}
@@ -405,6 +520,7 @@ export function CourseForm({
               <div className="space-y-2">
                 <Label htmlFor="duration-unit">Unit</Label>
                 <Select
+                  accent="black"
                   id="duration-unit"
                   className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                   options={DURATION_UNIT_OPTIONS}
@@ -453,6 +569,7 @@ export function CourseForm({
                 Certificate policy <span className="text-red-500" aria-hidden="true">*</span>
               </Label>
               <Select
+                accent="black"
                 id="course-certificate-policy"
                 className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                 options={[CERTIFICATE_LABELS.true, CERTIFICATE_LABELS.false]}
@@ -484,7 +601,9 @@ export function CourseForm({
           </div>
         ) : null}
 
-        {wizardStep === 4 ? (
+        {wizardStep === 4 ? moreInfoFields : null}
+
+        {wizardStep === 5 ? (
           <div className="space-y-4">
             <div>
               <Label>Highlights</Label>
@@ -496,7 +615,7 @@ export function CourseForm({
           </div>
         ) : null}
 
-        {wizardStep === 5 ? (
+        {wizardStep === 6 ? (
           <div className="space-y-4">
             <div>
               <Label>Skills</Label>
@@ -508,7 +627,7 @@ export function CourseForm({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {wizardStep === 7 ? (
           <div className="space-y-4">
             <div>
               <Label>Prerequisites</Label>
@@ -520,7 +639,7 @@ export function CourseForm({
           </div>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {wizardStep === 8 ? (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="text-xs">{service.accessType === "FREE" ? "Free" : "Paid"}</Badge>
@@ -554,6 +673,9 @@ export function CourseForm({
                   ["Highlights", highlights],
                   ["Skills", skills],
                   ["Prerequisites", prerequisites],
+                  ["Target audience", targetAudience.trim() ? [targetAudience] : []],
+                  ["Why pursue this course", whyPursueSteps],
+                  ["Explainer video", explainerVideoUrl.trim() ? [explainerVideoUrl] : []],
                 ] as const
               ).map(([label, list]) => (
                 <div key={label} className="flex items-center gap-2 text-sm">
@@ -588,12 +710,13 @@ export function CourseForm({
           {wizardStep < LAST_STEP ? (
             <Button
               type="submit"
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
               disabled={wizardStep === 1 ? !isBasicsValid : wizardStep === 2 ? !isContentValid : wizardStep === 3 ? !isPolicyValid : false}
             >
               Next <ArrowRight className="ml-2 size-4" aria-hidden="true" />
             </Button>
           ) : (
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving} className="bg-[#191919] bg-none hover:bg-[#27272A]">
               {isSaving ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
               Create course
             </Button>

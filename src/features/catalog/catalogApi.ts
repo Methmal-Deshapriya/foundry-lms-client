@@ -37,6 +37,22 @@ export interface LearningService {
   status: LearningServiceStatus;
   sortOrder: number;
   courseCount: number;
+  /** Short home-page-card blurb — distinct from `description`, which is the fuller hero/admin text. Falls back to `description` when empty (legacy rows only). */
+  summary: string | null;
+  /** The public Level-2 page's hook headline (falls back to `title` when empty). */
+  heroHeadline: string | null;
+  /** Exactly 2 bespoke marketing tags shown on the detail-page hero, alongside the auto course-count badge. */
+  heroTags: string[];
+  /** R2-backed image for the home page "What we offer" card — fixed 1672x941px. */
+  cardImageUrl: string | null;
+  cardImageObjectId: string | null;
+  cardImageObject: StoredObjectSummary | null;
+  /** R2-backed image for the service detail page's hero — fixed 1374x1145px. */
+  heroImageUrl: string | null;
+  heroImageObjectId: string | null;
+  heroImageObject: StoredObjectSummary | null;
+  processSteps: { title: string; description: string }[];
+  faqItems: { question: string; answer: string }[];
   createdAt: string;
   updatedAt: string;
 }
@@ -67,6 +83,14 @@ export interface AdminCourse {
   thumbnailUrl: string | null;
   thumbnailObjectId: string | null;
   thumbnailObject: StoredObjectSummary | null;
+  /** "Who this course is for" — a short descriptive sentence shown on the public course page. */
+  targetAudience: string | null;
+  /** "Why pursue this course" — rendered as numbered steps on the public course page. */
+  whyPursueSteps: { title: string; description: string }[];
+  /** YouTube URL, played the same way as the landing page's AboutVideo. */
+  explainerVideoUrl: string | null;
+  explainerVideoThumbnailObjectId: string | null;
+  explainerVideoThumbnailObject: StoredObjectSummary | null;
   sortOrder: number;
   archivedAt: string | null;
   service: LearningService;
@@ -115,6 +139,10 @@ export interface CourseInput {
   prerequisites?: string[];
   thumbnailUrl?: string | null;
   thumbnailObjectId?: string | null;
+  targetAudience?: string | null;
+  whyPursueSteps?: { title: string; description: string }[];
+  explainerVideoUrl?: string | null;
+  explainerVideoThumbnailObjectId?: string | null;
   sortOrder?: number;
   intakeCodePrefix: string;
   certificateEnabled: boolean;
@@ -184,6 +212,7 @@ export interface CourseAnalytics {
     certificateEligible: number;
   };
   districts: { district: string; count: number }[];
+  alStreams: { stream: string; count: number }[];
   sessionEngagement: {
     courseSessionId: string;
     title: string;
@@ -199,7 +228,8 @@ export interface CourseAnalytics {
  * Course-level (cross-intake) rollup — same shape as CourseAnalytics minus
  * capacity/districts/sessionEngagement, which are intake-specific and don't
  * aggregate meaningfully across intakes that may run different curricula.
- * See the 2026-08-31 course detail page improvement plan §4.
+ * See the 2026-08-31 course detail page improvement plan §4. A/L stream is
+ * a student attribute rather than a curriculum one, so it's still included.
  */
 export interface CourseRollupAnalytics {
   enrollments: { active: number; completed: number; cancelled: number };
@@ -214,6 +244,7 @@ export interface CourseRollupAnalytics {
     certificatesIssued: number;
     certificateEligible: number;
   };
+  alStreams: { stream: string; count: number }[];
   projects: { pending: number; approved: number; rejected: number };
 }
 
@@ -228,6 +259,17 @@ export interface AdminLearningServiceSummary {
   status: LearningServiceStatus;
   sortOrder: number;
   courseCount: number;
+  summary: string | null;
+  heroHeadline: string | null;
+  heroTags: string[];
+  cardImageUrl: string | null;
+  cardImageObjectId: string | null;
+  cardImageObject: StoredObjectSummary | null;
+  heroImageUrl: string | null;
+  heroImageObjectId: string | null;
+  heroImageObject: StoredObjectSummary | null;
+  processSteps: { title: string; description: string }[];
+  faqItems: { question: string; answer: string }[];
   createdAt: string;
   updatedAt: string;
   serviceType: LearningServiceType;
@@ -261,6 +303,15 @@ export interface AdminLearningServiceSummary {
   curriculumAttachmentCount: number;
   payments: { needsAttention: number } | null;
   attentionCount: number;
+  /** Same shape as AdminCourse's/Intake's own analytics — see the 2026-09-24 hierarchical admin summaries plan. */
+  revenue: { total: number; currency: string };
+  paymentBreakdown: {
+    full: { count: number; amount: number };
+    partial: { count: number; amount: number };
+    topUp: { count: number; amount: number };
+  };
+  certificates: { issued: number; eligible: number };
+  projects: { pending: number; approved: number; rejected: number };
 }
 
 export const catalogApi = baseApi.injectEndpoints({
@@ -293,9 +344,24 @@ export const catalogApi = baseApi.injectEndpoints({
     }),
     createLearningService: builder.mutation<
       LearningService,
-      Omit<
+      Pick<
         LearningService,
-        "id" | "status" | "courseCount" | "createdAt" | "updatedAt"
+        | "key"
+        | "slug"
+        | "title"
+        | "description"
+        | "accessType"
+        | "courseMode"
+        | "enrollmentMode"
+        | "paymentRequirement"
+        | "sortOrder"
+        | "summary"
+        | "heroHeadline"
+        | "heroTags"
+        | "cardImageObjectId"
+        | "heroImageObjectId"
+        | "processSteps"
+        | "faqItems"
       >
     >({
       query: (body) => ({ url: "/services", method: "POST", body }),
@@ -316,6 +382,13 @@ export const catalogApi = baseApi.injectEndpoints({
             | "courseMode"
             | "enrollmentMode"
             | "paymentRequirement"
+            | "summary"
+            | "heroHeadline"
+            | "heroTags"
+            | "cardImageObjectId"
+            | "heroImageObjectId"
+            | "processSteps"
+            | "faqItems"
           >
         >;
       }

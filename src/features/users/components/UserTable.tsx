@@ -46,6 +46,52 @@ import UserDetailSheet from "./UserDetailSheet";
 
 const INTERACTIVE_SELECTOR = "button,a,[data-no-row-navigation]";
 
+// Shared between the desktop table row and the narrow-screen card below.
+function UserAccessControl({
+  user,
+  name,
+  canManageRoles,
+  isPromoting,
+  isDemoting,
+  onPromote,
+  onDemote,
+}: {
+  user: UserRecord;
+  name: string;
+  canManageRoles: boolean;
+  isPromoting: boolean;
+  isDemoting: boolean;
+  onPromote: () => void;
+  onDemote: () => void;
+}) {
+  if (canManageRoles && (user.role === "STUDENT" || user.role === "ADMIN")) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`} data-no-row-navigation>
+            <MoreHorizontal />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {user.role === "STUDENT" ? (
+            <DropdownMenuItem disabled={isPromoting} onSelect={onPromote}>
+              <ArrowUpCircle /> Promote to admin
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem variant="destructive" disabled={isDemoting} onSelect={onDemote}>
+              <ArrowDownCircle /> Demote to student
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+  if (canManageRoles && user.role === "SUPER_ADMIN") {
+    return <span className="text-xs text-muted-foreground">Protected</span>;
+  }
+  return <span className="text-xs text-muted-foreground">View only</span>;
+}
+
 interface UserTableProps {
   users: UserRecord[];
   canManageRoles: boolean;
@@ -92,7 +138,7 @@ export default function UserTable({
         <TableCaption className="sr-only">Platform users and their access roles</TableCaption>
         <TableHeader className="bg-muted/40">
           <TableRow>
-            <TableHead className="px-4">User</TableHead>
+            <TableHead className="w-56 px-4">User</TableHead>
             <TableHead className="w-32">Role</TableHead>
             <TableHead className="w-32">Verification</TableHead>
             <TableHead className="w-28">Member since</TableHead>
@@ -142,7 +188,7 @@ export default function UserTable({
                     }
                   }}
                 >
-                  <TableCell className="max-w-sm whitespace-normal px-4">
+                  <TableCell className="w-56 whitespace-normal px-4">
                     <div className="min-w-0">
                       <p className="truncate font-semibold" title={name}>
                         {name}
@@ -163,37 +209,15 @@ export default function UserTable({
                     {format(new Date(user.createdAt), "MMM dd, yyyy")}
                   </TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    {canManageRoles && (user.role === "STUDENT" || user.role === "ADMIN") ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`}>
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {user.role === "STUDENT" ? (
-                            <DropdownMenuItem
-                              disabled={isPromoting}
-                              onSelect={() => setConfirmTarget({ id: user.id, name, action: "PROMOTE" })}
-                            >
-                              <ArrowUpCircle /> Promote to admin
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              variant="destructive"
-                              disabled={isDemoting}
-                              onSelect={() => setConfirmTarget({ id: user.id, name, action: "DEMOTE" })}
-                            >
-                              <ArrowDownCircle /> Demote to student
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : canManageRoles && user.role === "SUPER_ADMIN" ? (
-                      <span className="text-xs text-muted-foreground">Protected</span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">View only</span>
-                    )}
+                    <UserAccessControl
+                      user={user}
+                      name={name}
+                      canManageRoles={canManageRoles}
+                      isPromoting={isPromoting}
+                      isDemoting={isDemoting}
+                      onPromote={() => setConfirmTarget({ id: user.id, name, action: "PROMOTE" })}
+                      onDemote={() => setConfirmTarget({ id: user.id, name, action: "DEMOTE" })}
+                    />
                   </TableCell>
                 </TableRow>
               );
@@ -223,6 +247,7 @@ export default function UserTable({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant={confirmTarget?.action === "DEMOTE" ? "destructive" : "default"}
+              className={confirmTarget?.action === "DEMOTE" ? undefined : "bg-[#191919] bg-none hover:bg-[#27272A]"}
               disabled={isPromoting || isDemoting}
               onClick={confirmRoleChange}
             >

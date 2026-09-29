@@ -3,10 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Pie, PieChart, XAxis } from "recharts";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile";
 import { MagnitudeBar, Section } from "@/components/dataviz/StatPrimitives";
+import { StatusDonutCard } from "@/components/dataviz/StatusDonutCard";
+import {
+  CERTIFICATE_STATUS_COLORS,
+  ENROLLMENT_STATUS_COLORS,
+  PAYMENT_STATUS_COLORS,
+  PROJECT_STATUS_COLORS,
+  TREND_COLOR,
+} from "@/components/dataviz/chartColors";
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,22 +32,13 @@ import type { Role } from "@/lib/constants";
 import { useGetAdminDashboardQuery } from "../dashboardApi";
 import type {
   AdminDashboardSummary,
-  CertificateStatusKey,
   DashboardEnrollmentRequest,
   DashboardIntakeCard,
-  EnrollmentStatusKey,
-  PaymentStatusKey,
-  ProjectStatusKey,
   ServiceCount,
 } from "../dashboardTypes";
 import { SriLankaDistrictMap } from "./SriLankaDistrictMap";
 
 const MONTH_PRESETS = [3, 6, 12] as const;
-
-// A single hue per trend, matching the app's existing "one hue, magnitude
-// only" convention (MagnitudeBar, the heatmap) rather than an arbitrary
-// color per chart.
-const TREND_COLOR = "#2563eb"; // primary (blue-600)
 
 const ENROLLMENT_CHART_CONFIG = {
   count: { label: "Enrollments", color: TREND_COLOR },
@@ -48,28 +47,6 @@ const ENROLLMENT_CHART_CONFIG = {
 const REVENUE_CHART_CONFIG = {
   amount: { label: "Revenue", color: TREND_COLOR },
 } satisfies ChartConfig;
-
-// Reserved status palettes — the same colors these statuses already wear
-// everywhere else in the app (badges, roster cells, the project donut on
-// the student dashboard), not a fresh categorical assignment.
-const ENROLLMENT_STATUS_COLORS: Record<EnrollmentStatusKey, string> = {
-  ACTIVE: "#0ea5e9",
-  COMPLETED: "#10b981",
-  CANCELLED: "#f43f5e",
-};
-const CERTIFICATE_STATUS_COLORS: Record<CertificateStatusKey, string> = {
-  ISSUED: "#10b981",
-  REVOKED: "#f43f5e",
-};
-const PROJECT_STATUS_COLORS: Record<ProjectStatusKey, string> = {
-  PENDING: "#f59e0b",
-  APPROVED: "#10b981",
-  REJECTED: "#f43f5e",
-};
-const PAYMENT_STATUS_COLORS: Record<PaymentStatusKey, string> = {
-  COMPLETED: "#10b981",
-  PARTIAL: "#f59e0b",
-};
 
 type TrendFilter = { mode: "preset"; months: number } | { mode: "custom"; from: string; to: string };
 
@@ -138,7 +115,7 @@ export default function AdminDashboard() {
                     className={cn(
                       "rounded px-2.5 py-1 text-xs font-medium transition-colors",
                       trendFilter.mode === "preset" && trendFilter.months === months
-                        ? "bg-primary/10 text-primary"
+                        ? "bg-zinc-100 text-[#191919]"
                         : "text-muted-foreground hover:bg-muted",
                     )}
                   >
@@ -158,7 +135,7 @@ export default function AdminDashboard() {
               aria-current={page === 1}
               className={cn(
                 "flex h-6 w-6 items-center justify-center rounded text-xs font-semibold transition-colors",
-                page === 1 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                page === 1 ? "bg-[#191919] text-white" : "text-muted-foreground hover:bg-muted",
               )}
             >
               1
@@ -170,7 +147,7 @@ export default function AdminDashboard() {
               aria-current={page === 2}
               className={cn(
                 "flex h-6 w-6 items-center justify-center rounded text-xs font-semibold transition-colors",
-                page === 2 ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                page === 2 ? "bg-[#191919] text-white" : "text-muted-foreground hover:bg-muted",
               )}
             >
               2
@@ -284,7 +261,7 @@ function AdminDashboardPageOne({
             </Section>
 
             <StatusDonutCard
-              className="xl:col-span-2"
+              className="xl:col-span-2 xl:min-h-0"
               title="Enrollment status"
               order={["ACTIVE", "COMPLETED", "CANCELLED"]}
               counts={data?.enrollmentStatusBreakdown}
@@ -315,7 +292,7 @@ function AdminDashboardPageOne({
 
           <div className="grid flex-1 grid-cols-1 gap-4 xl:min-h-0 xl:grid-cols-5">
             <StatusDonutCard
-              className="xl:col-span-2"
+              className="xl:col-span-2 xl:min-h-0"
               title="Payment status"
               order={["COMPLETED", "PARTIAL"]}
               labels={{ COMPLETED: "Fully paid", PARTIAL: "Partially paid" }}
@@ -449,7 +426,7 @@ function AdminDashboardPageTwo({
             title="Recent activity"
             className="flex flex-col xl:min-h-0"
             action={
-              <Link href="/admin/audit" className="text-xs font-semibold text-primary hover:text-primary/80">
+              <Link href="/admin/audit" className="text-xs font-semibold text-[#E91717] hover:text-[#C91414]">
                 View all
               </Link>
             }
@@ -557,7 +534,7 @@ function IntakesCard({
               onClick={() => setView(key)}
               className={cn(
                 "rounded px-2.5 py-1 text-xs font-medium transition-colors",
-                view === key ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted",
+                view === key ? "bg-zinc-100 text-[#191919]" : "text-muted-foreground hover:bg-muted",
               )}
             >
               {label}
@@ -657,7 +634,7 @@ function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollment
   );
 }
 
-// Same green/amber pair as PAYMENT_STATUS_COLORS (COMPLETED/PARTIAL) —
+// Same black/grey pair as PAYMENT_STATUS_COLORS (COMPLETED/PARTIAL) —
 // "available" and "to come" are that same collected-vs-outstanding split,
 // just expressed in money instead of enrollment counts, so the identity
 // colors carry across the two cards on this page rather than diverging.
@@ -729,13 +706,12 @@ function RevenueSummaryBody({
 }
 
 // Services are admin-created catalog entities, not a fixed reserved status
-// set (unlike enrollment/payment/certificate/project statuses elsewhere on
-// this page) — so this draws from the app's generic --chart-1..4 categorical
-// ramp instead of a reserved palette. Capped at 4 named slices; anything
-// past that folds into one neutral "Other" bucket rather than inventing a
-// 5th+ hue or cycling the ramp.
-const SERVICE_CHART_COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)"];
-const OTHER_SERVICE_COLOR = "#cbd5e1"; // slate-300 — same "neutral, not a real category" role as the district map's zero-count fill
+// set — so this draws from the "Monochrome + Red" black/grey scale (dark to
+// light) rather than the app's generic multi-hue --chart-1..4 tokens, which
+// don't match the theme. Capped at 4 named slices; anything past that folds
+// into one neutral "Other" bucket rather than inventing a 5th+ step.
+const SERVICE_CHART_COLORS = ["#27272A", "#71717A", "#A1A1AA", "#D4D4D8"];
+const OTHER_SERVICE_COLOR = "#e4e4e7"; // zinc-200 — same "neutral, not a real category" role as the district map's zero-count fill
 
 function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | undefined; isLoading: boolean }) {
   const rows = data ?? [];
@@ -795,65 +771,3 @@ function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | un
   );
 }
 
-function StatusDonutCard<TKey extends string>({
-  title,
-  order,
-  counts,
-  colors,
-  isLoading,
-  labels,
-  className,
-}: {
-  title: string;
-  order: TKey[];
-  counts: Partial<Record<TKey, number>> | undefined;
-  colors: Record<TKey, string>;
-  isLoading: boolean;
-  labels?: Partial<Record<TKey, string>>;
-  className?: string;
-}) {
-  const rows = order.map((key) => ({ key, count: counts?.[key] ?? 0 }));
-  const total = rows.reduce((sum, row) => sum + row.count, 0);
-  const chartData = total > 0 ? rows.filter((row) => row.count > 0) : [{ key: order[0], count: 1 }];
-  const chartConfig = Object.fromEntries(order.map((key) => [key, { label: labels?.[key] ?? key }])) satisfies ChartConfig;
-
-  return (
-    // @container: same reasoning as ServiceEnrollmentsCard above — this
-    // card's rendered width tracks the nested grid it sits in, not the
-    // viewport, and below 18rem the fixed 7rem chart + legend has nowhere
-    // to shrink to. The legend drops rather than stacking, since hovering
-    // a slice already shows label + count via the tooltip.
-    <Section title={title} className={cn("@container flex flex-col xl:min-h-0", className)}>
-      {isLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <div className="flex flex-1 items-center justify-center gap-4 @2xs:justify-start">
-          <ChartContainer config={chartConfig} className="mx-auto aspect-square h-28 w-28 shrink-0">
-            <PieChart>
-              {total > 0 ? <ChartTooltip content={<ChartTooltipContent hideLabel nameKey="key" />} /> : null}
-              <Pie data={chartData} dataKey="count" nameKey="key" innerRadius={34} outerRadius={50} strokeWidth={2}>
-                {chartData.map((row) => (
-                  <Cell key={row.key} fill={total > 0 ? colors[row.key] : "var(--muted)"} stroke="var(--card)" />
-                ))}
-              </Pie>
-            </PieChart>
-          </ChartContainer>
-
-          <div className="hidden min-w-0 flex-1 space-y-1.5 text-sm @2xs:block">
-            {rows.map((row) => (
-              <div key={row.key} className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 truncate text-muted-foreground">
-                  <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: colors[row.key] }} />
-                  {labels?.[row.key] ?? row.key.charAt(0) + row.key.slice(1).toLowerCase()}
-                </span>
-                <span className="font-medium tabular-nums text-foreground">{row.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </Section>
-  );
-}

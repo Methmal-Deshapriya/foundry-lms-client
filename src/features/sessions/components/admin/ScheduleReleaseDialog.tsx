@@ -179,7 +179,7 @@ export function ScheduleReleaseDialog({
                     !inMonth && "text-muted-foreground/50",
                     disabled && "cursor-not-allowed opacity-30",
                     selected
-                      ? "bg-linear-to-r from-blue-600 to-indigo-500 font-semibold text-white"
+                      ? "bg-[#191919] font-semibold text-white"
                       : !disabled && "text-foreground hover:bg-muted",
                   )}
                 >
@@ -209,6 +209,7 @@ export function ScheduleReleaseDialog({
           <Button
             disabled={!combined || isInPast || isLoading}
             onClick={() => combined && onConfirm(combined.toISOString())}
+            className="bg-[#191919] bg-none hover:bg-[#27272A]"
           >
             {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CalendarClock className="mr-2 size-4" />}
             Schedule

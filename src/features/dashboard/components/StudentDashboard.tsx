@@ -17,6 +17,7 @@ import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile
 import { Section } from "@/components/dataviz/StatPrimitives";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { useGetMyProjectsQuery } from "@/features/projects/projectsApi";
 import type { ProjectStatus, StudentProject } from "@/features/projects/projectsTypes";
 import { useGetStudentDashboardQuery } from "../dashboardApi";
@@ -151,9 +152,9 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
 }
 
 // Shared thumbnail treatment for both the Continue Learning hero and each
-// "Your courses" row: a real image when the course has one, otherwise a
-// flat black tile with the course title centered in white — one fallback
-// look everywhere, instead of a generic icon placeholder.
+// "Your courses" row — a thin wrapper over the shared ThumbnailImage so both
+// call sites get the same graceful fallback (missing URL, or a failed load
+// e.g. an R2 outage) without repeating the null-title default at each site.
 function CourseThumbnail({
   src,
   title,
@@ -164,15 +165,8 @@ function CourseThumbnail({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center justify-center overflow-hidden bg-[#191919]", className)}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URLs
-        <img src={src} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <span className="line-clamp-2 px-2 text-center text-xs font-semibold text-white sm:text-sm">
-          {title ?? "Untitled course"}
-        </span>
-      )}
+    <div className={cn("overflow-hidden", className)}>
+      <ThumbnailImage src={src} alt="" label={title ?? "Untitled course"} className="h-full w-full object-cover" />
     </div>
   );
 }

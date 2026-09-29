@@ -18,10 +18,11 @@ const map = rawMap as unknown as SvgMapData;
 const NAME_ALIASES: Record<string, string> = { moneragala: "monaragala" };
 
 // Sequential, single-hue magnitude encoding — same "one hue, light to dark"
-// convention as the learning-activity heatmap and MagnitudeBar, not a fresh
-// palette invented for this one chart. Zero-count districts get a neutral
-// muted fill so "no data" reads distinctly from "the lightest bucket".
-const LEVEL_COLORS = ["#e5e7eb", "#bfdbfe", "#60a5fa", "#3b82f6", "#1d4ed8"];
+// convention as the learning-activity heatmap and MagnitudeBar, drawn from
+// the "Monochrome + Red" black/grey scale. Zero-count districts get a
+// neutral muted fill so "no data" reads distinctly from "the lightest
+// bucket".
+const LEVEL_COLORS = ["#e4e4e7", "#d4d4d8", "#a1a1aa", "#52525b", "#27272a"];
 
 function levelFor(count: number, max: number) {
   if (count <= 0) return 0;

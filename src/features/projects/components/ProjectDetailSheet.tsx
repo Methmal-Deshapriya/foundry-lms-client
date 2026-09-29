@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { BookOpen, Calendar, ExternalLink, Github, Globe, MessageSquare, Pencil } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,9 +12,9 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { cn } from "@/lib/utils";
 import { PROJECT_STATUS_STYLES } from "@/lib/statusColors";
-import { projectImageLoader } from "@/lib/projectImage";
 import type { StudentProject } from "@/features/projects/projectsTypes";
 import { ProjectEditDialog } from "./ProjectEditDialog";
 
@@ -52,22 +51,8 @@ export function ProjectDetailSheet({
           </SheetHeader>
 
           <div className="space-y-5 px-4 pb-6">
-            <div className="relative aspect-1280/780 overflow-hidden rounded-lg bg-[#191919]">
-              {project.thumbnailUrl ? (
-                <Image
-                  loader={projectImageLoader}
-                  unoptimized
-                  src={project.thumbnailUrl}
-                  alt=""
-                  fill
-                  sizes="(max-width: 640px) 100vw, 32rem"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center px-6">
-                  <span className="line-clamp-2 text-center text-sm font-semibold text-white">{project.title}</span>
-                </div>
-              )}
+            <div className="relative aspect-1280/780 overflow-hidden rounded-lg">
+              <ThumbnailImage src={project.thumbnailUrl} alt="" label={project.title} className="absolute inset-0 h-full w-full object-cover" />
             </div>
 
             <span

@@ -61,7 +61,7 @@ const STATUS_PILLS: { key: EnrollmentRequestStatus | ""; label: string; countKey
   { key: "DECLINED", label: "Declined", countKey: "DECLINED" },
 ];
 const PILL_ACTIVE_CLASS: Record<EnrollmentRequestStatus | "", string> = {
-  "": "border-primary bg-primary/10 text-primary",
+  "": "border-zinc-300 bg-zinc-100 text-[#191919]",
   PENDING: ENROLLMENT_REQUEST_STATUS_STYLES.PENDING,
   CONTACTED: ENROLLMENT_REQUEST_STATUS_STYLES.CONTACTED,
   ENROLLED: ENROLLMENT_REQUEST_STATUS_STYLES.ENROLLED,
@@ -72,6 +72,48 @@ const DEFAULT_PAGE_SIZE = 20;
 const FILTER_DEBOUNCE_MS = 300;
 const MIN_FILTER_LENGTH = 3;
 const INTERACTIVE_SELECTOR = "input,button,a,[role=menuitem],[data-no-row-navigation]";
+
+// Shared between the desktop table row and the narrow-screen card below.
+function RequestActionsRow({
+  request,
+  isUpdatingStatus,
+  onMarkContacted,
+  onEnroll,
+  onDecline,
+  onReopen,
+}: {
+  request: EnrollmentRequest;
+  isUpdatingStatus: boolean;
+  onMarkContacted: () => void;
+  onEnroll: () => void;
+  onDecline: () => void;
+  onReopen: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-2" data-no-row-navigation>
+      {request.status === "PENDING" ? (
+        <Button aria-label="Mark as contacted" variant="ghost" size="icon" disabled={isUpdatingStatus} onClick={onMarkContacted}>
+          <Check className="size-4 text-sky-600" aria-hidden="true" />
+        </Button>
+      ) : null}
+      {["PENDING", "CONTACTED"].includes(request.status) ? (
+        <>
+          <Button aria-label="Enroll this student" variant="ghost" size="icon" onClick={onEnroll}>
+            <UserCheck className="size-4 text-emerald-600" aria-hidden="true" />
+          </Button>
+          <Button aria-label="Decline this request" variant="ghost" size="icon" disabled={isUpdatingStatus} onClick={onDecline}>
+            <XCircle className="size-4 text-destructive" aria-hidden="true" />
+          </Button>
+        </>
+      ) : null}
+      {request.status === "DECLINED" ? (
+        <Button aria-label="Reopen this request" variant="ghost" size="icon" disabled={isUpdatingStatus} onClick={onReopen}>
+          <RotateCcw className="size-4 text-sky-600" aria-hidden="true" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}
 
 /**
  * The missing link between a PAID course's public "Enroll" button and the
@@ -230,7 +272,7 @@ export function EnrollmentRequestsTab({
           <TableCaption className="sr-only">Enrollment requests submitted for this intake</TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Student</TableHead>
+              <TableHead className="w-40 px-4">Student</TableHead>
               <TableHead className="w-40">Phone</TableHead>
               <TableHead className="w-28">Status</TableHead>
               <TableHead className="w-28">Requested</TableHead>
@@ -269,7 +311,7 @@ export function EnrollmentRequestsTab({
                     }
                   }}
                 >
-                  <TableCell className="max-w-0 px-4 py-4">
+                  <TableCell className="w-40 px-4 py-4">
                     <p className="truncate font-semibold" title={`${request.student?.firstName} ${request.student?.lastName}`}>
                       {request.student?.firstName} {request.student?.lastName}
                     </p>
@@ -298,51 +340,14 @@ export function EnrollmentRequestsTab({
                   </TableCell>
                   <TableCell className="text-muted-foreground">{format(new Date(request.createdAt), "MMM dd, yyyy")}</TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <div className="flex items-center justify-end gap-2">
-                      {request.status === "PENDING" ? (
-                        <Button
-                          aria-label="Mark as contacted"
-                          variant="ghost"
-                          size="icon"
-                          disabled={isUpdatingStatus}
-                          onClick={() => markContacted(request)}
-                        >
-                          <Check className="size-4 text-sky-600" aria-hidden="true" />
-                        </Button>
-                      ) : null}
-                      {["PENDING", "CONTACTED"].includes(request.status) ? (
-                        <>
-                          <Button
-                            aria-label="Enroll this student"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEnroll(request)}
-                          >
-                            <UserCheck className="size-4 text-emerald-600" aria-hidden="true" />
-                          </Button>
-                          <Button
-                            aria-label="Decline this request"
-                            variant="ghost"
-                            size="icon"
-                            disabled={isUpdatingStatus}
-                            onClick={() => decline(request)}
-                          >
-                            <XCircle className="size-4 text-destructive" aria-hidden="true" />
-                          </Button>
-                        </>
-                      ) : null}
-                      {request.status === "DECLINED" ? (
-                        <Button
-                          aria-label="Reopen this request"
-                          variant="ghost"
-                          size="icon"
-                          disabled={isUpdatingStatus}
-                          onClick={() => reopen(request)}
-                        >
-                          <RotateCcw className="size-4 text-sky-600" aria-hidden="true" />
-                        </Button>
-                      ) : null}
-                    </div>
+                    <RequestActionsRow
+                      request={request}
+                      isUpdatingStatus={isUpdatingStatus}
+                      onMarkContacted={() => markContacted(request)}
+                      onEnroll={() => openEnroll(request)}
+                      onDecline={() => decline(request)}
+                      onReopen={() => reopen(request)}
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -350,6 +355,7 @@ export function EnrollmentRequestsTab({
           </TableBody>
         </Table>
       </div>
+
 
       {data && data.pagination.total > 0 ? (
         <OffsetPagination
@@ -379,6 +385,7 @@ export function EnrollmentRequestsTab({
             <div className="space-y-2">
               <Label htmlFor="request-payment-status">Payment</Label>
               <Select
+                accent="black"
                 id="request-payment-status"
                 className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                 options={paymentOptions}
@@ -397,7 +404,12 @@ export function EnrollmentRequestsTab({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setEnrollTarget(null)}>Cancel</Button>
-            <Button type="button" disabled={isEnrolling} onClick={confirmEnroll}>
+            <Button
+              type="button"
+              disabled={isEnrolling}
+              onClick={confirmEnroll}
+              className="bg-[#191919] bg-none hover:bg-[#27272A]"
+            >
               {isEnrolling ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
               Enroll student
             </Button>
@@ -406,7 +418,7 @@ export function EnrollmentRequestsTab({
       </Dialog>
 
       <Sheet open={Boolean(detailRequest)} onOpenChange={(open) => !open && setDetailRequest(null)}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
+        <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {detailRequest ? (
             <>
               <SheetHeader>
@@ -450,7 +462,11 @@ export function EnrollmentRequestsTab({
                         <Check className="mr-2 size-4" aria-hidden="true" /> Mark contacted
                       </Button>
                     ) : null}
-                    <Button size="sm" onClick={() => openEnroll(detailRequest)}>
+                    <Button
+                      size="sm"
+                      onClick={() => openEnroll(detailRequest)}
+                      className="bg-[#191919] bg-none hover:bg-[#27272A]"
+                    >
                       <UserCheck className="mr-2 size-4" aria-hidden="true" /> Enroll
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => decline(detailRequest)} disabled={isUpdatingStatus}>

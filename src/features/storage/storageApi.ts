@@ -4,7 +4,10 @@ export type StoredObjectPurpose =
   | "COURSE_THUMBNAIL"
   | "SESSION_RECORDING"
   | "SESSION_MATERIAL"
-  | "PROJECT_THUMBNAIL";
+  | "PROJECT_THUMBNAIL"
+  | "SERVICE_HERO"
+  | "SERVICE_CARD"
+  | "COURSE_EXPLAINER_VIDEO_THUMBNAIL";
 
 export interface StoredObjectSummary {
   id: string;

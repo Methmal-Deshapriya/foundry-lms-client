@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  AlertTriangle,
   Award,
   BookOpen,
   Clock,
@@ -9,6 +10,7 @@ import {
   FolderCode,
   GraduationCap,
   LayoutDashboard,
+  Layers,
   Library,
   ShieldCheck,
   Users,
@@ -36,6 +38,8 @@ export const Icons = {
   enrollments: GraduationCap,
   pending: Clock,
   revenue: DollarSign,
+  intakes: Layers,
+  attention: AlertTriangle,
 } as const satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof Icons;

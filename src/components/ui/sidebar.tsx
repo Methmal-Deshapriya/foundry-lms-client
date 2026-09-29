@@ -196,6 +196,13 @@ function Sidebar({
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              // SheetContent's own default inline style always paints the
+              // public site's marketing gradient — an inline style beats any
+              // className override, so `bg-sidebar` above does nothing on
+              // its own. The sidebar is an admin surface, not a marketing
+              // one, so cancel the gradient and let bg-sidebar's flat color
+              // actually show.
+              backgroundImage: "none",
             } as React.CSSProperties
           }
           side={side}
@@ -234,7 +241,10 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+          // No h-svh: an explicit height overrides bottom:0, and svh can
+          // resolve shorter than the visible viewport. inset-y-0 alone pins
+          // it to the real top and bottom edges.
+          "fixed inset-y-0 z-10 hidden w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left"
             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",

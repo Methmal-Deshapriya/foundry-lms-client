@@ -10,9 +10,9 @@ export function RoleBadge({ role }: { role: Role }) {
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
         role === "SUPER_ADMIN"
-          ? "border-purple-500/20 bg-purple-500/10 text-purple-700"
+          ? "border-[#191919]/20 bg-[#191919] text-white"
           : role === "ADMIN"
-            ? "border-primary/20 bg-primary/10 text-primary"
+            ? "border-zinc-300 bg-zinc-100 text-[#191919]"
             : "border-border bg-muted text-muted-foreground",
       )}
     >

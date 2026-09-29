@@ -49,6 +49,7 @@ export function OffsetPagination({
         </Label>
         <Select
           id={id}
+          accent="black"
           className="h-9 w-28 rounded-md py-0 pl-3 pr-8 text-sm"
           options={PAGE_SIZE_LABELS}
           value={`${pageSize} / page`}

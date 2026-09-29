@@ -16,9 +16,9 @@ export function RecordingPreview({ url }: { url: string | null | undefined }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Open recording"
-      className="group flex h-40 items-center justify-center rounded-md bg-linear-to-br from-primary/15 via-primary/5 to-transparent transition hover:from-primary/25 hover:via-primary/10"
+      className="group flex h-40 items-center justify-center rounded-md bg-linear-to-br from-[#191919]/15 via-[#191919]/5 to-transparent transition hover:from-[#191919]/25 hover:via-[#191919]/10"
     >
-      <span className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition group-hover:scale-105">
+      <span className="flex size-14 items-center justify-center rounded-full bg-[#191919] text-white shadow-sm transition group-hover:scale-105">
         <Play className="size-6 fill-current" aria-hidden="true" />
       </span>
     </a>

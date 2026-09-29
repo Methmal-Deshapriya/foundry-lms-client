@@ -20,7 +20,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
@@ -53,7 +52,7 @@ const STATUS_PILLS: { key: ProjectStatus | ""; label: string; countKey: keyof Pr
   { key: "REJECTED", label: "Rejected", countKey: "rejected" },
 ];
 const PILL_ACTIVE_CLASS: Record<ProjectStatus | "", string> = {
-  "": "border-primary bg-primary/10 text-primary",
+  "": "border-zinc-300 bg-zinc-100 text-[#191919]",
   PENDING: statusStyles.PENDING,
   APPROVED: statusStyles.APPROVED,
   REJECTED: statusStyles.REJECTED,
@@ -62,6 +61,35 @@ const PILL_ACTIVE_CLASS: Record<ProjectStatus | "", string> = {
 const FILTER_DEBOUNCE_MS = 300;
 const MIN_FILTER_LENGTH = 3;
 const INTERACTIVE_SELECTOR = "input,button,a,[role=menuitem],[data-no-row-navigation]";
+
+// Shared between the desktop table row and the narrow-screen card below.
+function ProjectActionsMenu({
+  project,
+  onApprove,
+  onReject,
+}: {
+  project: StudentProject;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${project.title}`} data-no-row-navigation>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem disabled={project.status === "APPROVED"} onSelect={onApprove}>
+          <CheckCircle2 /> Approve
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" disabled={project.status === "REJECTED"} onSelect={onReject}>
+          <XCircle /> Reject
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 /**
  * The global, cross-course project review queue. Mirrors
@@ -154,7 +182,7 @@ export default function AdminProjectsPage() {
           <TableCaption className="sr-only">Student projects awaiting or carrying an administrative review</TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Project</TableHead>
+              <TableHead className="w-40 px-4">Project</TableHead>
               <TableHead className="w-48">Student / Course</TableHead>
               <TableHead className="w-24">Status</TableHead>
               <TableHead className="w-28">Submitted</TableHead>
@@ -201,7 +229,7 @@ export default function AdminProjectsPage() {
                     }
                   }}
                 >
-                  <TableCell className="max-w-0 px-4">
+                  <TableCell className="w-40 px-4">
                     <div className="flex min-w-0 items-center gap-2">
                       <p className="min-w-0 truncate font-semibold" title={project.title}>
                         {project.title}
@@ -211,7 +239,7 @@ export default function AdminProjectsPage() {
                         className={cn(
                           "shrink-0",
                           project.isPublic
-                            ? "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            ? "border-zinc-300 bg-zinc-100 text-[#191919]"
                             : "border-muted-foreground/25 bg-muted text-muted-foreground",
                         )}
                       >
@@ -219,7 +247,7 @@ export default function AdminProjectsPage() {
                       </Badge>
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-0">
+                  <TableCell className="w-48">
                     <p className="wrap-break-word font-medium">
                       {project.user?.firstName} {project.user?.lastName}
                     </p>
@@ -237,29 +265,11 @@ export default function AdminProjectsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{format(new Date(project.createdAt), "MMM dd, yyyy")}</TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${project.title}`}>
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          disabled={project.status === "APPROVED"}
-                          onSelect={() => openReview(project, "APPROVED")}
-                        >
-                          <CheckCircle2 /> Approve
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          disabled={project.status === "REJECTED"}
-                          onSelect={() => openReview(project, "REJECTED")}
-                        >
-                          <XCircle /> Reject
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <ProjectActionsMenu
+                      project={project}
+                      onApprove={() => openReview(project, "APPROVED")}
+                      onReject={() => openReview(project, "REJECTED")}
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -267,6 +277,7 @@ export default function AdminProjectsPage() {
           </TableBody>
         </Table>
       </div>
+
 
       <CursorPagination
         page={page}
@@ -292,7 +303,7 @@ export default function AdminProjectsPage() {
             <Label htmlFor="project-feedback">
               Feedback{" "}
               {reviewTarget?.status === "REJECTED" ? (
-                <span className="text-red-500" aria-hidden="true">
+                <span className="text-[#E91717]" aria-hidden="true">
                   *
                 </span>
               ) : (
@@ -314,6 +325,7 @@ export default function AdminProjectsPage() {
             <Button
               type="button"
               variant={reviewTarget?.status === "REJECTED" ? "destructive" : "default"}
+              className={reviewTarget?.status === "REJECTED" ? undefined : "bg-[#191919] bg-none hover:bg-[#27272A]"}
               disabled={isReviewing || (reviewTarget?.status === "REJECTED" && feedback.trim().length === 0)}
               onClick={confirmReview}
             >
@@ -325,7 +337,7 @@ export default function AdminProjectsPage() {
       </Dialog>
 
       <Sheet open={Boolean(detailProject)} onOpenChange={(open) => !open && setDetailProject(null)}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
+        <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {detailProject ? (
             <>
               <SheetHeader>

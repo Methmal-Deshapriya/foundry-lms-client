@@ -81,7 +81,7 @@ export function ProjectEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-border bg-white sm:max-w-lg">
+      <DialogContent className="max-h-[92vh] border-border bg-white sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit project</DialogTitle>
           <DialogDescription>Update your submission while it&apos;s still pending review.</DialogDescription>

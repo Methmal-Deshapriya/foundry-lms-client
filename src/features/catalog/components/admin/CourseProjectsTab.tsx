@@ -19,7 +19,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
@@ -58,7 +57,7 @@ const STATUS_PILLS: { key: ProjectStatus | ""; label: string; countKey: keyof Pr
   { key: "REJECTED", label: "Rejected", countKey: "rejected" },
 ];
 const PILL_ACTIVE_CLASS: Record<ProjectStatus | "", string> = {
-  "": "border-primary bg-primary/10 text-primary",
+  "": "border-zinc-300 bg-zinc-100 text-[#191919]",
   PENDING: statusStyles.PENDING,
   APPROVED: statusStyles.APPROVED,
   REJECTED: statusStyles.REJECTED,
@@ -68,6 +67,37 @@ const DEFAULT_PAGE_SIZE = 20;
 const FILTER_DEBOUNCE_MS = 300;
 const MIN_FILTER_LENGTH = 3;
 const INTERACTIVE_SELECTOR = "input,button,a,[role=menuitem],[data-no-row-navigation]";
+
+// Shared between the desktop table row and the narrow-screen card below.
+function ProjectActionsMenu({
+  project,
+  isReviewing,
+  onApprove,
+  onReject,
+}: {
+  project: StudentProject;
+  isReviewing: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={`Actions for ${project.title}`} data-no-row-navigation>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem disabled={isReviewing || project.status === "APPROVED"} onSelect={onApprove}>
+          <CheckCircle2 /> Approve
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" disabled={isReviewing || project.status === "REJECTED"} onSelect={onReject}>
+          <XCircle /> Reject
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
   const [q, setQ] = useState("");
@@ -147,7 +177,7 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
           <TableCaption className="sr-only">Student projects submitted for this course</TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Project</TableHead>
+              <TableHead className="w-40 px-4">Project</TableHead>
               <TableHead className="w-48">Student</TableHead>
               <TableHead className="w-28">Status</TableHead>
               <TableHead className="w-28">Submitted</TableHead>
@@ -194,11 +224,11 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
                     }
                   }}
                 >
-                  <TableCell className="max-w-0 truncate px-4 py-4 font-semibold" title={project.title}>
+                  <TableCell className="w-40 truncate px-4 py-4 font-semibold" title={project.title}>
                     {project.title}
                   </TableCell>
                   <TableCell
-                    className="max-w-0 truncate"
+                    className="w-48 truncate"
                     title={`${project.user?.firstName ?? ""} ${project.user?.lastName ?? ""}`.trim()}
                   >
                     {project.user?.firstName} {project.user?.lastName}
@@ -215,29 +245,12 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{format(new Date(project.createdAt), "MMM dd, yyyy")}</TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label={`Actions for ${project.title}`}>
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          disabled={isReviewing || project.status === "APPROVED"}
-                          onSelect={() => openReview(project, "APPROVED")}
-                        >
-                          <CheckCircle2 /> Approve
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          disabled={isReviewing || project.status === "REJECTED"}
-                          onSelect={() => openReview(project, "REJECTED")}
-                        >
-                          <XCircle /> Reject
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <ProjectActionsMenu
+                      project={project}
+                      isReviewing={isReviewing}
+                      onApprove={() => openReview(project, "APPROVED")}
+                      onReject={() => openReview(project, "REJECTED")}
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -245,6 +258,7 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
           </TableBody>
         </Table>
       </div>
+
 
       {pagination && pagination.total > 0 ? (
         <OffsetPagination
@@ -273,7 +287,7 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
           </DialogHeader>
           <div className="space-y-2">
             <Label htmlFor="project-feedback">
-              Feedback {reviewTarget?.status === "REJECTED" ? <span className="text-red-500" aria-hidden="true">*</span> : "(optional)"}
+              Feedback {reviewTarget?.status === "REJECTED" ? <span className="text-[#E91717]" aria-hidden="true">*</span> : "(optional)"}
             </Label>
             <textarea
               id="project-feedback"
@@ -290,6 +304,7 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
             <Button
               type="button"
               variant={reviewTarget?.status === "REJECTED" ? "destructive" : "default"}
+              className={reviewTarget?.status === "REJECTED" ? undefined : "bg-[#191919] bg-none hover:bg-[#27272A]"}
               disabled={isReviewing || (reviewTarget?.status === "REJECTED" && feedback.trim().length === 0)}
               onClick={confirmReview}
             >
@@ -301,7 +316,7 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
       </Dialog>
 
       <Sheet open={Boolean(detailProject)} onOpenChange={(open) => !open && setDetailProject(null)}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
+        <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {detailProject ? (
             <>
               <SheetHeader>

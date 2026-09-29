@@ -22,6 +22,7 @@ import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { AdminCatalogBreadcrumbs } from "@/features/catalog/components/AdminCatalogBreadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { SubmitProjectDialog } from "@/features/projects/components/SubmitProjectDialog";
@@ -137,21 +138,8 @@ export default function LearningPage() {
             backdrop band sat behind the title. */}
         <div className="space-y-6">
           <div className="flex items-start gap-4">
-            <div className="relative hidden aspect-video h-56 shrink-0 items-center justify-center overflow-hidden rounded-lg sm:flex sm:h-64">
-              {course.thumbnailUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URLs; next/image's domain allowlist would need constant upkeep
-                <img
-                  src={course.thumbnailUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-[#191919]">
-                  <span className="line-clamp-2 px-3 text-center text-xs font-semibold text-white">
-                    {course.title}
-                  </span>
-                </div>
-              )}
+            <div className="relative hidden aspect-video h-56 shrink-0 overflow-hidden rounded-lg sm:flex sm:h-64">
+              <ThumbnailImage src={course.thumbnailUrl} alt="" label={course.title} className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 space-y-4">
               <p className="flex items-center gap-2 truncate text-xs font-semibold tracking-widest text-[#71717A] uppercase">

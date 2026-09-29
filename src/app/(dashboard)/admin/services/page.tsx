@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import {
   AlertTriangle,
   Archive,
@@ -30,8 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -44,44 +42,105 @@ import {
 import { selectAuthUser } from "@/features/auth/authSelectors";
 import {
   type AdminLearningServiceSummary,
-  type LearningService,
-  useCreateLearningServiceMutation,
   useDeleteLearningServiceMutation,
   useGetAdminLearningServiceSummariesQuery,
   useTransitionLearningServiceMutation,
-  useUpdateLearningServiceMutation,
 } from "@/features/catalog/catalogApi";
 import { AdminCatalogBreadcrumbs } from "@/features/catalog/components/AdminCatalogBreadcrumbs";
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
-import { AdminSummaryStrip } from "@/features/catalog/components/AdminSummaryStrip";
+import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile";
+import { LearningServiceForm } from "@/features/catalog/components/LearningServiceForm";
 import { NavigableTableRow } from "@/features/catalog/components/NavigableTableRow";
 import { hasPermission, PERMISSIONS } from "@/lib/access";
 import { getApiErrorMessage } from "@/lib/api";
+import { Icons } from "@/lib/icons";
 import { LEARNING_SERVICE_STATUS_STYLES } from "@/lib/statusColors";
 import { useAppSelector } from "@/store/hooks";
 
-type ServiceForm = Pick<
-  LearningService,
-  "key" | "slug" | "title" | "description" | "sortOrder"
-> & { profile: "PAID" | "FREE" };
-const emptyForm: ServiceForm = {
-  key: "",
-  slug: "",
-  title: "",
-  description: "",
-  sortOrder: 0,
-  profile: "PAID",
-};
-const slugify = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-const keyify = (value: string) =>
-  value
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
+// Shared between the desktop table row and the narrow-screen card below —
+// same actions, same permission gates, just mounted from two call sites so
+// each layout can place the trigger where it makes sense there.
+function ServiceActionsMenu({
+  service,
+  canManage,
+  canPublish,
+  canDelete,
+  isDeleting,
+  onEdit,
+  onTransition,
+  onDelete,
+}: {
+  service: AdminLearningServiceSummary;
+  canManage: boolean;
+  canPublish: boolean;
+  canDelete: boolean;
+  isDeleting: boolean;
+  onEdit: () => void;
+  onTransition: (action: "activate" | "deactivate" | "archive" | "unarchive") => void;
+  onDelete: () => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={`Actions for ${service.title}`} data-no-row-navigation>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {canManage && service.status !== "ARCHIVED" ? (
+          <DropdownMenuItem onSelect={onEdit}>
+            <Pencil /> Edit service
+          </DropdownMenuItem>
+        ) : null}
+        {canPublish && service.status === "DRAFT" ? (
+          <DropdownMenuItem onSelect={() => onTransition("activate")}>
+            <Eye /> Activate
+          </DropdownMenuItem>
+        ) : null}
+        {canPublish && service.status === "ACTIVE" ? (
+          <DropdownMenuItem onSelect={() => onTransition("deactivate")}>
+            <EyeOff /> Return to draft
+          </DropdownMenuItem>
+        ) : null}
+        {canPublish && service.status === "ARCHIVED" ? (
+          <DropdownMenuItem onSelect={() => onTransition("unarchive")}>
+            <ArchiveRestore /> Restore as draft
+          </DropdownMenuItem>
+        ) : null}
+        {canPublish && service.status !== "ARCHIVED" ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={() => onTransition("archive")}>
+              <Archive /> Archive
+            </DropdownMenuItem>
+          </>
+        ) : null}
+        {canDelete && service.status === "ARCHIVED" && service.courseCount === 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" disabled={isDeleting} onSelect={onDelete}>
+              <Trash2 /> Delete permanently
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ServiceAttentionBadge({ count }: { count: number }) {
+  return count ? (
+    <Badge variant="outline" className="gap-1 border-amber-500/30 bg-amber-500/10 px-1.5 py-0 text-[10px] text-amber-700">
+      <AlertTriangle className="size-2.5" />
+      {count}
+    </Badge>
+  ) : (
+    <Badge variant="outline" className="gap-1 border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0 text-[10px] text-emerald-700">
+      <CheckCircle2 className="size-2.5" />
+      Ready
+    </Badge>
+  );
+}
 
 export default function AdminServicesPage() {
   const user = useAppSelector(selectAuthUser);
@@ -97,11 +156,7 @@ export default function AdminServicesPage() {
   const [editing, setEditing] = useState<
     AdminLearningServiceSummary | "new" | null
   >(null);
-  const [form, setForm] = useState<ServiceForm>(emptyForm);
-  const [createService, createState] = useCreateLearningServiceMutation();
-  const [updateService, updateState] = useUpdateLearningServiceMutation();
-  const [transitionService, transitionState] =
-    useTransitionLearningServiceMutation();
+  const [transitionService] = useTransitionLearningServiceMutation();
   const [deleteService, deleteState] = useDeleteLearningServiceMutation();
 
   const totals = services.reduce(
@@ -113,71 +168,6 @@ export default function AdminServicesPage() {
     }),
     { courses: 0, intakes: 0, learners: 0, attention: 0 },
   );
-
-  const openEditor = (service?: AdminLearningServiceSummary) => {
-    setEditing(service ?? "new");
-    setForm(
-      service
-        ? {
-            key: service.key,
-            slug: service.slug,
-            title: service.title,
-            description: service.description,
-            sortOrder: service.sortOrder,
-            profile: service.accessType,
-          }
-        : emptyForm,
-    );
-  };
-
-  const save = async (event: FormEvent) => {
-    event.preventDefault();
-    const policy =
-      form.profile === "FREE"
-        ? {
-            accessType: "FREE" as const,
-            courseMode: "EVERGREEN" as const,
-            enrollmentMode: "SELF" as const,
-            paymentRequirement: "NOT_REQUIRED" as const,
-          }
-        : {
-            accessType: "PAID" as const,
-            courseMode: "SEASONAL" as const,
-            enrollmentMode: "ADMIN" as const,
-            paymentRequirement: "REQUIRED" as const,
-          };
-    try {
-      if (editing === "new") {
-        await createService({
-          key: form.key,
-          slug: form.slug,
-          title: form.title,
-          description: form.description,
-          sortOrder: form.sortOrder,
-          ...policy,
-        }).unwrap();
-      } else if (editing) {
-        await updateService({
-          id: editing.id,
-          body: {
-            slug: form.slug,
-            title: form.title,
-            description: form.description,
-            sortOrder: form.sortOrder,
-            ...policy,
-          },
-        }).unwrap();
-      }
-      toast.success(
-        editing === "new"
-          ? "Learning service created as draft"
-          : "Learning service updated",
-      );
-      setEditing(null);
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, "Could not save learning service"));
-    }
-  };
 
   const transition = async (
     service: AdminLearningServiceSummary,
@@ -220,50 +210,60 @@ export default function AdminServicesPage() {
         description="Learning services own access, course mode, enrollment, and payment policy for everything below them."
         action={
           canManage ? (
-            <Button onClick={() => openEditor()}>
+            <Button onClick={() => setEditing("new")} className="bg-[#191919] bg-none hover:bg-[#27272A]">
               <Plus /> New service
             </Button>
           ) : null
         }
       />
-      <AdminSummaryStrip
-        items={[
-          {
-            label: "Courses",
-            value: totals.courses,
-            detail: "Across all services",
-          },
-          {
-            label: "Intakes",
-            value: totals.intakes,
-            detail: "Scheduled and evergreen runs",
-          },
-          {
-            label: "Active learners",
-            value: totals.learners,
-            detail: "Unique per service",
-          },
-          {
-            label: "Needs attention",
-            value: totals.attention,
-            detail: "Drafts and delivery gaps",
-          },
-        ]}
-      />
+      {/* Grid, not flex-wrap: fixed-width tiles in a flex-wrap row wrap
+          unevenly (e.g. 3-then-1) at whatever width happens to fall short by
+          one tile — a real grid always divides evenly into its column
+          count at every width instead. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <CourseKpiTile
+          size="sm"
+          className="w-full min-w-0"
+          icon={Icons.myCourses}
+          label="Courses"
+          value={totals.courses}
+        />
+        <CourseKpiTile
+          size="sm"
+          className="w-full min-w-0"
+          icon={Icons.intakes}
+          label="Intakes"
+          value={totals.intakes}
+        />
+        <CourseKpiTile
+          size="sm"
+          className="w-full min-w-0"
+          icon={Icons.users}
+          label="Active learners"
+          value={totals.learners}
+        />
+        <CourseKpiTile
+          size="sm"
+          className="w-full min-w-0"
+          icon={Icons.attention}
+          label="Needs attention"
+          value={totals.attention}
+        />
+      </div>
       <div className="overflow-hidden rounded-md border bg-card">
-        <Table className="table-fixed">
+        <Table className="table-fixed min-w-5xl">
           <TableCaption className="sr-only">
             Learning services summary
           </TableCaption>
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Service</TableHead>
-              <TableHead className="w-28">Courses</TableHead>
-              <TableHead className="w-36">Intake lifecycle</TableHead>
-              <TableHead className="w-32">Learners</TableHead>
-              <TableHead className="w-44">Inherited policy</TableHead>
-              <TableHead className="w-24">Attention</TableHead>
-              <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
+              <TableHead className="w-72 px-4">Service</TableHead>
+              <TableHead className="w-28 px-3">Courses</TableHead>
+              <TableHead className="w-40 px-3">Intake lifecycle</TableHead>
+              <TableHead className="w-32 px-3">Learners</TableHead>
+              <TableHead className="w-52 px-3">Inherited policy</TableHead>
+              <TableHead className="w-20 px-3">Attention</TableHead>
+              <TableHead className="w-20 pr-6 pl-3 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -310,7 +310,10 @@ export default function AdminServicesPage() {
                   <TableCell className="max-w-sm whitespace-normal px-4 py-4">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold">{service.title}</p>
-                      <Badge variant="outline" className={LEARNING_SERVICE_STATUS_STYLES[service.status]}>
+                      <Badge
+                        variant="outline"
+                        className={`${LEARNING_SERVICE_STATUS_STYLES[service.status]} px-1.5 py-0 text-[10px]`}
+                      >
                         {service.status}
                       </Badge>
                     </div>
@@ -318,7 +321,7 @@ export default function AdminServicesPage() {
                       {service.description}
                     </p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3">
                     <p className="truncate font-mono">
                       {service.courses.published} /{" "}
                       {service.courses.total - service.courses.archived}
@@ -327,7 +330,7 @@ export default function AdminServicesPage() {
                       published / active
                     </p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3">
                     <p
                       className="truncate font-mono"
                       title={`${service.intakes.openActive} / ${service.intakes.closedActive} / ${service.intakes.completed}`}
@@ -340,13 +343,13 @@ export default function AdminServicesPage() {
                       open / closed-active / completed
                     </p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3">
                     <p className="truncate font-mono">{service.learners.activeUnique}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {service.learners.activeEnrollments} active enrollments
                     </p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="px-3">
                     <p className="truncate font-medium">
                       {service.accessType} · {service.courseMode}
                     </p>
@@ -360,92 +363,20 @@ export default function AdminServicesPage() {
                         .replace("_", " ")}
                     </p>
                   </TableCell>
-                  <TableCell>
-                    {service.attentionCount ? (
-                      <Badge
-                        variant="outline"
-                        className="gap-1 border-amber-500/30 bg-amber-500/10 text-amber-700"
-                      >
-                        <AlertTriangle className="size-3" />
-                        {service.attentionCount}
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-                      >
-                        <CheckCircle2 className="size-3" />
-                        Ready
-                      </Badge>
-                    )}
+                  <TableCell className="px-3">
+                    <ServiceAttentionBadge count={service.attentionCount} />
                   </TableCell>
-                  <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Actions for ${service.title}`}
-                        >
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {canManage && service.status !== "ARCHIVED" ? (
-                          <DropdownMenuItem
-                            onSelect={() => openEditor(service)}
-                          >
-                            <Pencil /> Edit service
-                          </DropdownMenuItem>
-                        ) : null}
-                        {canPublish && service.status === "DRAFT" ? (
-                          <DropdownMenuItem
-                            onSelect={() => transition(service, "activate")}
-                          >
-                            <Eye /> Activate
-                          </DropdownMenuItem>
-                        ) : null}
-                        {canPublish && service.status === "ACTIVE" ? (
-                          <DropdownMenuItem
-                            onSelect={() => transition(service, "deactivate")}
-                          >
-                            <EyeOff /> Return to draft
-                          </DropdownMenuItem>
-                        ) : null}
-                        {canPublish && service.status === "ARCHIVED" ? (
-                          <DropdownMenuItem
-                            onSelect={() => transition(service, "unarchive")}
-                          >
-                            <ArchiveRestore /> Restore as draft
-                          </DropdownMenuItem>
-                        ) : null}
-                        {canPublish && service.status !== "ARCHIVED" ? (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onSelect={() => transition(service, "archive")}
-                            >
-                              <Archive /> Archive
-                            </DropdownMenuItem>
-                          </>
-                        ) : null}
-                        {canDelete &&
-                        service.status === "ARCHIVED" &&
-                        service.courseCount === 0 ? (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              variant="destructive"
-                              disabled={deleteState.isLoading}
-                              onSelect={() => remove(service)}
-                            >
-                              <Trash2 /> Delete permanently
-                            </DropdownMenuItem>
-                          </>
-                        ) : null}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <TableCell className="pr-6 pl-3 text-right" data-no-row-navigation>
+                    <ServiceActionsMenu
+                      service={service}
+                      canManage={canManage}
+                      canPublish={canPublish}
+                      canDelete={canDelete}
+                      isDeleting={deleteState.isLoading}
+                      onEdit={() => setEditing(service)}
+                      onTransition={(action) => transition(service, action)}
+                      onDelete={() => remove(service)}
+                    />
                   </TableCell>
                 </NavigableTableRow>
               ))
@@ -460,7 +391,7 @@ export default function AdminServicesPage() {
           if (!open) setEditing(null);
         }}
       >
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editing === "new"
@@ -468,137 +399,16 @@ export default function AdminServicesPage() {
                 : "Edit learning service"}
             </DialogTitle>
             <DialogDescription>
-              Choose one supported delivery profile. Identity and policy lock
-              after the first course is created.
+              {editing === "new"
+                ? "Every step below feeds the public home page card and the service's own detail page — the service goes live from this data alone."
+                : "Identity and policy lock after the first course is created."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={save} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="service-title">Title</Label>
-                <Input
-                  id="service-title"
-                  required
-                  minLength={3}
-                  value={form.title}
-                  onChange={(event) => {
-                    const title = event.target.value;
-                    setForm((current) => ({
-                      ...current,
-                      title,
-                      ...(editing === "new"
-                        ? { slug: slugify(title), key: keyify(title) }
-                        : {}),
-                    }));
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="service-key">Stable key</Label>
-                <Input
-                  id="service-key"
-                  required
-                  disabled={editing !== "new"}
-                  value={form.key}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      key: keyify(event.target.value),
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="service-slug">Public slug</Label>
-                <Input
-                  id="service-slug"
-                  required
-                    disabled={editing !== null && editing !== "new" && editing.courseCount > 0}
-                  value={form.slug}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      slug: slugify(event.target.value),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="service-order">Sort order</Label>
-                <Input
-                  id="service-order"
-                  type="number"
-                  min={0}
-                  value={form.sortOrder}
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      sortOrder: Number(event.target.value),
-                    }))
-                  }
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="service-description">Description</Label>
-              <textarea
-                id="service-description"
-                required
-                minLength={10}
-                className="min-h-24 w-full rounded-md border bg-background p-3 text-sm"
-                value={form.description}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="service-profile">Delivery policy</Label>
-              <select
-                id="service-profile"
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                disabled={editing !== null && editing !== "new" && editing.courseCount > 0}
-                value={form.profile}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    profile: event.target.value as "PAID" | "FREE",
-                  }))
-                }
-              >
-                <option value="PAID">
-                  Paid · seasonal · admin enrollment · payment required
-                </option>
-                <option value="FREE">
-                  Free · evergreen · self enrollment · no payment
-                </option>
-              </select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditing(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  createState.isLoading ||
-                  updateState.isLoading ||
-                  transitionState.isLoading
-                }
-              >
-                Save service
-              </Button>
-            </div>
-          </form>
+          <LearningServiceForm
+            initial={editing !== "new" && editing !== null ? editing : undefined}
+            onSuccess={() => setEditing(null)}
+            onCancel={() => setEditing(null)}
+          />
         </DialogContent>
       </Dialog>
     </div>

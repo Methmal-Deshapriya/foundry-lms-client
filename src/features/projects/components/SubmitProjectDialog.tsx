@@ -109,7 +109,7 @@ export function SubmitProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[92vh] sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Submit a project</DialogTitle>
           <DialogDescription>

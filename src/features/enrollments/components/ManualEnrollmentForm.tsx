@@ -165,6 +165,7 @@ export default function ManualEnrollmentForm({
         <div className="space-y-2">
           <Label htmlFor="enrollment-payment-status">Payment</Label>
           <Select
+            accent="black"
             id="enrollment-payment-status"
             className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
             options={paymentOptions}
@@ -181,7 +182,13 @@ export default function ManualEnrollmentForm({
       </div>
       <div className="space-y-2"><Label htmlFor="enrollment-payment-note">Internal payment note</Label><textarea id="enrollment-payment-note" className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm" value={note} onChange={(event) => setNote(event.target.value)} /></div>
       <div className="flex gap-2">
-        <Button disabled={selectedIds.length === 0 || submitting} onClick={submit}>{submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Enroll {selectedIds.length || "selected"} student{selectedIds.length === 1 ? "" : "s"}</Button>
+        <Button
+          disabled={selectedIds.length === 0 || submitting}
+          onClick={submit}
+          className="bg-[#191919] bg-none hover:bg-[#27272A]"
+        >
+          {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Enroll {selectedIds.length || "selected"} student{selectedIds.length === 1 ? "" : "s"}
+        </Button>
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel

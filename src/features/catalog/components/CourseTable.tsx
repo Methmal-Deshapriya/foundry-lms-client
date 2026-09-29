@@ -54,6 +54,63 @@ function enrollmentStatusLabel(status: AdminCourse["enrollmentStatus"]) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+// Shared between the desktop table row and the narrow-screen card below.
+function CourseActionsMenu({
+  course,
+  canPublish,
+  canDelete,
+  onEdit,
+  onTogglePublish,
+  onToggleArchive,
+  onDelete,
+}: {
+  course: AdminCourse;
+  canPublish: boolean;
+  canDelete: boolean;
+  onEdit: () => void;
+  onTogglePublish: () => void;
+  onToggleArchive: () => void;
+  onDelete: () => void;
+}) {
+  const isArchived = course.status === "ARCHIVED";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={`Actions for ${course.title}`} data-no-row-navigation>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem disabled={isArchived} onSelect={onEdit}>
+          <Pencil /> Edit course
+        </DropdownMenuItem>
+        {canPublish && !isArchived ? (
+          <DropdownMenuItem onSelect={onTogglePublish}>
+            {course.status === "PUBLISHED" ? <EyeOff /> : <Eye />}
+            {course.status === "PUBLISHED" ? "Unpublish" : "Publish"}
+          </DropdownMenuItem>
+        ) : null}
+        {canPublish ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant={isArchived ? undefined : "destructive"} onSelect={onToggleArchive}>
+              {isArchived ? <ArchiveRestore /> : <Archive />} {isArchived ? "Restore as draft" : "Archive course"}
+            </DropdownMenuItem>
+          </>
+        ) : null}
+        {canDelete && isArchived && course.intakeCount === 0 ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+              <Trash2 /> Delete course
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function CourseTable({
   courses,
   serviceSlug,
@@ -95,13 +152,22 @@ export function CourseTable({
     }
   };
 
+  const removeCourse = async (course: AdminCourse) => {
+    try {
+      await deleteCourse(course.id).unwrap();
+      toast.success("Course deleted");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Could not delete course"));
+    }
+  };
+
   return (
     <>
       <div className="overflow-hidden rounded-md border bg-card">
         <Table className="table-fixed">
           <TableHeader className="bg-muted/40">
             <TableRow>
-              <TableHead className="px-4">Course</TableHead>
+              <TableHead className="w-48 px-4">Course</TableHead>
               <TableHead className="w-20">Level</TableHead>
               <TableHead className="w-24">Price</TableHead>
               <TableHead className="w-20">Intakes</TableHead>
@@ -119,7 +185,6 @@ export function CourseTable({
               </TableRow>
             ) : (
               courses.map((course) => {
-                const isArchived = course.status === "ARCHIVED";
                 return (
                   <TableRow
                     key={course.id}
@@ -130,12 +195,9 @@ export function CourseTable({
                       if (event.key === "Enter") router.push(`${base}/${course.id}`);
                     }}
                   >
-                    <TableCell className="max-w-0 py-4">
+                    <TableCell className="w-48 py-4">
                       <p className="truncate font-semibold" title={course.title}>
                         {course.title}
-                      </p>
-                      <p className="truncate font-mono text-xs text-muted-foreground" title={`/${course.slug} · ${course.intakeCodePrefix}`}>
-                        /{course.slug} · {course.intakeCodePrefix}
                       </p>
                     </TableCell>
                     <TableCell className="text-xs">{course.level}</TableCell>
@@ -152,52 +214,15 @@ export function CourseTable({
                       <CatalogStatusBadge status={course.status} />
                     </TableCell>
                     <TableCell className="pr-4 text-right" onClick={(event) => event.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label={`Actions for ${course.title}`}>
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem disabled={isArchived} onSelect={() => setEditTarget(course)}>
-                            <Pencil /> Edit course
-                          </DropdownMenuItem>
-                          {canPublish && !isArchived ? (
-                            <DropdownMenuItem onSelect={() => togglePublish(course)}>
-                              {course.status === "PUBLISHED" ? <EyeOff /> : <Eye />}
-                              {course.status === "PUBLISHED" ? "Unpublish" : "Publish"}
-                            </DropdownMenuItem>
-                          ) : null}
-                          {canPublish ? (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                variant={isArchived ? undefined : "destructive"}
-                                onSelect={() => toggleArchive(course)}
-                              >
-                                {isArchived ? <ArchiveRestore /> : <Archive />}{" "}
-                                {isArchived ? "Restore as draft" : "Archive course"}
-                              </DropdownMenuItem>
-                            </>
-                          ) : null}
-                          {canDelete && isArchived && course.intakeCount === 0 ? (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onSelect={() =>
-                                  deleteCourse(course.id)
-                                    .unwrap()
-                                    .then(() => toast.success("Course deleted"))
-                                    .catch((error) => toast.error(getApiErrorMessage(error, "Could not delete course")))
-                                }
-                              >
-                                <Trash2 /> Delete course
-                              </DropdownMenuItem>
-                            </>
-                          ) : null}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <CourseActionsMenu
+                        course={course}
+                        canPublish={canPublish}
+                        canDelete={canDelete}
+                        onEdit={() => setEditTarget(course)}
+                        onTogglePublish={() => togglePublish(course)}
+                        onToggleArchive={() => toggleArchive(course)}
+                        onDelete={() => removeCourse(course)}
+                      />
                     </TableCell>
                   </TableRow>
                 );
@@ -207,8 +232,9 @@ export function CourseTable({
         </Table>
       </div>
 
+
       <Dialog open={Boolean(editTarget)} onOpenChange={(open) => !open && setEditTarget(null)}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent className="max-h-[92vh] sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Edit course</DialogTitle>
             <DialogDescription>

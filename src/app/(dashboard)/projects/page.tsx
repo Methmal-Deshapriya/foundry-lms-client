@@ -1,15 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { ChevronRight, FolderCode, Loader2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { cn } from "@/lib/utils";
 import { PROJECT_STATUS_STYLES } from "@/lib/statusColors";
-import { projectImageLoader } from "@/lib/projectImage";
 import { useGetMyProjectsQuery } from "@/features/projects/projectsApi";
 import type { ProjectStatus, StudentProject } from "@/features/projects/projectsTypes";
 import { SubmitProjectDialog } from "@/features/projects/components/SubmitProjectDialog";
@@ -148,22 +147,13 @@ function ProjectCard({ project, onOpen }: { project: StudentProject; onOpen: () 
       onClick={onOpen}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-lg"
     >
-      <div className="relative aspect-video overflow-hidden bg-[#191919]">
-        {project.thumbnailUrl ? (
-          <Image
-            loader={projectImageLoader}
-            unoptimized
-            src={project.thumbnailUrl}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center px-4">
-            <span className="line-clamp-2 text-center text-sm font-semibold text-white">{project.title}</span>
-          </div>
-        )}
+      <div className="relative aspect-video overflow-hidden">
+        <ThumbnailImage
+          src={project.thumbnailUrl}
+          alt=""
+          label={project.title}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
         <Badge
           variant="outline"
           className={cn("absolute top-3 right-3 bg-background/90 shadow-sm backdrop-blur", PROJECT_STATUS_STYLES[project.status])}

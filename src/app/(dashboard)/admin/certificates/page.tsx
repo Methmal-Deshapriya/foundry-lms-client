@@ -48,7 +48,7 @@ const STATUS_PILLS: { key: CertificateStatus | ""; label: string; countKey: keyo
   { key: "REVOKED", label: "Revoked", countKey: "revoked" },
 ];
 const PILL_ACTIVE_CLASS: Record<CertificateStatus | "", string> = {
-  "": "border-primary bg-primary/10 text-primary",
+  "": "border-zinc-300 bg-zinc-100 text-[#191919]",
   ISSUED: CERTIFICATE_STATUS_STYLES.ISSUED,
   REVOKED: CERTIFICATE_STATUS_STYLES.REVOKED,
 };
@@ -56,6 +56,36 @@ const PILL_ACTIVE_CLASS: Record<CertificateStatus | "", string> = {
 const FILTER_DEBOUNCE_MS = 300;
 const MIN_FILTER_LENGTH = 3;
 const INTERACTIVE_SELECTOR = "input,button,a,[role=menuitem],[data-no-row-navigation]";
+
+// Shared between the desktop table row and the narrow-screen card below.
+function CertificateActionsMenu({ certificate, onRevoke }: { certificate: Certificate; onRevoke: () => void }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          aria-label={`Actions for certificate ${certificate.certificateCode}`}
+          data-no-row-navigation
+        >
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={`/certificates/verify/${certificate.certificateCode}`} target="_blank">
+            <ExternalLink /> Open verification
+          </Link>
+        </DropdownMenuItem>
+        {certificate.status === "ISSUED" ? (
+          <DropdownMenuItem variant="destructive" onSelect={onRevoke}>
+            <XCircle /> Revoke certificate
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 /**
  * The global, cross-course certificate registry. Deliberately mirrors
@@ -144,7 +174,7 @@ export default function AdminCertificatesPage() {
             <TableRow>
               <TableHead className="w-40 px-4">Certificate code</TableHead>
               <TableHead className="w-40">Student</TableHead>
-              <TableHead>Course</TableHead>
+              <TableHead className="w-40">Course</TableHead>
               <TableHead className="w-24">Status</TableHead>
               <TableHead className="w-28">Issued</TableHead>
               <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
@@ -190,13 +220,13 @@ export default function AdminCertificatesPage() {
                     }
                   }}
                 >
-                  <TableCell className="max-w-0 truncate px-4 py-4 font-mono" title={certificate.certificateCode}>
+                  <TableCell className="w-40 truncate px-4 py-4 font-mono" title={certificate.certificateCode}>
                     {certificate.certificateCode}
                   </TableCell>
-                  <TableCell className="max-w-0 truncate font-medium" title={certificate.studentName}>
+                  <TableCell className="w-40 truncate py-4 font-medium" title={certificate.studentName}>
                     {certificate.studentName}
                   </TableCell>
-                  <TableCell className="max-w-0 truncate" title={certificate.courseName}>
+                  <TableCell className="w-40 truncate" title={certificate.courseName}>
                     {certificate.courseName}
                   </TableCell>
                   <TableCell>
@@ -208,35 +238,13 @@ export default function AdminCertificatesPage() {
                     {format(new Date(certificate.issuedDate), "MMM dd, yyyy")}
                   </TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon-lg"
-                          aria-label={`Actions for certificate ${certificate.certificateCode}`}
-                        >
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/certificates/verify/${certificate.certificateCode}`} target="_blank">
-                            <ExternalLink /> Open verification
-                          </Link>
-                        </DropdownMenuItem>
-                        {certificate.status === "ISSUED" ? (
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => {
-                              setReason("");
-                              setRevokeTarget(certificate);
-                            }}
-                          >
-                            <XCircle /> Revoke certificate
-                          </DropdownMenuItem>
-                        ) : null}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <CertificateActionsMenu
+                      certificate={certificate}
+                      onRevoke={() => {
+                        setReason("");
+                        setRevokeTarget(certificate);
+                      }}
+                    />
                   </TableCell>
                 </TableRow>
               ))
@@ -244,6 +252,7 @@ export default function AdminCertificatesPage() {
           </TableBody>
         </Table>
       </div>
+
 
       <CursorPagination
         page={page}
@@ -267,7 +276,7 @@ export default function AdminCertificatesPage() {
           <div className="space-y-2">
             <Label htmlFor="revoke-reason">
               Reason{" "}
-              <span className="text-red-500" aria-hidden="true">
+              <span className="text-[#E91717]" aria-hidden="true">
                 *
               </span>
             </Label>
@@ -297,7 +306,7 @@ export default function AdminCertificatesPage() {
       </Dialog>
 
       <Sheet open={Boolean(detailCertificate)} onOpenChange={(open) => !open && setDetailCertificate(null)}>
-        <SheetContent className="flex flex-col sm:max-w-lg">
+        <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {detailCertificate ? (
             <>
               <SheetHeader>

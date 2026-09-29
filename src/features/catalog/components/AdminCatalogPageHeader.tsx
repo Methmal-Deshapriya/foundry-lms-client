@@ -19,7 +19,7 @@ export function AdminCatalogPageHeader({
     <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         <h1 className="flex flex-wrap items-center gap-2 font-sans text-xl font-semibold tracking-tight text-foreground">
-          {Icon ? <Icon className="size-4 text-primary" aria-hidden="true" /> : null}
+          {Icon ? <Icon className="size-4 text-[#191919]" aria-hidden="true" /> : null}
           {title}
           {badge}
         </h1>

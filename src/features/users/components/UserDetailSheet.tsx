@@ -107,7 +107,7 @@ export default function UserDetailSheet({
 
   return (
     <Sheet open={Boolean(userId)} onOpenChange={(open) => !open && onOpenChange(false)}>
-      <SheetContent className="flex flex-col sm:max-w-xl">
+      <SheetContent className="flex flex-col border-border bg-white sm:max-w-xl" style={{ backgroundImage: "none" }}>
         {isLoading ? (
           <p className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground" role="status" aria-live="polite">
             <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading user…
@@ -121,7 +121,7 @@ export default function UserDetailSheet({
             <SheetHeader>
               <div className="flex items-center gap-3">
                 <Avatar className="h-12 w-12 rounded-xl">
-                  <AvatarFallback className="rounded-xl bg-primary text-primary-foreground">
+                  <AvatarFallback className="rounded-xl bg-[#191919] text-white">
                     {getInitials(detail.firstName, detail.lastName)}
                   </AvatarFallback>
                 </Avatar>

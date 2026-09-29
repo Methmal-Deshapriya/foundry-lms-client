@@ -6,6 +6,7 @@ import { Bell } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useDashboardHeader } from "@/components/layout/DashboardHeaderContext";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 const PAGE_TITLES: Record<string, string> = {
@@ -55,9 +56,16 @@ export default function DashboardHeader() {
           {activeBreadcrumbs.map((crumb, index) => (
             <span
               key={`${crumb.label}-${index}`}
-              className="flex min-w-0 items-center gap-2"
+              className={cn(
+                // On a narrow phone, the full chain wraps onto a second line
+                // and reads as broken — only the current page matters there,
+                // so every earlier crumb (and its leading "/") is hidden
+                // until there's room for the whole trail again at sm+.
+                "min-w-0 items-center gap-2",
+                index === activeBreadcrumbs.length - 1 ? "flex" : "hidden sm:flex",
+              )}
             >
-              {index > 0 ? <span aria-hidden="true">/</span> : null}
+              {index > 0 ? <span aria-hidden="true" className="hidden sm:inline">/</span> : null}
               {crumb.href ? (
                 <Link
                   className="truncate font-medium hover:text-foreground"

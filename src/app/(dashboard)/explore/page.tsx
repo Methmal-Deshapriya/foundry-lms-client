@@ -7,6 +7,7 @@ import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, formatLKR } from "@/lib/utils";
 import {
@@ -352,13 +353,8 @@ function ExploreCourseCard({ course }: { course: PublicExploreCourseCard }) {
       href={`/${course.serviceSlug}/${course.slug}`}
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-lg"
     >
-      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-[#191919]">
-        {course.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied URLs; next/image's domain allowlist would need constant upkeep
-          <img src={course.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <span className="line-clamp-2 px-4 text-center text-sm font-semibold text-white">{course.title}</span>
-        )}
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden">
+        <ThumbnailImage src={course.thumbnailUrl} alt="" label={course.title} className="h-full w-full object-cover" />
         <span className="absolute right-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur">
           {course.accessType === "FREE" ? "Free" : formatLKR(course.price)}
         </span>
