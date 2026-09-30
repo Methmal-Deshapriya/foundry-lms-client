@@ -7,6 +7,7 @@
 // declared locally instead.
 import rawMap from "@svg-maps/sri-lanka";
 import type { DistrictCount } from "../dashboardTypes";
+import { NEUTRAL_COLOR, SEQUENTIAL_BLUE } from "@/components/dataviz/chartColors";
 
 type SvgMapLocation = { id: string; name: string; path: string };
 type SvgMapData = { label: string; viewBox: string; locations: SvgMapLocation[] };
@@ -19,10 +20,10 @@ const NAME_ALIASES: Record<string, string> = { moneragala: "monaragala" };
 
 // Sequential, single-hue magnitude encoding — same "one hue, light to dark"
 // convention as the learning-activity heatmap and MagnitudeBar, drawn from
-// the "Monochrome + Red" black/grey scale. Zero-count districts get a
+// the Signal palette's blue ramp. Zero-count districts get a
 // neutral muted fill so "no data" reads distinctly from "the lightest
 // bucket".
-const LEVEL_COLORS = ["#e4e4e7", "#d4d4d8", "#a1a1aa", "#52525b", "#27272a"];
+const LEVEL_COLORS = [NEUTRAL_COLOR, ...SEQUENTIAL_BLUE];
 
 function levelFor(count: number, max: number) {
   if (count <= 0) return 0;

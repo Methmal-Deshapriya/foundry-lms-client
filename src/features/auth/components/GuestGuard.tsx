@@ -22,7 +22,7 @@ export default function GuestGuard({
   if (!isAuthResolved || isAuthenticated) {
     return (
       <div className="flex h-[80vh] w-full flex-col items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#191919]" />
         <p className="mt-4 text-muted-foreground">Redirecting to dashboard...</p>
       </div>
     );

@@ -69,7 +69,7 @@ Never fire an API request per keystroke. Combine two independent techniques (the
 - Use the shared `Sheet`/`SheetContent` for "view full details of one row" rather than growing the dialog or the table row itself.
 - Cap it at a sensible max height and make the body `overflow-y-auto` — long "used in" / related-entity lists must scroll inside the Sheet, not push the Sheet itself to full page height.
 - Only show data the table row doesn't already show (see above), and don't have the frontend re-derive/display parent-entity chains (e.g. course → category → service names) if a direct link already exists to that entity — that's wasted API payload and UI clutter; keep just enough (an id/slug) to build the link.
-- `SheetContent` (and the sidebar) already carry the public site's `CATALOG_GRADIENT_BG` gradient background by default (`src/components/ui/sheet.tsx`, `src/components/ui/sidebar.tsx`) — don't override it with a flat background on a new page.
+- `SheetContent` (and the sidebar) use the plain `bg-background` surface — the old blue/violet `CATALOG_GRADIENT_BG` wash was removed app-wide on request (2026-09-30). Don't reintroduce a gradient background on sheets, drawers or the sidebar.
 
 ## Dialogs (create/edit forms)
 

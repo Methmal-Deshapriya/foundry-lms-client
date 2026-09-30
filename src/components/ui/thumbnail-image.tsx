@@ -41,6 +41,18 @@ export function ThumbnailImage({
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary admin-supplied R2 URL; next/image's domain allowlist would need constant upkeep
-    <img src={src} alt={alt} className={className} onError={() => setErrored(true)} />
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => setErrored(true)}
+      // On a server-rendered page the browser can finish (and fail) loading
+      // the image before React hydrates and attaches onError, so that error
+      // is never delivered. Catch it on mount instead: a completed load with
+      // no pixels means it already failed.
+      ref={(img) => {
+        if (img?.complete && img.naturalWidth === 0) setErrored(true);
+      }}
+    />
   );
 }

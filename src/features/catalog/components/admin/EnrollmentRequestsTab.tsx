@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Check, Copy, Loader2, RotateCcw, UserCheck, XCircle } from "lucide-react";
+import { Check, Copy, Loader2, MoreHorizontal, RotateCcw, UserCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -14,6 +14,12 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,7 +80,7 @@ const MIN_FILTER_LENGTH = 3;
 const INTERACTIVE_SELECTOR = "input,button,a,[role=menuitem],[data-no-row-navigation]";
 
 // Shared between the desktop table row and the narrow-screen card below.
-function RequestActionsRow({
+function RequestActionsMenu({
   request,
   isUpdatingStatus,
   onMarkContacted,
@@ -89,29 +95,47 @@ function RequestActionsRow({
   onDecline: () => void;
   onReopen: () => void;
 }) {
+  const canContact = request.status === "PENDING";
+  const canEnrollOrDecline = request.status === "PENDING" || request.status === "CONTACTED";
+  const canReopen = request.status === "DECLINED";
+  // ENROLLED is terminal — nothing left to do from the row.
+  if (!canContact && !canEnrollOrDecline && !canReopen) return null;
+
   return (
-    <div className="flex items-center justify-end gap-2" data-no-row-navigation>
-      {request.status === "PENDING" ? (
-        <Button aria-label="Mark as contacted" variant="ghost" size="icon" disabled={isUpdatingStatus} onClick={onMarkContacted}>
-          <Check className="size-4 text-sky-600" aria-hidden="true" />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Actions for request from ${request.student?.firstName ?? ""} ${request.student?.lastName ?? ""}`.trim()}
+          data-no-row-navigation
+        >
+          <MoreHorizontal />
         </Button>
-      ) : null}
-      {["PENDING", "CONTACTED"].includes(request.status) ? (
-        <>
-          <Button aria-label="Enroll this student" variant="ghost" size="icon" onClick={onEnroll}>
-            <UserCheck className="size-4 text-emerald-600" aria-hidden="true" />
-          </Button>
-          <Button aria-label="Decline this request" variant="ghost" size="icon" disabled={isUpdatingStatus} onClick={onDecline}>
-            <XCircle className="size-4 text-destructive" aria-hidden="true" />
-          </Button>
-        </>
-      ) : null}
-      {request.status === "DECLINED" ? (
-        <Button aria-label="Reopen this request" variant="ghost" size="icon" disabled={isUpdatingStatus} onClick={onReopen}>
-          <RotateCcw className="size-4 text-sky-600" aria-hidden="true" />
-        </Button>
-      ) : null}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {canContact ? (
+          <DropdownMenuItem disabled={isUpdatingStatus} onSelect={onMarkContacted}>
+            <Check /> Mark as contacted
+          </DropdownMenuItem>
+        ) : null}
+        {canEnrollOrDecline ? (
+          <>
+            <DropdownMenuItem onSelect={onEnroll}>
+              <UserCheck /> Enroll student
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" disabled={isUpdatingStatus} onSelect={onDecline}>
+              <XCircle /> Decline request
+            </DropdownMenuItem>
+          </>
+        ) : null}
+        {canReopen ? (
+          <DropdownMenuItem disabled={isUpdatingStatus} onSelect={onReopen}>
+            <RotateCcw /> Reopen request
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -254,7 +278,7 @@ export function EnrollmentRequestsTab({
             setOffset(0);
           }}
           placeholder="Search name or email"
-          className="h-9 w-56 shrink-0"
+          className="h-9 w-full sm:w-56 sm:shrink-0"
         />
         <FilterPills
           ariaLabel="Filter by request status"
@@ -340,7 +364,7 @@ export function EnrollmentRequestsTab({
                   </TableCell>
                   <TableCell className="text-muted-foreground">{format(new Date(request.createdAt), "MMM dd, yyyy")}</TableCell>
                   <TableCell className="pr-4 text-right" data-no-row-navigation>
-                    <RequestActionsRow
+                    <RequestActionsMenu
                       request={request}
                       isUpdatingStatus={isUpdatingStatus}
                       onMarkContacted={() => markContacted(request)}

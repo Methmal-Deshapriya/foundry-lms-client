@@ -37,6 +37,12 @@ export interface PublicServiceConfig {
       description: string;
       href: string;
       icon: LucideIcon;
+      /**
+       * Card image. When present the card shows it (via ThumbnailImage, so a
+       * missing or failed R2 image falls back to the black title card)
+       * instead of the small icon tile.
+       */
+      image?: { src: string | null; label: string };
       badge?: string;
       /** Plain lines only — e.g. ["3 courses", "Beginner to Intermediate"] */
       metadata: string[];

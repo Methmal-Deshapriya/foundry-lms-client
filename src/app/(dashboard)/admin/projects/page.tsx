@@ -164,7 +164,7 @@ export default function AdminProjectsPage() {
             resetToFirstPage();
           }}
           placeholder="Search title, student, or course"
-          className="h-9 w-64 shrink-0"
+          className="h-9 w-full sm:w-64 sm:shrink-0"
         />
         <FilterPills
           ariaLabel="Filter by project status"
@@ -184,7 +184,7 @@ export default function AdminProjectsPage() {
             <TableRow>
               <TableHead className="w-40 px-4">Project</TableHead>
               <TableHead className="w-48">Student / Course</TableHead>
-              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-32">Status</TableHead>
               <TableHead className="w-28">Submitted</TableHead>
               <TableHead className="w-24 pr-4 text-right">Actions</TableHead>
             </TableRow>

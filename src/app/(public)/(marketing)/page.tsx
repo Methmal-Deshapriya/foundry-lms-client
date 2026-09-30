@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AboutVideo } from "@/components/marketing/AboutVideo";
 import Services from "@/components/marketing/Services";
 import LearningExperience from "@/components/marketing/LearningExperience";
@@ -11,7 +11,12 @@ import { Testimonials } from "@/components/marketing/Testimonials";
 import { PathProvider } from "@/components/marketing/companion/PathContext";
 import { PathChoice } from "@/components/marketing/companion/PathChoice";
 import { WelcomeSlide } from "@/components/marketing/companion/WelcomeSlide";
-import { useGuestGuard } from "@/features/auth/hooks/useGuestGuard";
+import { useAppSelector } from "@/store/hooks";
+import {
+  selectAuthRole,
+  selectIsAuthenticated,
+} from "@/features/auth/authSelectors";
+import { getDashboardPath } from "@/lib/access";
 
 /**
  * The home page's sections, in normal document flow — no more click-through
@@ -24,6 +29,9 @@ import { useGuestGuard } from "@/features/auth/hooks/useGuestGuard";
  * auth form.
  */
 function HomeSections() {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const role = useAppSelector(selectAuthRole);
+
   return (
     <PathProvider>
       <div className="w-full bg-[#FAFAFA]">
@@ -64,19 +72,31 @@ function HomeSections() {
               Join Foundry Academy and start building job-ready skills today.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href="/sign-up"
-                className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 font-alt text-sm font-semibold text-[#191919] transition-colors hover:bg-zinc-200 sm:text-base"
-              >
-                Get started for free
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/sign-in"
-                className="inline-flex h-12 items-center rounded-full border border-zinc-600 px-6 font-alt text-sm font-semibold text-white transition-colors hover:border-zinc-400 sm:text-base"
-              >
-                Sign in
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  href={getDashboardPath(role)}
+                  className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 font-alt text-sm font-semibold text-[#191919] transition-colors hover:bg-zinc-200 sm:text-base"
+                >
+                  Go to dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/sign-up"
+                    className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 font-alt text-sm font-semibold text-[#191919] transition-colors hover:bg-zinc-200 sm:text-base"
+                  >
+                    Get started for free
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/sign-in"
+                    className="inline-flex h-12 items-center rounded-full border border-zinc-600 px-6 font-alt text-sm font-semibold text-white transition-colors hover:border-zinc-400 sm:text-base"
+                  >
+                    Sign in
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -85,21 +105,11 @@ function HomeSections() {
   );
 }
 
+// Logged-in visitors can browse the public site like anyone else — no
+// redirect to the dashboard. The sign-up/sign-in CTAs (here, in
+// WelcomeSlide and in MarketingNavbar) swap to a single "Dashboard" link
+// instead.
 export default function Home() {
-  // Already-authenticated visitors land straight on their dashboard instead
-  // of the marketing/sign-up funnel — same behavior GuestGuard gives the
-  // dedicated auth-only routes.
-  const { isAuthenticated } = useGuestGuard();
-
-  if (isAuthenticated) {
-    return (
-      <div className="flex h-dvh w-full flex-col items-center justify-center bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Redirecting to dashboard...</p>
-      </div>
-    );
-  }
-
   return (
     <Suspense fallback={null}>
       <HomeSections />

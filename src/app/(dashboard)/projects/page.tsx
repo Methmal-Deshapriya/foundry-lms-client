@@ -101,7 +101,7 @@ export default function MyProjectsPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="@container space-y-4">
             <FilterPills options={filterOptions} active={filter} onChange={setFilter} ariaLabel="Filter by status" />
 
             {filtered.length === 0 ? (
@@ -109,7 +109,7 @@ export default function MyProjectsPage() {
                 No {filter.toLowerCase()} projects.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-4 @md:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4 @6xl:grid-cols-5">
                 {filtered.map((project) => (
                   <ProjectCard
                     key={project.id}

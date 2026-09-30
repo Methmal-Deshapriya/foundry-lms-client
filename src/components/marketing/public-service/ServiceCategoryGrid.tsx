@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { BookOpen, ChevronRight, Star } from "lucide-react";
 import { Reveal, RevealItem } from "@/components/ui/reveal";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import type { PublicServiceConfig } from "./types";
 
 export function ServiceCategoryGrid({
@@ -18,8 +19,8 @@ export function ServiceCategoryGrid({
             Courses are coming soon
           </h2>
           <p className="mx-auto mt-2 max-w-lg font-alt text-sm leading-relaxed text-[#71717A] sm:text-base">
-            We&apos;re preparing the first courses for this service.
-            Please check back soon for updates.
+            We&apos;re preparing the first courses for this service. Please
+            check back soon for updates.
           </p>
         </Reveal>
       </section>
@@ -28,40 +29,68 @@ export function ServiceCategoryGrid({
 
   return (
     <section id="categories" className="mb-16 sm:mb-24 scroll-mt-20">
-      <Reveal stagger={0.08} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+      <Reveal
+        stagger={0.08}
+        className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5"
+      >
         {categorySection.items.map((item) => {
           const Icon = item.icon;
           return (
             <RevealItem key={item.id}>
               <Link
                 href={item.href}
-                className="group relative flex flex-col h-full bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 transition-all hover:border-zinc-300 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#191919]"
+                className="group relative flex flex-col h-full overflow-hidden bg-white border border-zinc-200 rounded-2xl transition-all hover:border-zinc-300 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#191919]"
               >
                 {item.badge && (
-                  <span className="absolute top-4 right-4 flex items-center gap-1 font-alt text-[10px] font-semibold text-[#C91414] bg-[#FFF1F1] rounded-full px-2 py-0.5">
-                    <Star className="h-2.5 w-2.5 fill-current" aria-hidden="true" />
+                  <span className="absolute top-4 right-4 z-10 flex items-center gap-1 font-alt text-[10px] font-semibold text-[#C91414] bg-[#FFF1F1] rounded-full px-2 py-0.5">
+                    <Star
+                      className="h-2.5 w-2.5 fill-current"
+                      aria-hidden="true"
+                    />
                     {item.badge}
                   </span>
                 )}
 
-                <div className="h-11 w-11 rounded-xl flex items-center justify-center mb-4 bg-zinc-100 text-[#191919]">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
+                {item.image ? (
+                  <div className="relative aspect-video w-full shrink-0 overflow-hidden border-b border-zinc-100 bg-zinc-50">
+                    <ThumbnailImage
+                      src={item.image.src}
+                      alt=""
+                      label={item.image.label}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                ) : null}
 
-                <h3 className="font-sans font-semibold text-base text-[#191919] mb-1">{item.title}</h3>
-                <p className="font-alt text-sm text-[#71717A] mb-4 leading-snug">{item.description}</p>
+                <div className="flex flex-1 flex-col p-5 sm:p-6">
+                  {item.image ? null : (
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center mb-4 bg-zinc-100 text-[#191919]">
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </div>
+                  )}
 
-                <div className="space-y-1 mb-4">
-                  {item.metadata.map((line) => (
-                    <p key={line} className="font-alt text-xs text-[#71717A]">
-                      {line}
-                    </p>
-                  ))}
-                </div>
+                  <h3 className="font-sans font-semibold text-base text-[#191919] mb-1">
+                    {item.title}
+                  </h3>
+                  <p className="font-alt text-sm text-[#71717A] mb-4 leading-snug">
+                    {item.description}
+                  </p>
 
-                <div className="mt-auto flex items-center justify-end gap-1 pt-3 border-t border-zinc-100 font-alt text-sm font-semibold text-[#191919] transition-all group-hover:gap-2">
-                  Explore {item.title}
-                  <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <div className="space-y-1 mb-4">
+                    {item.metadata.map((line) => (
+                      <p key={line} className="font-alt text-xs text-[#71717A]">
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+
+                  <div className="mt-auto flex items-center justify-end gap-1 pt-3 border-t border-zinc-100 font-alt text-sm font-semibold text-[#191919] transition-all group-hover:gap-2">
+                    Explore {item.title}
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0"
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
               </Link>
             </RevealItem>

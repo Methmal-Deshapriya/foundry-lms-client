@@ -306,7 +306,7 @@ export default function ClassRosterTable({
             setOffset(0);
           }}
           placeholder="Search name or email"
-          className="h-9 w-56 shrink-0"
+          className="h-9 w-full sm:w-56 sm:shrink-0"
         />
         <FilterPills
           ariaLabel="Filter by enrollment status"

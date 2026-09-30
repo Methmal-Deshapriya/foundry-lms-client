@@ -149,7 +149,7 @@ export function CourseCertificatesTab({ intakeId }: { intakeId: string }) {
             setOffset(0);
           }}
           placeholder="Search code or student"
-          className="h-9 w-56 shrink-0"
+          className="h-9 w-full sm:w-56 sm:shrink-0"
         />
         <FilterPills
           ariaLabel="Filter by certificate status"

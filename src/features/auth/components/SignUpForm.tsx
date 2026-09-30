@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Loader2, User, Phone, MapPin, GraduationCap, Home, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { isNormalizedApiError } from "@/lib/api";
+import { withEnrollIntent } from "@/lib/enrollIntent";
 
 // 1. Define Validation Schema (Matches backend registerSchema + confirm password)
 const registerSchema = z
@@ -70,10 +71,7 @@ const controlClassName =
 export default function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const enrollmentCourseId = searchParams.get("enrollCourse");
-  const signInHref = enrollmentCourseId
-    ? `/sign-in?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-    : "/sign-in";
+  const signInHref = withEnrollIntent("/sign-in", searchParams);
   const [registerUser, { isLoading }] = useRegisterMutation();
 
   // 2. Initialize Form
@@ -125,10 +123,7 @@ export default function SignUpForm() {
       // Registering does not log the user in — they must verify their
       // email via OTP first, so we redirect explicitly rather than
       // relying on GuestGuard's isAuthenticated-driven redirect.
-      const intent = enrollmentCourseId
-        ? `&enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-        : "";
-      router.push(`/verify-email?email=${encodeURIComponent(values.email)}${intent}`);
+      router.push(withEnrollIntent(`/verify-email?email=${encodeURIComponent(values.email)}`, searchParams));
     } catch (error: unknown) {
       // Check if it's a normalized field error from our baseApi
       if (isNormalizedApiError(error) && error.field) {

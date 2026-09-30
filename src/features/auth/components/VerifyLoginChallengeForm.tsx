@@ -6,11 +6,12 @@ import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { OtpInput } from "@/components/ui/otp-input";
 import { isNormalizedApiError } from "@/lib/api";
 import { useVerifyLoginChallengeMutation } from "../authApi";
+import { withEnrollIntent } from "@/lib/enrollIntent";
 
 function ChallengeDeadEnd({ title, message }: { title: string; message: string }) {
   return (
@@ -37,7 +38,6 @@ export default function VerifyLoginChallengeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const challengeId = searchParams.get("challenge") ?? "";
-  const enrollmentCourseId = searchParams.get("enrollCourse");
   const [verify, { isLoading }] = useVerifyLoginChallengeMutation();
   const [expiredMessage, setExpiredMessage] = useState<string | null>(null);
   const {
@@ -54,13 +54,10 @@ export default function VerifyLoginChallengeForm() {
     try {
       await verify({ challengeId, code }).unwrap();
       toast.success("Administrator login verified.");
-      const intent = enrollmentCourseId
-        ? `?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-        : "";
       // This challenge only ever exists for admin/super-admin logins (see
       // SignInForm's requiresMfa branch), so the target is always the
       // admin dashboard — no role check needed.
-      router.replace(`/admin/dashboard${intent}`);
+      router.replace(withEnrollIntent("/admin/dashboard", searchParams));
     } catch (error: unknown) {
       const message = isNormalizedApiError(error)
         ? error.message
@@ -94,10 +91,6 @@ export default function VerifyLoginChallengeForm() {
   return (
     <div className="w-full max-w-md space-y-6">
       <div className="space-y-2">
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#FDECEC] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#C91414]">
-          <ShieldCheck className="size-4" aria-hidden="true" />
-          Administrator security
-        </div>
         <h2 className="font-sans text-3xl font-bold text-[#191919]">
           Verify Administrator Login
         </h2>

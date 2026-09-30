@@ -18,7 +18,7 @@ const accessibleCourseStatuses = new Set([
   "ARCHIVED",
 ]);
 
-function getAccessMessage(enrollment: MyEnrollment) {
+export function getAccessMessage(enrollment: MyEnrollment) {
   if (enrollment.status === "CANCELLED") {
     return "This enrollment was cancelled. Contact support if this is unexpected.";
   }

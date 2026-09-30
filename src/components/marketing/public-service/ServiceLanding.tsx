@@ -31,7 +31,7 @@ const LEGACY_HERO_ILLUSTRATION: Record<
   { src: string; alt: string; width: number; height: number }
 > = {
   bootcamps: {
-    src: "/bootcamp.png",
+    src: "/bootcamp.webp",
     alt: "A student learning to code at a laptop, representing IT bootcamps",
     width: 1374,
     height: 1145,
@@ -100,6 +100,7 @@ export function ServiceLanding({
         description: course.summary,
         href: `/${service}/${course.slug}`,
         icon: Icon,
+        image: { src: course.thumbnailUrl, label: course.title },
         badge:
           course.enrollmentStatus === "COMING_SOON"
             ? "Coming soon"

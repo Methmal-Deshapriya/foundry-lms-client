@@ -28,22 +28,26 @@ export default function AccountPage() {
 
   return (
     <div className="space-y-8 pb-20">
-      <div className="flex flex-wrap items-center gap-4">
-        <Avatar className="h-14 w-14 rounded-2xl">
-          <AvatarFallback className="rounded-2xl bg-primary text-lg text-primary-foreground">
-            {getInitials(user.firstName, user.lastName)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-foreground">
-            {user.firstName} {user.lastName}
-          </h1>
-          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Mail className="size-3.5" aria-hidden="true" />
-            {user.email}
-          </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
+          <Avatar className="h-14 w-14 shrink-0 rounded-2xl">
+            <AvatarFallback className="rounded-2xl bg-primary text-lg text-primary-foreground">
+              {getInitials(user.firstName, user.lastName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold text-foreground wrap-anywhere sm:text-2xl">
+              {user.firstName} {user.lastName}
+            </h1>
+            <p className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+              <Mail className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate" title={user.email}>
+                {user.email}
+              </span>
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <RoleBadge role={user.role} />
           <VerifiedBadge verified={user.emailVerified} />
         </div>
@@ -55,7 +59,7 @@ export default function AccountPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Profile details</h2>
-        <div className="rounded-xl border bg-card p-6">
+        <div className="rounded-xl border bg-card p-4 sm:p-6">
           <AccountProfileForm user={user} />
         </div>
       </section>

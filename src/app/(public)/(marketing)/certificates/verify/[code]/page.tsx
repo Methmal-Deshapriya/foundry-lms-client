@@ -6,6 +6,7 @@ import { jsPDF } from "jspdf";
 import { CircleAlert, Download, FileDown, Loader2, ShieldX } from "lucide-react";
 import { useVerifyCertificateQuery } from "@/features/certificates/certificatesApi";
 import CertificateTemplate from "@/features/certificates/components/CertificateTemplate";
+import { CertificateThumbnail } from "@/features/certificates/components/CertificateThumbnail";
 
 const primaryButtonClassName =
   "inline-flex h-9 items-center justify-center gap-2 rounded-md bg-[#191919] px-4 font-alt text-sm font-medium text-white transition-colors hover:bg-[#27272A] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#191919] disabled:cursor-not-allowed disabled:opacity-60";
@@ -93,7 +94,10 @@ export default function PublicCertificateVerificationPage({
     try {
       const dataUrl = await captureCertificatePng();
       if (!dataUrl || !certificateRef.current) return;
-      const { width, height } = certificateRef.current.getBoundingClientRect();
+      // offsetWidth/Height, not getBoundingClientRect(): the latter includes
+      // the on-screen scale transform, so a phone would get a tiny PDF page.
+      const width = certificateRef.current.offsetWidth;
+      const height = certificateRef.current.offsetHeight;
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "px",
@@ -124,16 +128,25 @@ export default function PublicCertificateVerificationPage({
           </div>
         ) : null}
 
-        <div className="overflow-hidden rounded-2xl shadow-2xl" ref={certificateRef}>
-          <CertificateTemplate
-            studentName={certificate.studentName}
-            courseName={certificate.courseName}
-            description={certificate.description}
-            issuedDate={certificate.issuedDate}
-            certificateCode={certificate.certificateCode}
-            skills={certificate.skills}
-            verifyUrl={verifyUrl}
-          />
+        {/* CertificateThumbnail renders the template at its fixed design
+            width and scales it to fit — its fixed rem type otherwise piles up
+            and clips when squeezed onto a phone. The ref sits on the
+            untransformed inner node, so exports are always the full-size
+            certificate regardless of the viewer's screen width. */}
+        <div className="overflow-hidden rounded-2xl shadow-2xl">
+          <CertificateThumbnail>
+            <div ref={certificateRef}>
+              <CertificateTemplate
+                studentName={certificate.studentName}
+                courseName={certificate.courseName}
+                description={certificate.description}
+                issuedDate={certificate.issuedDate}
+                certificateCode={certificate.certificateCode}
+                skills={certificate.skills}
+                verifyUrl={verifyUrl}
+              />
+            </div>
+          </CertificateThumbnail>
         </div>
 
         <div className="mt-6 flex justify-end">

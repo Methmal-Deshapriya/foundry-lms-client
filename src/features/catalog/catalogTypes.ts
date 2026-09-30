@@ -44,6 +44,8 @@ export interface PublicCourseCard {
   certificateEnabled: boolean;
   /** Derived from this course's intakes — see the course-to-program rename plan §8. Drives the public CTA: OPEN shows Enroll, COMING_SOON/REOPENING_SOON show the matching waiting state. */
   enrollmentStatus: CourseEnrollmentStatus;
+  /** Resolved R2 (or external) course image; null when none was uploaded. */
+  thumbnailUrl: string | null;
 }
 
 /** The course's currently OPEN_ACTIVE intake, if any — the target for Enroll/self-enroll. */

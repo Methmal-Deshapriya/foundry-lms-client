@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAppSelector } from "@/store/hooks";
 import { getDashboardPath } from "@/lib/access";
 import { selectAuthRole, selectIsAuthenticated, selectIsAuthResolved } from "../authSelectors";
+import { withEnrollIntent } from "@/lib/enrollIntent";
 
 /**
  * useGuestGuard
@@ -17,19 +18,15 @@ import { selectAuthRole, selectIsAuthenticated, selectIsAuthResolved } from "../
 export function useGuestGuard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const enrollmentCourseId = searchParams.get("enrollCourse");
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isAuthResolved = useAppSelector(selectIsAuthResolved);
   const role = useAppSelector(selectAuthRole);
 
   useEffect(() => {
     if (isAuthResolved && isAuthenticated) {
-      const intent = enrollmentCourseId
-        ? `?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-        : "";
-      router.replace(`${getDashboardPath(role)}${intent}`);
+      router.replace(withEnrollIntent(getDashboardPath(role), searchParams));
     }
-  }, [enrollmentCourseId, isAuthenticated, isAuthResolved, role, router]);
+  }, [isAuthenticated, isAuthResolved, role, router, searchParams]);
 
   return { isAuthResolved, isAuthenticated };
 }

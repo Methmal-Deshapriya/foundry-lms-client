@@ -136,12 +136,16 @@ export default function LearningPage() {
         {/* Header + completion card, two plain stacked blocks — no more
             floating/overlap trick, which only made sense when a colored
             backdrop band sat behind the title. */}
-        <div className="space-y-6">
-          <div className="flex items-start gap-4">
-            <div className="relative hidden aspect-video h-56 shrink-0 overflow-hidden rounded-lg sm:flex sm:h-64">
+        <div className="@container space-y-6">
+          {/* Stacked (thumbnail on top, capped width) until the content
+              area itself — not the viewport, since the sidebar eats ~256px
+              from md up — is wide enough to sit the thumbnail beside the
+              text without squeezing it into a one-word-per-line column. */}
+          <div className="flex flex-col gap-5 @3xl:flex-row @3xl:items-start">
+            <div className="relative aspect-video w-full max-w-xl shrink-0 overflow-hidden rounded-lg @3xl:h-56 @3xl:w-auto @3xl:max-w-none @5xl:h-64">
               <ThumbnailImage src={course.thumbnailUrl} alt="" label={course.title} className="h-full w-full object-cover" />
             </div>
-            <div className="min-w-0 space-y-4">
+            <div className="min-w-0 flex-1 space-y-4">
               <p className="flex items-center gap-2 truncate text-xs font-semibold tracking-widest text-[#71717A] uppercase">
                 <span className="text-[#E91717]">—</span> {course.serviceTitle}
               </p>
@@ -183,7 +187,7 @@ export default function LearningPage() {
           </div>
 
           {/* One "at a glance" card: progress + every quick fact together. */}
-          <div className="rounded-lg border border-border bg-card p-6">
+          <div className="rounded-lg border border-border bg-card p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-foreground">
                 Course Completion

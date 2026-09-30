@@ -12,6 +12,7 @@ import { Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { isNormalizedApiError } from "@/lib/api";
 import { getDashboardPath } from "@/lib/access";
+import { withEnrollIntent } from "@/lib/enrollIntent";
 
 // 1. Define Validation Schema (Matches backend verifyOtpSchema)
 const verifyOtpSchema = z.object({
@@ -33,7 +34,6 @@ export default function VerifyEmailForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email");
-  const enrollmentCourseId = searchParams.get("enrollCourse");
 
   const [verifyOtp, { isLoading: isVerifying }] = useVerifyOtpMutation();
   const [resendOtp, { isLoading: isResending }] = useResendOtpMutation();
@@ -61,10 +61,7 @@ export default function VerifyEmailForm() {
     try {
       const verifiedUser = await verifyOtp({ email, code: values.code }).unwrap();
       toast.success("Email verified! Welcome to Foundry Academy.");
-      const intent = enrollmentCourseId
-        ? `?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-        : "";
-      router.replace(`${getDashboardPath(verifiedUser.role)}${intent}`);
+      router.replace(withEnrollIntent(getDashboardPath(verifiedUser.role), searchParams));
     } catch (error: unknown) {
       if (isNormalizedApiError(error) && error.field) {
         setError("code", {

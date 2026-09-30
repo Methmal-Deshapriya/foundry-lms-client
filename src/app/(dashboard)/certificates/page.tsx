@@ -32,10 +32,12 @@ export default function MyCertificatesPage() {
             <p className="text-sm text-red-700">Failed to load certificates. Please try again.</p>
           </div>
         ) : certificates.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-            {certificates.map((cert) => (
-              <CertificateCard key={cert.id} certificate={cert} />
-            ))}
+          <div className="@container">
+            <div className="grid grid-cols-1 gap-4 @md:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-4">
+              {certificates.map((cert) => (
+                <CertificateCard key={cert.id} certificate={cert} />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-border bg-card p-16 text-center">

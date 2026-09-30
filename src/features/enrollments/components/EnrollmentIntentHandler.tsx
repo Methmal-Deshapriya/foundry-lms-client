@@ -36,7 +36,7 @@ export default function EnrollmentIntentHandler() {
 
   return (
     <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
-      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+      <Loader2 className="h-4 w-4 animate-spin text-[#191919]" />
       Adding your free course to My Courses...
     </div>
   );

@@ -8,6 +8,8 @@ import {
   Check,
   Clock,
   Infinity as InfinityIcon,
+  LockKeyhole,
+  MessageCircle,
   RefreshCw,
   Repeat,
   Tag,
@@ -16,6 +18,12 @@ import {
 import { Reveal } from "@/components/ui/reveal";
 import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import type { PublicCourseDetail } from "@/features/catalog/catalogTypes";
+import { selectAuthRole, selectIsAuthenticated } from "@/features/auth/authSelectors";
+import { useGetMyEnrollmentsQuery } from "@/features/enrollments/enrollmentsApi";
+import { getAccessMessage } from "@/features/enrollments/components/EnrollmentCard";
+import type { MyEnrollment } from "@/features/enrollments/enrollmentsTypes";
+import { useAppSelector } from "@/store/hooks";
+import { getWhatsAppEnrollUrl } from "@/lib/whatsapp";
 import { CertificatePreview } from "./CertificatePreview";
 import { CourseExplainerVideo } from "./CourseExplainerVideo";
 import { PageSlide } from "./PageSlide";
@@ -33,8 +41,28 @@ function formatPrice(price: number, currency: string) {
   return `${currency} ${price.toLocaleString()}`;
 }
 
+const PRIMARY_CTA_CLASS =
+  "flex h-12 w-full items-center justify-center rounded-full bg-[#191919] px-6 font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A]";
+
+// The student's own enrollment in this course, if any — an active one wins
+// over a completed one (a re-take), and a cancelled one doesn't count as
+// "already enrolled" at all, so they can enroll again.
+function findOwnEnrollment(enrollments: MyEnrollment[] | undefined, courseId: string) {
+  const mine = (enrollments ?? []).filter((e) => e.courseId === courseId && e.status !== "CANCELLED");
+  return mine.find((e) => e.status === "ACTIVE") ?? mine[0] ?? null;
+}
+
 export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
   const { service, openIntake } = course;
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isStudent = useAppSelector(selectAuthRole) === "STUDENT";
+  const { data: myEnrollments } = useGetMyEnrollmentsQuery({ limit: 50 }, { skip: !isStudent });
+  const ownEnrollment = findOwnEnrollment(myEnrollments?.enrollments, course.id);
+  const ownAccessMessage = ownEnrollment ? getAccessMessage(ownEnrollment) : null;
+  // A logged-in student goes straight to the dashboard, whose intent
+  // handlers run the free-enroll / paid-request flows — routing them via
+  // /sign-in would just bounce them to the dashboard and drop the intent.
+  const intentBase = isStudent ? "/dashboard" : "/sign-in";
   const startDate = openIntake ? formatDate(openIntake.startDate) : null;
   const endDate = openIntake ? formatDate(openIntake.expectedEndDate) : null;
 
@@ -203,22 +231,54 @@ export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
                 )}
               </ul>
 
-              {course.enrollmentStatus === "OPEN" && openIntake ? (
+              {ownEnrollment ? (
+                // Already enrolled: skip the enroll flow entirely. Straight
+                // to the classroom when it's open to them; otherwise to My
+                // Courses, whose card explains why it's still locked (e.g.
+                // payment not yet confirmed).
+                <div className="space-y-3">
+                  <Link
+                    href={ownAccessMessage ? "/my-courses" : `/my-courses/${ownEnrollment.id}`}
+                    className={PRIMARY_CTA_CLASS}
+                  >
+                    {ownAccessMessage ? "View in My Courses" : "Go to classroom"}
+                  </Link>
+                  <p className="flex items-center justify-center gap-1.5 text-center font-alt text-xs text-[#71717A]">
+                    {ownAccessMessage ? (
+                      <>
+                        <LockKeyhole className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        {ownAccessMessage}
+                      </>
+                    ) : ownEnrollment.status === "COMPLETED" ? (
+                      "You've completed this course."
+                    ) : (
+                      "You're enrolled in this course."
+                    )}
+                  </p>
+                </div>
+              ) : course.enrollmentStatus === "OPEN" && openIntake ? (
                 <div className="space-y-3">
                   {course.accessType === "FREE" ? (
-                    <Link
-                      href={`/sign-in?enrollCourse=${openIntake.id}`}
-                      className="flex h-12 w-full items-center justify-center rounded-full bg-[#191919] px-6 font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A]"
-                    >
-                      Sign in and add to My Courses
+                    <Link href={`${intentBase}?enrollCourse=${openIntake.id}`} className={PRIMARY_CTA_CLASS}>
+                      {isAuthenticated ? "Add to My Courses" : "Sign in and add to My Courses"}
                     </Link>
                   ) : (
-                    <Link
-                      href={`/sign-in?requestCourse=${course.id}`}
-                      className="flex h-12 w-full items-center justify-center rounded-full bg-[#191919] px-6 font-alt text-sm font-semibold text-white transition-colors hover:bg-[#27272A]"
-                    >
+                    <Link href={`${intentBase}?requestCourse=${course.id}`} className={PRIMARY_CTA_CLASS}>
                       Enroll now
                     </Link>
+                  )}
+                  {course.accessType === "PAID" && (
+                    // A second path for students who'd rather arrange the
+                    // seat directly over WhatsApp than wait for a call back.
+                    <a
+                      href={getWhatsAppEnrollUrl(course.title)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-zinc-200 bg-white px-6 font-alt text-sm font-semibold text-[#191919] transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+                    >
+                      <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                      Enroll on WhatsApp
+                    </a>
                   )}
                   <p className="flex items-center justify-center gap-1.5 font-alt text-xs text-[#71717A]">
                     <Users className="h-3.5 w-3.5" aria-hidden="true" />

@@ -4,7 +4,6 @@ import * as React from "react"
 import { XIcon } from "lucide-react"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
-import { CATALOG_GRADIENT_BG } from "@/components/marketing/catalog/background"
 import { cn } from "@/lib/utils"
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
@@ -73,7 +72,7 @@ function SheetContent({
             "inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
           className
         )}
-        style={{ backgroundImage: CATALOG_GRADIENT_BG, ...style }}
+        style={style}
         {...props}
       >
         {children}

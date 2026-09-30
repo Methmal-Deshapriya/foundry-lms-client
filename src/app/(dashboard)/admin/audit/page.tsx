@@ -144,7 +144,10 @@ export default function AdminAuditPage() {
                 <span className="shrink-0 whitespace-nowrap text-muted-foreground/70">
                   [{format(new Date(log.createdAt), "yyyy-MM-dd HH:mm:ss")}]
                 </span>
-                <span className={cn("shrink-0", actionColorClass(log.action), "font-semibold")}>{log.action}</span>
+                {/* wrap-anywhere: action names are single unbroken tokens
+                    (e.g. STORED_OBJECT_UPLOAD_COMPLETED) that are wider than a
+                    phone screen — let them break only when they don't fit. */}
+                <span className={cn("min-w-0 max-w-full wrap-anywhere", actionColorClass(log.action), "font-semibold")}>{log.action}</span>
                 <span className="min-w-0 wrap-break-word text-foreground">
                   {log.description || `${log.entityType}${log.entityId ? ` #${log.entityId.slice(0, 8)}` : ""}`}
                 </span>

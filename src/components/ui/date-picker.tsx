@@ -101,7 +101,7 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(f
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-2 w-72 rounded-xl border border-input bg-white p-3 shadow-lg">
+        <div className="absolute z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-input bg-white p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between gap-1">
             <button
               type="button"

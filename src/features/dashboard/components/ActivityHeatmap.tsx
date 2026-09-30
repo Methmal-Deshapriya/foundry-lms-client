@@ -5,10 +5,9 @@ const WEEKS = 52;
 const DAYS = WEEKS * 7;
 
 // Sequential, single-hue magnitude encoding (see the dataviz skill's
-// color-formula: sequential = one hue, light -> dark) — same house black
-// used for the course progress bars elsewhere on this dashboard, rather
-// than introducing GitHub's green.
-const LEVEL_CLASSES = ["bg-muted", "bg-[#191919]/25", "bg-[#191919]/50", "bg-[#191919]/75", "bg-[#191919]"];
+// color-formula: sequential = one hue, light -> dark) — the Signal
+// palette's blue, same as every other chart, rather than GitHub's green.
+const LEVEL_CLASSES = ["bg-muted", "bg-[#2563EB]/25", "bg-[#2563EB]/50", "bg-[#2563EB]/75", "bg-[#2563EB]"];
 
 function levelFor(count: number, max: number) {
   if (count <= 0) return 0;

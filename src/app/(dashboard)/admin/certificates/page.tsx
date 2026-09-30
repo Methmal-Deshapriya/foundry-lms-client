@@ -154,7 +154,7 @@ export default function AdminCertificatesPage() {
             resetToFirstPage();
           }}
           placeholder="Search code, student, or course"
-          className="h-9 w-64 shrink-0"
+          className="h-9 w-full sm:w-64 sm:shrink-0"
         />
         <FilterPills
           ariaLabel="Filter by certificate status"

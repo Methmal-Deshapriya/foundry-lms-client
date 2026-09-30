@@ -567,8 +567,13 @@ export default function SessionLibraryManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex flex-1 items-center gap-2 overflow-x-auto pb-1">
+      {/* Wraps instead of a single-line horizontal scroll strip: at tablet
+          widths that strip hid the status pills entirely behind the create
+          button with no hint they existed. Wide screens still fit it all on
+          one row; narrower ones wrap the filters, and on phones the create
+          button moves to the top at full width. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <Input
             aria-label="Search Session Library"
             value={q}
@@ -577,7 +582,7 @@ export default function SessionLibraryManager() {
               setOffset(0);
             }}
             placeholder="Search title or description"
-            className="h-9 w-56 shrink-0"
+            className="h-9 w-full sm:w-56 sm:shrink-0"
           />
           <Input
             aria-label="Filter by tag"
@@ -587,9 +592,9 @@ export default function SessionLibraryManager() {
               setOffset(0);
             }}
             placeholder="Filter by tag"
-            className="h-9 w-40 shrink-0"
+            className="h-9 w-full sm:w-40 sm:shrink-0"
           />
-          <div className="flex shrink-0 gap-2" role="group" aria-label="Filter by status">
+          <div className="flex max-w-full flex-wrap gap-2" role="group" aria-label="Filter by status">
             {STATUS_PILLS.map(({ key, label, countKey, activeClassName }) => {
               const active = statusFilter === key;
               return (
@@ -623,7 +628,7 @@ export default function SessionLibraryManager() {
           </div>
         </div>
         {canManage ? (
-          <Button className="shrink-0 bg-[#191919] bg-none hover:bg-[#27272A]" onClick={() => { reset(); setFormOpen(true); }}>
+          <Button className="order-first w-full shrink-0 bg-[#191919] bg-none hover:bg-[#27272A] sm:w-auto sm:self-start lg:order-0" onClick={() => { reset(); setFormOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" /> New session resource
           </Button>
         ) : null}
@@ -664,10 +669,10 @@ export default function SessionLibraryManager() {
               ) : null}
               <TableHead className="w-64">Resource</TableHead>
               <TableHead className="w-24">Status</TableHead>
-              <TableHead className="hidden w-20 sm:table-cell">Duration</TableHead>
-              <TableHead className="hidden w-32 md:table-cell">Tags</TableHead>
-              <TableHead className="hidden w-24 md:table-cell">Usage</TableHead>
-              <TableHead className="hidden w-24 lg:table-cell">Updated</TableHead>
+              <TableHead className="w-20">Duration</TableHead>
+              <TableHead className="w-32">Tags</TableHead>
+              <TableHead className="w-24">Usage</TableHead>
+              <TableHead className="w-24">Updated</TableHead>
               <TableHead className="w-28 pr-6 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -734,10 +739,10 @@ export default function SessionLibraryManager() {
                         {session.status.charAt(0) + session.status.slice(1).toLowerCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
+                    <TableCell className="text-sm text-muted-foreground">
                       {duration ?? "—"}
                     </TableCell>
-                    <TableCell className="hidden max-w-40 md:table-cell">
+                    <TableCell className="max-w-40 whitespace-normal">
                       {tags.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {tags.map((tag) => (
@@ -750,12 +755,12 @@ export default function SessionLibraryManager() {
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
+                    <TableCell className="text-sm text-muted-foreground">
                       {session.usage.courseCount > 0
                         ? `${session.usage.courseCount} course(s)`
                         : "Unused"}
                     </TableCell>
-                    <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
+                    <TableCell className="text-sm text-muted-foreground">
                       {formatUpdatedAt(session.updatedAt)}
                     </TableCell>
                     <TableCell className="pr-6 text-right" data-no-row-navigation>

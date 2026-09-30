@@ -64,45 +64,41 @@ export function Instructors() {
         </button>
       </div>
 
-      {/* Supervisor + instructors — one connected photo frame, all shown
-          at the same size/prominence. */}
+      {/* Supervisor + instructors, all shown at the same size/prominence.
+          Each photo and its caption are one unit, so when the row stacks on
+          phones every name stays directly under its own portrait. Equal
+          aspect ratios keep the captions aligned in the 3-column row. */}
       <Reveal>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-6 lg:gap-8">
           {INSTRUCTORS.map((person) => (
-            <div
-              key={person.id}
-              className="relative aspect-3/4"
-              style={FADE_MASK}
-            >
-              <Image
-                src={person.imageSrc}
-                alt={person.imageAlt}
-                fill
-                className="object-cover object-top"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-5 mt-4">
-          {INSTRUCTORS.map((person) => (
-            <div key={person.id} className="text-center">
-              <p className="font-sans font-semibold text-base text-[#191919]">
-                {person.name}
-                {person.suffix && ` ${person.suffix}`}
-              </p>
-              <p className="font-alt text-xs text-[#71717A] mt-1">
-                {person.professionalRole}
-              </p>
-              <div className="mt-2 pt-2 border-t border-zinc-100 space-y-0.5">
-                <p className="font-alt text-xs text-[#71717A]">
-                  {person.achievement}
-                </p>
-                <p className="font-alt text-xs text-[#71717A]">
-                  {person.education}
-                </p>
+            <figure key={person.id} className="mx-auto w-full max-w-xs sm:max-w-none">
+              <div className="relative aspect-3/4" style={FADE_MASK}>
+                <Image
+                  src={person.imageSrc}
+                  alt={person.imageAlt}
+                  fill
+                  sizes="(min-width: 1152px) 360px, (min-width: 640px) 30vw, 320px"
+                  className="object-cover object-top"
+                />
               </div>
-            </div>
+              <figcaption className="mt-4 text-center">
+                <p className="font-sans font-semibold text-base text-[#191919]">
+                  {person.name}
+                  {person.suffix && ` ${person.suffix}`}
+                </p>
+                <p className="font-alt text-xs text-[#71717A] mt-1">
+                  {person.professionalRole}
+                </p>
+                <div className="mt-2 pt-2 border-t border-zinc-100 space-y-0.5">
+                  <p className="font-alt text-xs text-[#71717A]">
+                    {person.achievement}
+                  </p>
+                  <p className="font-alt text-xs text-[#71717A]">
+                    {person.education}
+                  </p>
+                </div>
+              </figcaption>
+            </figure>
           ))}
         </div>
       </Reveal>

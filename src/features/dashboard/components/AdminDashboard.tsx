@@ -9,10 +9,12 @@ import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile
 import { MagnitudeBar, Section } from "@/components/dataviz/StatPrimitives";
 import { StatusDonutCard } from "@/components/dataviz/StatusDonutCard";
 import {
+  CATEGORICAL_COLORS,
   CERTIFICATE_STATUS_COLORS,
   ENROLLMENT_STATUS_COLORS,
   PAYMENT_STATUS_COLORS,
   PROJECT_STATUS_COLORS,
+  NEUTRAL_COLOR,
   TREND_COLOR,
 } from "@/components/dataviz/chartColors";
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
@@ -634,7 +636,7 @@ function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollment
   );
 }
 
-// Same black/grey pair as PAYMENT_STATUS_COLORS (COMPLETED/PARTIAL) —
+// Same pair as PAYMENT_STATUS_COLORS (COMPLETED/PARTIAL) —
 // "available" and "to come" are that same collected-vs-outstanding split,
 // just expressed in money instead of enrollment counts, so the identity
 // colors carry across the two cards on this page rather than diverging.
@@ -706,12 +708,11 @@ function RevenueSummaryBody({
 }
 
 // Services are admin-created catalog entities, not a fixed reserved status
-// set — so this draws from the "Monochrome + Red" black/grey scale (dark to
-// light) rather than the app's generic multi-hue --chart-1..4 tokens, which
-// don't match the theme. Capped at 4 named slices; anything past that folds
-// into one neutral "Other" bucket rather than inventing a 5th+ step.
-const SERVICE_CHART_COLORS = ["#27272A", "#71717A", "#A1A1AA", "#D4D4D8"];
-const OTHER_SERVICE_COLOR = "#e4e4e7"; // zinc-200 — same "neutral, not a real category" role as the district map's zero-count fill
+// set — so this draws from the Signal palette's categorical slots, in fixed
+// order. Capped at 4 named slices; anything past that folds into one
+// neutral "Other" bucket rather than inventing a 5th+ hue.
+const SERVICE_CHART_COLORS = CATEGORICAL_COLORS;
+const OTHER_SERVICE_COLOR = NEUTRAL_COLOR; // same "neutral, not a real category" role as the district map's zero-count fill
 
 function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | undefined; isLoading: boolean }) {
   const rows = data ?? [];

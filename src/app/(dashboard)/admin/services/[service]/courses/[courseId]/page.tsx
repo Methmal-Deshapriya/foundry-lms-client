@@ -258,15 +258,15 @@ export default function CourseDetailPage() {
           — a stretched (implicit) height doesn't reliably drive
           aspect-video's width calculation the way an explicit height class
           does, which previously rendered as a badly squeezed thumbnail. */}
-      <div className="flex flex-col gap-4 lg:flex-row">
-        <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-md lg:h-64 lg:w-auto">
+      <div className="flex flex-col gap-4 xl:flex-row">
+        <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-md xl:h-64 xl:w-auto">
           <ThumbnailImage src={course.thumbnailUrl} alt={course.title} label={course.title} className="h-full w-full object-cover" />
           <span className="absolute bottom-2 left-2 rounded-full bg-[#191919] px-2.5 py-1 text-xs font-semibold text-white">
             {service.accessType === "FREE" ? "Free" : formatLKR(course.price)}
           </span>
         </div>
 
-        <Section title="A/L stream" className="w-full flex-1">
+        <Section title="A/L stream" className="w-full min-w-0 flex-1">
           <p className="text-xs text-muted-foreground">
             {alStreamTotal > 0 ? `${alStreamTotal} students with a known stream.` : "No enrolled students yet."}
           </p>

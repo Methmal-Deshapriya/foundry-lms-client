@@ -110,7 +110,7 @@ export function DateRangePicker({
       </Button>
 
       {open ? (
-        <div className="absolute top-full right-0 z-50 mt-2 w-72 rounded-md border border-border bg-card p-3 shadow-lg">
+        <div className="absolute top-full right-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-md border border-border bg-card p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between gap-1">
             <button
               type="button"

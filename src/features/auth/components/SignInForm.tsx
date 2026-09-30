@@ -13,6 +13,7 @@ import { Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { isNormalizedApiError } from "@/lib/api";
 import { getDashboardPath } from "@/lib/access";
+import { withEnrollIntent } from "@/lib/enrollIntent";
 
 // 1. Define Validation Schema (Matches backend logic)
 const loginSchema = z.object({
@@ -38,10 +39,7 @@ const inputClassName =
 export default function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const enrollmentCourseId = searchParams.get("enrollCourse");
-  const signUpHref = enrollmentCourseId
-    ? `/sign-up?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-    : "/sign-up";
+  const signUpHref = withEnrollIntent("/sign-up", searchParams);
   const [login, { isLoading }] = useLoginMutation();
 
   // 2. Initialize Form
@@ -63,27 +61,18 @@ export default function SignInForm() {
     try {
       const result = await login(data).unwrap();
       if ("requiresMfa" in result) {
-        const intent = enrollmentCourseId
-          ? `&enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-          : "";
         toast.success("Check your administrator email for a login code.");
         router.push(
-          `/verify-login?challenge=${encodeURIComponent(result.challengeId)}${intent}`,
+          withEnrollIntent(`/verify-login?challenge=${encodeURIComponent(result.challengeId)}`, searchParams),
         );
         return;
       }
       toast.success("Welcome back to Foundry Academy!");
-      const intent = enrollmentCourseId
-        ? `?enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-        : "";
-      router.replace(`${getDashboardPath(result.role)}${intent}`);
+      router.replace(withEnrollIntent(getDashboardPath(result.role), searchParams));
     } catch (error: unknown) {
       if (isNormalizedApiError(error) && error.code === "EMAIL_NOT_VERIFIED") {
         toast.error("Please verify your email before logging in.");
-        const intent = enrollmentCourseId
-          ? `&enrollCourse=${encodeURIComponent(enrollmentCourseId)}`
-          : "";
-        router.push(`/verify-email?email=${encodeURIComponent(data.email)}${intent}`);
+        router.push(withEnrollIntent(`/verify-email?email=${encodeURIComponent(data.email)}`, searchParams));
         return;
       }
       // Check if it's a normalized field error from our baseApi

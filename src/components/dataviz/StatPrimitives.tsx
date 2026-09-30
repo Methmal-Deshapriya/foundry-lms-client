@@ -18,8 +18,8 @@ export function MagnitudeBar({ label, count, max }: { label: string; count: numb
         <span className="truncate text-foreground">{label}</span>
         <span className="shrink-0 font-medium tabular-nums text-muted-foreground">{count}</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
-        <div className="h-full rounded-full bg-[#191919]" style={{ width: `${pct}%` }} />
+      <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
+        <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
