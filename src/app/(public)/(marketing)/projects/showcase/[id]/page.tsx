@@ -72,7 +72,22 @@ export default function PublicProjectShowcasePage({
         <h1 className="mt-3 font-sans text-3xl font-bold tracking-tight text-[#191919] sm:text-4xl">
           {project.title}
         </h1>
-        {studentName ? <p className="mt-2 text-[#71717A]">By {studentName}</p> : null}
+        {studentName ? (
+          <p className="mt-2 text-[#71717A]">
+            By{" "}
+            {project.user?.profileSlug ? (
+              // The student's name links to their public profile when they have one.
+              <Link
+                href={`/students/${project.user.profileSlug}`}
+                className="font-semibold text-[#191919] underline decoration-zinc-300 underline-offset-4 transition-colors hover:decoration-[#191919]"
+              >
+                {studentName}
+              </Link>
+            ) : (
+              studentName
+            )}
+          </p>
+        ) : null}
 
         <div className="mt-8 aspect-video w-full overflow-hidden rounded-lg">
           <ThumbnailImage src={project.thumbnailUrl} alt="" label={project.title} className="h-full w-full object-cover" />

@@ -8,6 +8,7 @@ import Services from "@/components/marketing/Services";
 import LearningExperience from "@/components/marketing/LearningExperience";
 import Instructors from "@/components/marketing/Instructors";
 import { Testimonials } from "@/components/marketing/Testimonials";
+import { ProjectGallery } from "@/components/marketing/ProjectGallery";
 import { PathProvider } from "@/components/marketing/companion/PathContext";
 import { PathChoice } from "@/components/marketing/companion/PathChoice";
 import { WelcomeSlide } from "@/components/marketing/companion/WelcomeSlide";
@@ -62,6 +63,8 @@ function HomeSections() {
         <section id="testimonials" className="px-3 pb-16 sm:px-6 sm:pb-24">
           <Testimonials />
         </section>
+
+        <ProjectGallery />
 
         <section className="px-3 pb-16 sm:px-6 sm:pb-24">
           <div className="w-full max-w-6xl mx-auto rounded-3xl bg-[#191919] px-6 py-12 text-center sm:px-12 sm:py-16">

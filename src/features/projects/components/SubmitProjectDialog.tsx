@@ -128,16 +128,16 @@ export function SubmitProjectDialog({
                     className={cn(
                       "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
                       wizardStep === step
-                        ? "bg-linear-to-r from-blue-600 to-indigo-500 text-white"
+                        ? "bg-[#191919] text-white"
                         : wizardStep > step
-                          ? "bg-primary/10 text-primary"
+                          ? "bg-zinc-200 text-foreground"
                           : "bg-muted text-muted-foreground",
                     )}
                   >
                     {wizardStep > step ? <Check className="size-3.5" aria-hidden="true" /> : step}
                   </span>
                   {index < WIZARD_STEPS.length - 1 ? (
-                    <div className={cn("h-px min-w-3 flex-1", wizardStep > step ? "bg-primary/40" : "bg-border")} />
+                    <div className={cn("h-px min-w-3 flex-1", wizardStep > step ? "bg-[#191919]/40" : "bg-border")} />
                   ) : null}
                 </Fragment>
               ))}
@@ -301,11 +301,11 @@ export function SubmitProjectDialog({
                 )}
               </Button>
               {wizardStep < LAST_STEP ? (
-                <Button type="submit" disabled={wizardStep === 1 && !isBasicsValid}>
+                <Button type="submit" disabled={wizardStep === 1 && !isBasicsValid} className="bg-[#191919] bg-none text-white hover:bg-[#27272A]">
                   Next <ArrowRight className="ml-2 size-4" aria-hidden="true" />
                 </Button>
               ) : (
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className="bg-[#191919] bg-none text-white hover:bg-[#27272A]">
                   {isSubmitting ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
                   Submit for review
                 </Button>

@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Award } from "lucide-react";
 import { useGetMyCertificatesQuery } from "@/features/certificates/certificatesApi";
 import { CertificateCard } from "@/features/certificates/components/CertificateCard";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
 
 export default function MyCertificatesPage() {
@@ -45,18 +47,32 @@ export default function MyCertificatesPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-border bg-card p-16 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-background">
-              <Award className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <h2 className="mb-1 text-base font-bold text-foreground">No certificates yet</h2>
-            <p className="mx-auto mb-6 max-w-md text-sm text-muted-foreground">
-              Complete your enrolled courses and your certificates will appear here once issued.
-            </p>
-            <Button asChild size="sm">
-              <Link href="/my-courses">Go to My Courses</Link>
-            </Button>
-          </div>
+          <EmptyState
+            icon={Award}
+            eyebrow="Your achievements"
+            title="Earn your first certificate"
+            description="Finish a certificate course and your official Foundry Academy certificate appears here, ready to download or share."
+            steps={[
+              { title: "Complete a course", description: "Work through its sessions until your progress reaches the end." },
+              { title: "Get it issued", description: "Once you've finished, your certificate is issued in your name." },
+              { title: "Share it anywhere", description: "Download it as a PNG or PDF, or share its public verification link." },
+            ]}
+            action={
+              <Button asChild className="bg-[#191919] bg-none text-white hover:bg-[#27272A]">
+                <Link href="/my-courses">Go to My Courses</Link>
+              </Button>
+            }
+            preview={
+              <Image
+                src="/certificate/certificate_dummy.webp"
+                alt=""
+                width={1584}
+                height={993}
+                sizes="(min-width: 1280px) 560px, 100vw"
+                className="h-auto w-full rounded-lg border border-border shadow-sm"
+              />
+            }
+          />
         )}
       </div>
     </StudentOnlyRoute>

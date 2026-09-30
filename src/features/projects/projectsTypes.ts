@@ -29,6 +29,8 @@ export type StudentProject = {
   user?: {
     firstName: string;
     lastName: string;
+    /** Set when the student has a published public profile (/students/<slug>). */
+    profileSlug?: string | null;
   };
   course?: {
     title: string;

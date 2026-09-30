@@ -224,6 +224,7 @@ export default function IntakeWorkspacePage() {
             intakeId={intake.id}
             deliveryMode={intake.accessType === "FREE" ? "FREE" : "PAID"}
             certificateEnabled={intake.certificateEnabled}
+            exportName={intake.code}
           />
         </TabsContent>
 

@@ -6,12 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
 import { ThumbnailImage } from "@/components/ui/thumbnail-image";
+import { ThumbnailFallback } from "@/components/ui/thumbnail-fallback";
+import { EmptyState } from "@/components/ui/empty-state";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { cn } from "@/lib/utils";
 import { PROJECT_STATUS_STYLES } from "@/lib/statusColors";
 import { useGetMyProjectsQuery } from "@/features/projects/projectsApi";
 import type { ProjectStatus, StudentProject } from "@/features/projects/projectsTypes";
 import { SubmitProjectDialog } from "@/features/projects/components/SubmitProjectDialog";
+import { useGetMyProfileQuery } from "@/features/profiles/profilesApi";
+import { ProfileSetupDialog } from "@/features/profiles/components/ProfileSetupDialog";
+import { PublicProfileStatusCard } from "@/features/profiles/components/PublicProfileStatusCard";
 import { ProjectDetailSheet } from "@/features/projects/components/ProjectDetailSheet";
 import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
 
@@ -41,6 +46,14 @@ export default function MyProjectsPage() {
   const projects = useMemo(() => data?.projects ?? [], [data]);
   const [filter, setFilter] = useState<FilterKey>("ALL");
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [profileDialogMode, setProfileDialogMode] = useState<"setup" | "edit" | null>(null);
+  const { data: myProfile, isLoading: isProfileLoading } = useGetMyProfileQuery();
+  // A student's first submission starts with setting up their public
+  // profile; the profile dialog then hands straight over to this one.
+  const startSubmission = () => {
+    if (myProfile?.profile) setSubmitDialogOpen(true);
+    else setProfileDialogMode("setup");
+  };
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   // Looked up by id (not a frozen snapshot) so the Sheet reflects fresh data
   // once an edit invalidates and refetches this same query.
@@ -71,11 +84,15 @@ export default function MyProjectsPage() {
               Showcase your work and get feedback from our instructors.
             </p>
           </div>
-          <Button onClick={() => setSubmitDialogOpen(true)} className="bg-[#191919] bg-none hover:bg-[#27272A]">
+          <Button onClick={startSubmission} disabled={isProfileLoading} className="bg-[#191919] bg-none hover:bg-[#27272A]">
             <Plus className="h-4 w-4" />
             Submit Project
           </Button>
         </div>
+
+        {myProfile?.profile ? (
+          <PublicProfileStatusCard data={myProfile} onEdit={() => setProfileDialogMode("edit")} />
+        ) : null}
 
         {isLoading ? (
           <div className="@container">
@@ -91,19 +108,49 @@ export default function MyProjectsPage() {
             <p className="text-sm text-red-700">Failed to load projects. Please try again.</p>
           </div>
         ) : projects.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card p-16 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-background">
-              <FolderCode className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <h2 className="mb-1 text-base font-bold text-foreground">Portfolio is empty</h2>
-            <p className="mx-auto mb-6 max-w-md text-sm text-muted-foreground">
-              You haven&apos;t submitted any projects yet. Show off your skills and build a portfolio that
-              instructors and employers will love.
-            </p>
-            <Button size="sm" onClick={() => setSubmitDialogOpen(true)} className="bg-[#191919] bg-none hover:bg-[#27272A]">
-              Submit your first project
-            </Button>
-          </div>
+          <EmptyState
+            icon={FolderCode}
+            eyebrow="Your portfolio"
+            title="Show the world what you've built"
+            description="Projects you submit are reviewed by our instructors. Approved ones appear on the public showcase with your name on them."
+            steps={[
+              { title: "Build something real", description: "Use what you learn in a course to make a working project." },
+              { title: "Submit it for review", description: "Add a title, screenshots and your GitHub or live link." },
+              { title: "Get featured", description: "Once approved, it's shown publicly on the Foundry Academy showcase." },
+            ]}
+            action={
+              <Button onClick={startSubmission} disabled={isProfileLoading} className="bg-[#191919] bg-none text-white hover:bg-[#27272A]">
+                Submit your first project
+              </Button>
+            }
+            preview={
+              <div className="grid w-full grid-cols-1 gap-3 @sm:grid-cols-2">
+                {[
+                  { title: "Your portfolio site", tags: ["React", "Tailwind"] },
+                  { title: "Your capstone app", tags: ["Node.js", "SQL"] },
+                ].map((card) => (
+                  <div key={card.title} className="overflow-hidden rounded-xl border border-border bg-card">
+                    <div className="relative aspect-video">
+                      <ThumbnailFallback label={card.title} className="text-xs" />
+                      <span className="absolute top-2 right-2 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        Approved
+                      </span>
+                    </div>
+                    <div className="space-y-2 p-3">
+                      <p className="truncate text-sm font-semibold text-foreground">{card.title}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {card.tags.map((tag) => (
+                          <span key={tag} className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }
+          />
         ) : (
           <div className="@container space-y-4">
             <FilterPills options={filterOptions} active={filter} onChange={setFilter} ariaLabel="Filter by status" />
@@ -128,6 +175,12 @@ export default function MyProjectsPage() {
       </div>
 
       <SubmitProjectDialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen} />
+      <ProfileSetupDialog
+        open={profileDialogMode !== null}
+        onOpenChange={(open) => !open && setProfileDialogMode(null)}
+        mode={profileDialogMode ?? "setup"}
+        onSaved={profileDialogMode === "setup" ? () => setSubmitDialogOpen(true) : undefined}
+      />
       <ProjectDetailSheet
         project={selectedProject}
         open={selectedProjectId !== null}

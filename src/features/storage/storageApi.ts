@@ -7,7 +7,8 @@ export type StoredObjectPurpose =
   | "PROJECT_THUMBNAIL"
   | "SERVICE_HERO"
   | "SERVICE_CARD"
-  | "COURSE_EXPLAINER_VIDEO_THUMBNAIL";
+  | "COURSE_EXPLAINER_VIDEO_THUMBNAIL"
+  | "STUDENT_AVATAR";
 
 export interface StoredObjectSummary {
   id: string;

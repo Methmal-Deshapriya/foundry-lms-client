@@ -5,6 +5,8 @@ import {
   Award,
   Ban,
   CheckCircle2,
+  Copy,
+  Download,
   Loader2,
   Mail,
   MoreHorizontal,
@@ -53,6 +55,7 @@ import {
 } from "@/components/ui/table";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { getApiErrorMessage } from "@/lib/api";
+import { downloadCsv, toCsv } from "@/lib/csv";
 import {
   CERTIFICATE_STATUS_STYLES,
   ENROLLMENT_STATUS_STYLES,
@@ -62,6 +65,7 @@ import { useIssueCertificateMutation } from "@/features/certificates/certificate
 import {
   useCompletePaymentMutation,
   useGetCourseRosterQuery,
+  useLazyGetCourseRosterQuery,
   useUpdateEnrollmentMutation,
 } from "../enrollmentsApi";
 import type { ClassRosterEntry, EnrollmentStatus, RosterSummary } from "../enrollmentsTypes";
@@ -194,14 +198,25 @@ function RosterActionsMenu({
   );
 }
 
+const EXPORT_PAGE_SIZE = 100; // the roster endpoint's max page size
+
+// yyyy-MM-dd in the admin's own timezone (toISOString would give the UTC date).
+function localDate(date: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export default function ClassRosterTable({
   intakeId,
   deliveryMode,
   certificateEnabled,
+  exportName,
 }: {
   intakeId: string;
   deliveryMode: "PAID" | "FREE";
   certificateEnabled: boolean;
+  /** Used for the export's file name, e.g. the intake code. */
+  exportName?: string;
 }) {
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | "">("");
@@ -219,6 +234,57 @@ export default function ClassRosterTable({
     offset,
   });
   const entries = data?.enrollments ?? [];
+
+  // Export always covers the WHOLE intake roster — every status, ignoring
+  // the table's current search/filter/page — since its main use is sharing
+  // Google Drive video folders with every enrolled student's email.
+  const [fetchRosterPage] = useLazyGetCourseRosterQuery();
+  const [isExporting, setIsExporting] = useState(false);
+  const fetchWholeRoster = async () => {
+    const all: ClassRosterEntry[] = [];
+    for (let pageOffset = 0; ; pageOffset += EXPORT_PAGE_SIZE) {
+      const page = await fetchRosterPage({ intakeId, limit: EXPORT_PAGE_SIZE, offset: pageOffset }).unwrap();
+      all.push(...page.enrollments);
+      if (!page.pagination.hasMore) return all;
+    }
+  };
+  const runExport = async (kind: "csv" | "emails") => {
+    setIsExporting(true);
+    try {
+      const roster = await fetchWholeRoster();
+      if (roster.length === 0) {
+        toast.info("There are no enrollments to export yet.");
+        return;
+      }
+      if (kind === "emails") {
+        // Active + completed only: a cancelled student shouldn't be given
+        // access to course material.
+        const emails = [...new Set(roster.filter((entry) => entry.status !== "CANCELLED").map((entry) => entry.user.email))];
+        await navigator.clipboard.writeText(emails.join(", "));
+        toast.success(`Copied ${emails.length} email${emails.length === 1 ? "" : "s"} — paste them into Google Drive's Share box.`);
+        return;
+      }
+      const rows = [
+        ["First name", "Last name", "Email", "Status", "Payment", "Enrolled on", "Enrolled via"],
+        ...roster.map((entry) => [
+          entry.user.firstName,
+          entry.user.lastName,
+          entry.user.email,
+          entry.status,
+          entry.paymentStatus,
+          entry.enrolledAt ? localDate(new Date(entry.enrolledAt)) : "",
+          entry.source === "SELF" ? "Self-enrolled" : "Admin",
+        ]),
+      ];
+      const stamp = localDate(new Date());
+      downloadCsv(`${exportName ?? "enrollments"}-enrollments-${stamp}.csv`, toCsv(rows));
+      toast.success(`Exported ${roster.length} enrollment${roster.length === 1 ? "" : "s"}.`);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "The export could not be completed."));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const [updateEnrollment, { isLoading: isUpdating }] = useUpdateEnrollmentMutation();
   const [issueCertificate, { isLoading: isIssuing }] = useIssueCertificateMutation();
@@ -317,6 +383,22 @@ export default function ClassRosterTable({
             setOffset(0);
           }}
         />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-9 w-full sm:ml-auto sm:w-auto" disabled={isExporting}>
+              {isExporting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Download className="size-4" aria-hidden="true" />}
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => void runExport("csv")}>
+              <Download /> Download spreadsheet (.csv)
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => void runExport("emails")}>
+              <Copy /> Copy all student emails
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="overflow-hidden rounded-md border bg-card" aria-busy={isLoading || isFetching}>

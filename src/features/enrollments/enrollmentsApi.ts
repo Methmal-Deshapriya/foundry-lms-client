@@ -108,6 +108,7 @@ export const enrollmentsApi = baseApi.injectEndpoints({
 export const {
   useGetMyEnrollmentsQuery,
   useGetCourseRosterQuery,
+  useLazyGetCourseRosterQuery,
   useGetEligibleStudentsQuery,
   useCreateEnrollmentMutation,
   useBulkCreateEnrollmentsMutation,
