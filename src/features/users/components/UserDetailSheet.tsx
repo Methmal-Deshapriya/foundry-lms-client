@@ -20,6 +20,8 @@ import { useResendOtpMutation } from "@/features/auth/authApi";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingStatus } from "@/components/ui/loading-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -109,9 +111,24 @@ export default function UserDetailSheet({
     <Sheet open={Boolean(userId)} onOpenChange={(open) => !open && onOpenChange(false)}>
       <SheetContent className="flex flex-col border-border bg-white sm:max-w-xl" style={{ backgroundImage: "none" }}>
         {isLoading ? (
-          <p className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground" role="status" aria-live="polite">
-            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading user…
-          </p>
+          <div className="flex-1 space-y-6 p-6">
+            <LoadingStatus label="Loading user…" />
+            <div className="flex items-center gap-4" aria-hidden="true">
+              <Skeleton className="size-14 rounded-2xl" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-1/2" />
+                <Skeleton className="h-3.5 w-2/3" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4" aria-hidden="true">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className="space-y-2">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : isError || !detail ? (
           <p className="flex flex-1 items-center justify-center text-sm text-destructive" role="alert">
             Could not load this user.

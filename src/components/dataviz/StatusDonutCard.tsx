@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { DonutSkeleton } from "@/components/ui/loading-skeletons";
 import { Cell, Pie, PieChart } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
@@ -48,9 +48,7 @@ export function StatusDonutCard<TKey extends string>({
     // rather than sitting right at a callers's own chosen card width.
     <Section title={title} className={cn("@container flex flex-col", className)}>
       {isLoading ? (
-        <div className={cn("flex flex-auto items-center justify-center py-8", bodyClassName)}>
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <DonutSkeleton legendRows={order.length} className={bodyClassName} />
       ) : (
         <div className={cn("flex flex-auto items-center justify-center gap-4 @3xs:justify-start", bodyClassName)}>
           <ChartContainer config={chartConfig} className="mx-auto aspect-square h-28 w-28 shrink-0">

@@ -8,7 +8,9 @@ import {
   selectIsAuthenticated,
   selectIsAuthResolved,
 } from "../authSelectors";
-import { Loader2, RefreshCw, WifiOff } from "lucide-react";
+import { RefreshCw, WifiOff } from "lucide-react";
+import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * AuthenticatedGuard Component
@@ -58,12 +60,49 @@ export default function AuthenticatedGuard({
   // While checking or if not authenticated (before redirect happens)
   if (!isAuthResolved || !isAuthenticated) {
     return (
-      <div className="flex h-[80vh] w-full flex-col items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#191919]" />
-        <p className="mt-4 text-muted-foreground">Checking authorization...</p>
-      </div>
+      <DashboardShellSkeleton />
     );
   }
 
   return <>{children}</>;
+}
+
+// The dashboard frame (sidebar, top bar, a page's worth of blocks) drawn in
+// skeleton while the session is verified — so the real shell swaps in over
+// the same layout instead of replacing a centered spinner.
+function DashboardShellSkeleton() {
+  return (
+    <div className="fixed inset-0 flex bg-[#FAFAFA]">
+      <LoadingStatus label="Checking authorization…" />
+      <aside className="hidden w-64 shrink-0 flex-col gap-6 border-r border-border bg-background p-4 md:flex" aria-hidden="true">
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-8 rounded-lg" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+        <div className="space-y-3">
+          {[0, 1, 2, 3, 4].map((key) => (
+            <Skeleton key={key} className="h-7 w-full" />
+          ))}
+        </div>
+      </aside>
+      <div className="flex min-w-0 flex-1 flex-col" aria-hidden="true">
+        <div className="flex h-16 shrink-0 items-center gap-4 border-b border-border bg-background px-4 md:px-8">
+          <Skeleton className="size-7" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+        <div className="flex-1 space-y-6 overflow-hidden p-6">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((key) => (
+              <Skeleton key={key} className="h-16 w-full" />
+            ))}
+          </div>
+          <CardGridSkeleton count={3} className="hidden grid-cols-3 gap-4 lg:grid" />
+        </div>
+      </div>
+    </div>
+  );
 }

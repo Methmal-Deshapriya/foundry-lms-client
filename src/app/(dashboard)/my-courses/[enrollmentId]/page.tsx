@@ -12,7 +12,6 @@ import {
   Check,
   ExternalLink,
   FolderGit2,
-  Loader2,
   Wallet,
 } from "lucide-react";
 import { useGetClassroomQuery } from "@/features/sessions/sessionsApi";
@@ -26,6 +25,8 @@ import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { SubmitProjectDialog } from "@/features/projects/components/SubmitProjectDialog";
+import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PROJECT_STATUS_STYLES: Record<string, string> = {
   PENDING: "bg-amber-50 text-amber-700",
@@ -78,11 +79,28 @@ export default function LearningPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#191919]" />
-        <p className="font-medium text-muted-foreground">
-          Preparing your classroom...
-        </p>
+      // Same shape as the loaded page: header (thumbnail + text), the
+      // completion card with its fact tiles, then the session grid.
+      <div className="@container space-y-6 pb-20">
+        <LoadingStatus label="Preparing your classroom…" />
+        <div className="flex flex-col gap-5 @3xl:flex-row @3xl:items-start" aria-hidden="true">
+          <Skeleton className="aspect-video w-full max-w-xl shrink-0 rounded-lg @3xl:h-56 @3xl:w-auto" />
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-7 w-2/3" />
+            <Skeleton className="h-4 w-full max-w-md" />
+          </div>
+        </div>
+        <div className="space-y-4 rounded-lg border border-border bg-card p-4 sm:p-6" aria-hidden="true">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-2.5 w-full rounded-full" />
+          <div className="flex flex-wrap gap-3 border-t border-border pt-5">
+            {[0, 1, 2, 3].map((key) => (
+              <Skeleton key={key} className="h-16 min-w-44 flex-1" />
+            ))}
+          </div>
+        </div>
+        <CardGridSkeleton count={3} className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-3" />
       </div>
     );
   }

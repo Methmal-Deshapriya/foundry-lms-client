@@ -3,11 +3,27 @@
 import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Pie, PieChart, XAxis } from "recharts";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Pie,
+  PieChart,
+  XAxis,
+} from "recharts";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile";
 import { MagnitudeBar, Section } from "@/components/dataviz/StatPrimitives";
 import { StatusDonutCard } from "@/components/dataviz/StatusDonutCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ChartSkeleton,
+  DonutSkeleton,
+  KpiValueSkeleton,
+  ListSkeleton,
+} from "@/components/ui/loading-skeletons";
 import {
   CATEGORICAL_COLORS,
   CERTIFICATE_STATUS_COLORS,
@@ -20,8 +36,16 @@ import {
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { DateRangePicker, type DateRange } from "@/components/ui/date-range-picker";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import {
+  DateRangePicker,
+  type DateRange,
+} from "@/components/ui/date-range-picker";
 import { useAppSelector } from "@/store/hooks";
 import { selectAuthRole } from "@/features/auth/authSelectors";
 import { isSuperAdmin } from "@/lib/access";
@@ -29,7 +53,10 @@ import { useGetAuditLogsQuery } from "@/features/audit/auditApi";
 import type { AuditLogsResponse } from "@/features/audit/auditTypes";
 import { Icons } from "@/lib/icons";
 import { cn, formatLKR, formatLKRCompact } from "@/lib/utils";
-import { ENROLLMENT_REQUEST_STATUS_STYLES, INTAKE_STATUS_STYLES } from "@/lib/statusColors";
+import {
+  ENROLLMENT_REQUEST_STATUS_STYLES,
+  INTAKE_STATUS_STYLES,
+} from "@/lib/statusColors";
 import type { Role } from "@/lib/constants";
 import { useGetAdminDashboardQuery } from "../dashboardApi";
 import type {
@@ -50,7 +77,9 @@ const REVENUE_CHART_CONFIG = {
   amount: { label: "Revenue", color: TREND_COLOR },
 } satisfies ChartConfig;
 
-type TrendFilter = { mode: "preset"; months: number } | { mode: "custom"; from: string; to: string };
+type TrendFilter =
+  | { mode: "preset"; months: number }
+  | { mode: "custom"; from: string; to: string };
 
 /**
  * The admin/super-admin dashboard: platform-wide counts, trends, and
@@ -69,18 +98,26 @@ type TrendFilter = { mode: "preset"; months: number } | { mode: "custom"; from: 
 export default function AdminDashboard() {
   const role = useAppSelector(selectAuthRole);
   const [page, setPage] = useState<1 | 2>(1);
-  const [trendFilter, setTrendFilter] = useState<TrendFilter>({ mode: "preset", months: 6 });
+  const [trendFilter, setTrendFilter] = useState<TrendFilter>({
+    mode: "preset",
+    months: 6,
+  });
   const [customRange, setCustomRange] = useState<DateRange>({});
 
   const { data, isLoading } = useGetAdminDashboardQuery(
-    trendFilter.mode === "preset" ? { months: trendFilter.months } : { from: trendFilter.from, to: trendFilter.to },
+    trendFilter.mode === "preset"
+      ? { months: trendFilter.months }
+      : { from: trendFilter.from, to: trendFilter.to },
   );
   const { data: auditData, isLoading: isAuditLoading } = useGetAuditLogsQuery(
     { limit: 8 },
     { skip: !isSuperAdmin(role) || page !== 2 },
   );
 
-  const maxTopCourse = Math.max(1, ...(data?.topCourses.map((row) => row.count) ?? [1]));
+  const maxTopCourse = Math.max(
+    1,
+    ...(data?.topCourses.map((row) => row.count) ?? [1]),
+  );
 
   const handlePreset = (months: number) => {
     setCustomRange({});
@@ -116,7 +153,8 @@ export default function AdminDashboard() {
                     onClick={() => handlePreset(months)}
                     className={cn(
                       "rounded px-2.5 py-1 text-xs font-medium transition-colors",
-                      trendFilter.mode === "preset" && trendFilter.months === months
+                      trendFilter.mode === "preset" &&
+                        trendFilter.months === months
                         ? "bg-zinc-100 text-[#191919]"
                         : "text-muted-foreground hover:bg-muted",
                     )}
@@ -125,7 +163,10 @@ export default function AdminDashboard() {
                   </button>
                 ))}
               </div>
-              <DateRangePicker value={customRange} onChange={handleRangeChange} />
+              <DateRangePicker
+                value={customRange}
+                onChange={handleRangeChange}
+              />
             </>
           ) : null}
 
@@ -137,7 +178,9 @@ export default function AdminDashboard() {
               aria-current={page === 1}
               className={cn(
                 "flex h-6 w-6 items-center justify-center rounded text-xs font-semibold transition-colors",
-                page === 1 ? "bg-[#191919] text-white" : "text-muted-foreground hover:bg-muted",
+                page === 1
+                  ? "bg-[#191919] text-white"
+                  : "text-muted-foreground hover:bg-muted",
               )}
             >
               1
@@ -149,7 +192,9 @@ export default function AdminDashboard() {
               aria-current={page === 2}
               className={cn(
                 "flex h-6 w-6 items-center justify-center rounded text-xs font-semibold transition-colors",
-                page === 2 ? "bg-[#191919] text-white" : "text-muted-foreground hover:bg-muted",
+                page === 2
+                  ? "bg-[#191919] text-white"
+                  : "text-muted-foreground hover:bg-muted",
               )}
             >
               2
@@ -172,10 +217,20 @@ export default function AdminDashboard() {
       )}
 
       <div className="flex shrink-0 items-center justify-center gap-3 xl:hidden">
-        <Button variant="outline" size="sm" onClick={() => setPage(1)} disabled={page === 1}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage(1)}
+          disabled={page === 1}
+        >
           <ChevronLeft className="size-4" /> Page 1
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setPage(2)} disabled={page === 2}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPage(2)}
+          disabled={page === 2}
+        >
           Page 2 <ChevronRight className="size-4" />
         </Button>
       </div>
@@ -206,42 +261,72 @@ function AdminDashboardPageOne({
           className="min-w-0"
           icon={Icons.users}
           label="Total students"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.totalStudents ?? 0)}
+          value={isLoading ? <KpiValueSkeleton /> : (data?.totalStudents ?? 0)}
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={Icons.enrollments}
           label="Active enrollments"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.totalActiveEnrollments ?? 0)}
+          value={
+            isLoading ? (
+              <KpiValueSkeleton />
+            ) : (
+              (data?.totalActiveEnrollments ?? 0)
+            )
+          }
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={Icons.pending}
           label="Pending requests"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.pendingEnrollmentRequests ?? 0)}
+          value={
+            isLoading ? (
+              <KpiValueSkeleton />
+            ) : (
+              (data?.pendingEnrollmentRequests ?? 0)
+            )
+          }
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={Icons.certificates}
           label="Certificates issued"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.totalCertificatesIssued ?? 0)}
+          value={
+            isLoading ? (
+              <KpiValueSkeleton />
+            ) : (
+              (data?.totalCertificatesIssued ?? 0)
+            )
+          }
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={Icons.reviewProjects}
           label="Projects in review"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (data?.pendingProjectReviews ?? 0)}
+          value={
+            isLoading ? (
+              <KpiValueSkeleton />
+            ) : (
+              (data?.pendingProjectReviews ?? 0)
+            )
+          }
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={Icons.revenue}
           label="Total revenue"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : formatLKRCompact(data?.totalRevenue ?? 0)}
+          value={
+            isLoading ? (
+              <KpiValueSkeleton />
+            ) : (
+              formatLKRCompact(data?.totalRevenue ?? 0)
+            )
+          }
         />
       </div>
 
@@ -249,16 +334,32 @@ function AdminDashboardPageOne({
         {/* Left: the three trend/financial rows, stacked */}
         <div className="flex flex-1 flex-col gap-4 xl:min-h-0">
           <div className="grid flex-1 grid-cols-1 gap-4 xl:min-h-0 xl:grid-cols-6">
-            <Section title="Enrollments" className="flex flex-col xl:col-span-4 xl:min-h-0">
+            <Section
+              title="Enrollments"
+              className="flex flex-col xl:col-span-4 xl:min-h-0"
+            >
               <div className="min-h-40 flex-1 xl:min-h-0">
-                <ChartContainer config={ENROLLMENT_CHART_CONFIG} className="h-full w-full">
-                  <BarChart data={data?.enrollmentTrend ?? []}>
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="count" fill={TREND_COLOR} radius={4} />
-                  </BarChart>
-                </ChartContainer>
+                {isLoading ? (
+                  <ChartSkeleton />
+                ) : (
+                  <ChartContainer
+                    config={ENROLLMENT_CHART_CONFIG}
+                    className="h-full w-full"
+                  >
+                    <BarChart data={data?.enrollmentTrend ?? []}>
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        fontSize={12}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="count" fill={TREND_COLOR} radius={4} />
+                    </BarChart>
+                  </ChartContainer>
+                )}
               </div>
             </Section>
 
@@ -274,21 +375,40 @@ function AdminDashboardPageOne({
 
           <Section title="Revenue" className="flex flex-1 flex-col xl:min-h-0">
             <div className="min-h-40 flex-1 xl:min-h-0">
-              <ChartContainer config={REVENUE_CHART_CONFIG} className="h-full w-full">
-                <AreaChart data={data?.revenueTrend ?? []}>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatLKR(Number(value))} />} />
-                  <Area
-                    dataKey="amount"
-                    type="monotone"
-                    fill={TREND_COLOR}
-                    fillOpacity={0.15}
-                    stroke={TREND_COLOR}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ChartContainer>
+              {isLoading ? (
+                <ChartSkeleton />
+              ) : (
+                <ChartContainer
+                  config={REVENUE_CHART_CONFIG}
+                  className="h-full w-full"
+                >
+                  <AreaChart data={data?.revenueTrend ?? []}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      fontSize={12}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) => formatLKR(Number(value))}
+                        />
+                      }
+                    />
+                    <Area
+                      dataKey="amount"
+                      type="monotone"
+                      fill={TREND_COLOR}
+                      fillOpacity={0.15}
+                      stroke={TREND_COLOR}
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              )}
             </div>
           </Section>
 
@@ -303,10 +423,24 @@ function AdminDashboardPageOne({
               isLoading={isLoading}
             />
 
-            <Section title="Revenue summary" className="flex flex-col xl:col-span-3 xl:min-h-0">
+            <Section
+              title="Revenue summary"
+              className="flex flex-col xl:col-span-3 xl:min-h-0"
+            >
               {isLoading ? (
-                <div className="flex flex-1 items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <div
+                  className="flex flex-1 flex-col justify-center gap-4"
+                  aria-hidden="true"
+                >
+                  <Skeleton className="h-2.5 w-full rounded-full" />
+                  <div className="grid grid-cols-3 gap-4">
+                    {[0, 1, 2].map((key) => (
+                      <div key={key} className="space-y-2">
+                        <Skeleton className="h-3 w-3/4" />
+                        <Skeleton className="h-5 w-2/3" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <RevenueSummaryBody
@@ -338,8 +472,12 @@ function AdminDashboardPageOne({
             financial grid needs real room, and `lg` was exactly where it
             used to visibly overflow. */}
         <div className="flex shrink-0 flex-col rounded-md border border-input bg-card p-4 xl:w-[min(26rem,22vw)] xl:min-h-0 xl:rounded-none xl:border-0 xl:bg-transparent xl:p-0">
-          {!data || data.districtBreakdown.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No district data yet.</p>
+{isLoading ? (
+            <Skeleton className="aspect-[3/5] w-full max-w-xs self-center rounded-[40%]" aria-hidden="true" />
+          ) : !data || data.districtBreakdown.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No district data yet.
+            </p>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center pt-10 xl:min-h-0 xl:overflow-y-auto">
               <SriLankaDistrictMap data={data.districtBreakdown} />
@@ -388,19 +526,30 @@ function AdminDashboardPageTwo({
           isLoading={isLoading}
         />
 
-        <Section title="Top courses by enrollment" className="flex flex-col xl:min-h-0 xl:overflow-y-auto">
+        <Section
+          title="Top courses by enrollment"
+          className="flex flex-col xl:min-h-0 xl:overflow-y-auto"
+        >
           {!data || data.topCourses.length === 0 ? (
             <p className="text-sm text-muted-foreground">No enrollments yet.</p>
           ) : (
             <div className="space-y-2.5">
               {data.topCourses.map((row) => (
-                <MagnitudeBar key={row.courseId} label={row.title} count={row.count} max={maxTopCourse} />
+                <MagnitudeBar
+                  key={row.courseId}
+                  label={row.title}
+                  count={row.count}
+                  max={maxTopCourse}
+                />
               ))}
             </div>
           )}
         </Section>
 
-        <ServiceEnrollmentsCard data={data?.serviceBreakdown} isLoading={isLoading} />
+        <ServiceEnrollmentsCard
+          data={data?.serviceBreakdown}
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Left column stacks the two operational lists; Recent activity sits
@@ -408,8 +557,18 @@ function AdminDashboardPageTwo({
           combined height, rather than being squeezed into just the bottom
           row's share — a super-admin-only feed reads better as a single
           continuous timeline than a short, easily-exhausted list. */}
-      <div className={cn("grid flex-1 grid-cols-1 gap-4 xl:min-h-0", isSuperAdmin(role) && "xl:grid-cols-3")}>
-        <div className={cn("flex flex-col gap-4 xl:min-h-0", isSuperAdmin(role) && "xl:col-span-2")}>
+      <div
+        className={cn(
+          "grid flex-1 grid-cols-1 gap-4 xl:min-h-0",
+          isSuperAdmin(role) && "xl:grid-cols-3",
+        )}
+      >
+        <div
+          className={cn(
+            "flex flex-col gap-4 xl:min-h-0",
+            isSuperAdmin(role) && "xl:col-span-2",
+          )}
+        >
           <div className="flex-1 xl:min-h-0">
             <IntakesCard
               running={data?.runningIntakes}
@@ -419,7 +578,10 @@ function AdminDashboardPageTwo({
             />
           </div>
           <div className="flex-1 xl:min-h-0">
-            <EnrollmentRequestsCard data={data?.enrollmentRequestsList} isLoading={isLoading} />
+            <EnrollmentRequestsCard
+              data={data?.enrollmentRequestsList}
+              isLoading={isLoading}
+            />
           </div>
         </div>
 
@@ -428,25 +590,35 @@ function AdminDashboardPageTwo({
             title="Recent activity"
             className="flex flex-col xl:min-h-0"
             action={
-              <Link href="/admin/audit" className="text-xs font-semibold text-[#E91717] hover:text-[#C91414]">
+              <Link
+                href="/admin/audit"
+                className="text-xs font-semibold text-[#E91717] hover:text-[#C91414]"
+              >
                 View all
               </Link>
             }
           >
             <div className="flex-1 xl:min-h-0 xl:overflow-y-auto">
               {isAuditLoading ? (
-                <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-                </p>
+                <ListSkeleton rows={5} />
               ) : !auditData || auditData.logs.length === 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">No recent activity yet.</p>
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  No recent activity yet.
+                </p>
               ) : (
                 <ul className="divide-y divide-border">
                   {auditData.logs.map((log) => (
-                    <li key={log.id} className="py-3 text-sm first:pt-0 last:pb-0">
-                      <p className="text-foreground">{log.description ?? log.action.replace(/_/g, " ").toLowerCase()}</p>
+                    <li
+                      key={log.id}
+                      className="py-3 text-sm first:pt-0 last:pb-0"
+                    >
+                      <p className="text-foreground">
+                        {log.description ??
+                          log.action.replace(/_/g, " ").toLowerCase()}
+                      </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {log.actor.firstName} {log.actor.lastName} · {format(new Date(log.createdAt), "MMM dd, HH:mm")}
+                        {log.actor.firstName} {log.actor.lastName} ·{" "}
+                        {format(new Date(log.createdAt), "MMM dd, HH:mm")}
                       </p>
                     </li>
                   ))}
@@ -462,7 +634,10 @@ function AdminDashboardPageTwo({
 
 // Shared by every status badge on this page ("OPEN_ACTIVE" -> "Open active").
 function formatStatusLabel(status: string) {
-  return status.replace("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return status
+    .replace("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function intakeHref(intake: DashboardIntakeCard) {
@@ -481,15 +656,31 @@ function intakeDateRange(intake: DashboardIntakeCard) {
 
 const INTAKE_VIEWS = [
   { key: "running", label: "Running", empty: "No intakes currently running." },
-  { key: "upcoming", label: "Starting soon", empty: "Nothing scheduled to start soon." },
-  { key: "overdue", label: "Overdue", empty: "No cohorts overdue for closing." },
+  {
+    key: "upcoming",
+    label: "Starting soon",
+    empty: "Nothing scheduled to start soon.",
+  },
+  {
+    key: "overdue",
+    label: "Overdue",
+    empty: "No cohorts overdue for closing.",
+  },
 ] as const;
 
 // Thin inline meter for a single 0-100 stat on an intake row — same "one
 // hue, a labeled value, a muted track" shape as the revenue summary's
 // collected-vs-outstanding bar, just single-segment here since each stat
 // stands alone rather than summing to a whole.
-function IntakeStatBar({ label, pct, color }: { label: string; pct: number | null; color: string }) {
+function IntakeStatBar({
+  label,
+  pct,
+  color,
+}: {
+  label: string;
+  pct: number | null;
+  color: string;
+}) {
   if (pct === null) return null;
   return (
     <div className="min-w-0 flex-1">
@@ -498,7 +689,10 @@ function IntakeStatBar({ label, pct, color }: { label: string; pct: number | nul
         <span className="tabular-nums">{pct}%</span>
       </div>
       <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+        <div
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
       </div>
     </div>
   );
@@ -519,8 +713,10 @@ function IntakesCard({
   overdue: DashboardIntakeCard[] | undefined;
   isLoading: boolean;
 }) {
-  const [view, setView] = useState<(typeof INTAKE_VIEWS)[number]["key"]>("running");
-  const rows = view === "running" ? running : view === "upcoming" ? upcoming : overdue;
+  const [view, setView] =
+    useState<(typeof INTAKE_VIEWS)[number]["key"]>("running");
+  const rows =
+    view === "running" ? running : view === "upcoming" ? upcoming : overdue;
   const activeView = INTAKE_VIEWS.find((v) => v.key === view)!;
 
   return (
@@ -536,7 +732,9 @@ function IntakesCard({
               onClick={() => setView(key)}
               className={cn(
                 "rounded px-2.5 py-1 text-xs font-medium transition-colors",
-                view === key ? "bg-zinc-100 text-[#191919]" : "text-muted-foreground hover:bg-muted",
+                view === key
+                  ? "bg-zinc-100 text-[#191919]"
+                  : "text-muted-foreground hover:bg-muted",
               )}
             >
               {label}
@@ -546,19 +744,25 @@ function IntakesCard({
       }
     >
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton rows={4} className="flex-1" />
       ) : !rows || rows.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">{activeView.empty}</p>
+        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          {activeView.empty}
+        </p>
       ) : (
         <ul className="flex-1 divide-y divide-border xl:min-h-0 xl:overflow-y-auto">
           {rows.map((intake) => (
             <li key={intake.id}>
-              <Link href={intakeHref(intake)} className="flex flex-col gap-1.5 py-2.5 first:pt-0 last:pb-0 hover:opacity-75">
+              <Link
+                href={intakeHref(intake)}
+                className="flex flex-col gap-1.5 py-2.5 first:pt-0 last:pb-0 hover:opacity-75"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground" title={intake.title}>
+                    <p
+                      className="truncate text-sm font-medium text-foreground"
+                      title={intake.title}
+                    >
                       {intake.title}
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -570,13 +774,23 @@ function IntakesCard({
                       {intake.enrolledCount}
                       {intake.capacity ? ` / ${intake.capacity}` : ""} seats
                     </span>
-                    <Badge className={INTAKE_STATUS_STYLES[intake.status]}>{formatStatusLabel(intake.status)}</Badge>
+                    <Badge className={INTAKE_STATUS_STYLES[intake.status]}>
+                      {formatStatusLabel(intake.status)}
+                    </Badge>
                   </div>
                 </div>
                 {intake.totalSessions > 0 ? (
                   <div className="flex items-center gap-4">
-                    <IntakeStatBar label="Curriculum released" pct={intake.releaseProgressPct} color={TREND_COLOR} />
-                    <IntakeStatBar label="Completion" pct={intake.completionPct} color={AVAILABLE_COLOR} />
+                    <IntakeStatBar
+                      label="Curriculum released"
+                      pct={intake.releaseProgressPct}
+                      color={TREND_COLOR}
+                    />
+                    <IntakeStatBar
+                      label="Completion"
+                      pct={intake.completionPct}
+                      color={AVAILABLE_COLOR}
+                    />
                   </div>
                 ) : null}
               </Link>
@@ -598,15 +812,24 @@ function enrollmentRequestHref(request: DashboardEnrollmentRequest) {
 // Oldest-pending-first jump-off list — the counterpart to "Course delivery"
 // on the other half of this page's "services delivered" half, surfacing
 // which prospective students are still waiting on an admin to reach out.
-function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollmentRequest[] | undefined; isLoading: boolean }) {
+function EnrollmentRequestsCard({
+  data,
+  isLoading,
+}: {
+  data: DashboardEnrollmentRequest[] | undefined;
+  isLoading: boolean;
+}) {
   return (
-    <Section title="Enrollment requests" className="flex h-full flex-col xl:min-h-0">
+    <Section
+      title="Enrollment requests"
+      className="flex h-full flex-col xl:min-h-0"
+    >
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton rows={4} className="flex-1" />
       ) : !data || data.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">No pending enrollment requests.</p>
+        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          No pending enrollment requests.
+        </p>
       ) : (
         <ul className="flex-1 divide-y divide-border xl:min-h-0 xl:overflow-y-auto">
           {data.map((request) => (
@@ -616,7 +839,10 @@ function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollment
                 className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0 hover:opacity-75"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground" title={request.studentName}>
+                  <p
+                    className="truncate text-sm font-medium text-foreground"
+                    title={request.studentName}
+                  >
                     {request.studentName}
                   </p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -624,8 +850,14 @@ function EnrollmentRequestsCard({ data, isLoading }: { data: DashboardEnrollment
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{format(new Date(request.createdAt), "MMM d")}</span>
-                  <Badge className={ENROLLMENT_REQUEST_STATUS_STYLES[request.status]}>{formatStatusLabel(request.status)}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(request.createdAt), "MMM d")}
+                  </span>
+                  <Badge
+                    className={ENROLLMENT_REQUEST_STATUS_STYLES[request.status]}
+                  >
+                    {formatStatusLabel(request.status)}
+                  </Badge>
                 </div>
               </Link>
             </li>
@@ -652,19 +884,44 @@ function RevenueSummaryBody({
   availableRevenue: number;
   revenueToCome: number;
 }) {
-  const collectedPct = fullPotentialRevenue > 0 ? Math.min(100, (availableRevenue / fullPotentialRevenue) * 100) : 0;
+  const collectedPct =
+    fullPotentialRevenue > 0
+      ? Math.min(100, (availableRevenue / fullPotentialRevenue) * 100)
+      : 0;
 
   return (
     <div className="flex flex-1 flex-col justify-center gap-4">
       <div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{fullPotentialRevenue > 0 ? `${Math.round(collectedPct)}% collected` : "No revenue yet"}</span>
-          <span className="tabular-nums">{formatLKRCompact(fullPotentialRevenue)} full potential</span>
+          <span>
+            {fullPotentialRevenue > 0
+              ? `${Math.round(collectedPct)}% collected`
+              : "No revenue yet"}
+          </span>
+          <span className="tabular-nums">
+            {formatLKRCompact(fullPotentialRevenue)} full potential
+          </span>
         </div>
         {fullPotentialRevenue > 0 ? (
-          <div className="mt-1.5 flex h-2.5 w-full gap-0.5" role="img" aria-label={`${Math.round(collectedPct)}% of potential revenue collected`}>
-            <div className="h-full rounded-full" style={{ width: `${collectedPct}%`, backgroundColor: AVAILABLE_COLOR }} />
-            <div className="h-full rounded-full" style={{ width: `${100 - collectedPct}%`, backgroundColor: TO_COME_COLOR }} />
+          <div
+            className="mt-1.5 flex h-2.5 w-full gap-0.5"
+            role="img"
+            aria-label={`${Math.round(collectedPct)}% of potential revenue collected`}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${collectedPct}%`,
+                backgroundColor: AVAILABLE_COLOR,
+              }}
+            />
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${100 - collectedPct}%`,
+                backgroundColor: TO_COME_COLOR,
+              }}
+            />
           </div>
         ) : (
           <div className="mt-1.5 h-2.5 w-full rounded-full bg-muted" />
@@ -682,25 +939,47 @@ function RevenueSummaryBody({
           both lines. */}
       <div className="flex flex-wrap gap-x-4 gap-y-3">
         <div className="min-w-28 flex-1">
-          <p className="text-[11px] tracking-wide text-muted-foreground uppercase">Full revenue</p>
-          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{formatLKRCompact(fullPotentialRevenue)}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">Every paid enrollment, in full</p>
+          <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
+            Full revenue
+          </p>
+          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+            {formatLKRCompact(fullPotentialRevenue)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Every paid enrollment, in full
+          </p>
         </div>
         <div className="min-w-28 flex-1">
           <p className="flex items-start gap-1.5 text-[11px] tracking-wide text-muted-foreground uppercase">
-            <span className="mt-0.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: AVAILABLE_COLOR }} aria-hidden="true" />
+            <span
+              className="mt-0.5 size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: AVAILABLE_COLOR }}
+              aria-hidden="true"
+            />
             Available revenue
           </p>
-          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{formatLKRCompact(availableRevenue)}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">Actually collected so far</p>
+          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+            {formatLKRCompact(availableRevenue)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Actually collected so far
+          </p>
         </div>
         <div className="min-w-28 flex-1">
           <p className="flex items-start gap-1.5 text-[11px] tracking-wide text-muted-foreground uppercase">
-            <span className="mt-0.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: TO_COME_COLOR }} aria-hidden="true" />
+            <span
+              className="mt-0.5 size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: TO_COME_COLOR }}
+              aria-hidden="true"
+            />
             Revenue to come
           </p>
-          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">{formatLKRCompact(revenueToCome)}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">Owed by partial payers</p>
+          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+            {formatLKRCompact(revenueToCome)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Owed by partial payers
+          </p>
         </div>
       </div>
     </div>
@@ -714,21 +993,38 @@ function RevenueSummaryBody({
 const SERVICE_CHART_COLORS = CATEGORICAL_COLORS;
 const OTHER_SERVICE_COLOR = NEUTRAL_COLOR; // same "neutral, not a real category" role as the district map's zero-count fill
 
-function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | undefined; isLoading: boolean }) {
+function ServiceEnrollmentsCard({
+  data,
+  isLoading,
+}: {
+  data: ServiceCount[] | undefined;
+  isLoading: boolean;
+}) {
   const rows = data ?? [];
   const named = rows.slice(0, 4);
   const otherCount = rows.slice(4).reduce((sum, row) => sum + row.count, 0);
-  const slices = otherCount > 0 ? [...named, { service: "Other", count: otherCount }] : named;
+  const slices =
+    otherCount > 0
+      ? [...named, { service: "Other", count: otherCount }]
+      : named;
   const total = slices.reduce((sum, row) => sum + row.count, 0);
-  const colorFor = (service: string, index: number) => (service === "Other" ? OTHER_SERVICE_COLOR : SERVICE_CHART_COLORS[index % SERVICE_CHART_COLORS.length]);
+  const colorFor = (service: string, index: number) =>
+    service === "Other"
+      ? OTHER_SERVICE_COLOR
+      : SERVICE_CHART_COLORS[index % SERVICE_CHART_COLORS.length];
   // A solid (non-donut), no-separator pie — deliberately different from
   // every status pie on this page, so "this one is a different kind of
   // breakdown" (a real category, not a reserved status) reads at a glance.
   const chartData =
     total > 0
-      ? slices.map((row, index) => ({ ...row, fill: colorFor(row.service, index) }))
+      ? slices.map((row, index) => ({
+          ...row,
+          fill: colorFor(row.service, index),
+        }))
       : [{ service: "None", count: 1, fill: "var(--muted)" }];
-  const chartConfig = Object.fromEntries(slices.map((row) => [row.service, { label: row.service }])) satisfies ChartConfig;
+  const chartConfig = Object.fromEntries(
+    slices.map((row) => [row.service, { label: row.service }]),
+  ) satisfies ChartConfig;
 
   return (
     // @container: this card's column width varies with the nested grid it
@@ -737,31 +1033,57 @@ function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | un
     // the fixed 7rem chart + legend has nowhere to go and would overflow;
     // the legend drops (hovering a slice already shows label + count via
     // the tooltip) rather than stacking, matching that established pattern.
-    <Section title="Active enrollments by service" className="@container flex flex-col xl:min-h-0">
+    <Section
+      title="Active enrollments by service"
+      className="@container flex flex-col xl:min-h-0"
+    >
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <DonutSkeleton legendRows={4} className="flex-1" />
       ) : (
         <div className="flex flex-1 items-center justify-center gap-4 @2xs:justify-start">
-          <ChartContainer config={chartConfig} className="mx-auto aspect-square h-28 w-28 shrink-0">
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square h-28 w-28 shrink-0"
+          >
             <PieChart>
-              {total > 0 ? <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="service" />} /> : null}
-              <Pie data={chartData} dataKey="count" nameKey="service" outerRadius={50} stroke="0" />
+              {total > 0 ? (
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel nameKey="service" />}
+                />
+              ) : null}
+              <Pie
+                data={chartData}
+                dataKey="count"
+                nameKey="service"
+                outerRadius={50}
+                stroke="0"
+              />
             </PieChart>
           </ChartContainer>
 
           {slices.length === 0 ? (
-            <p className="min-w-0 flex-1 text-sm text-muted-foreground">No active enrollments yet.</p>
+            <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+              No active enrollments yet.
+            </p>
           ) : (
             <div className="hidden min-w-0 flex-1 space-y-1.5 text-sm @2xs:block">
               {slices.map((row, index) => (
-                <div key={row.service} className="flex items-center justify-between gap-2">
+                <div
+                  key={row.service}
+                  className="flex items-center justify-between gap-2"
+                >
                   <span className="flex items-center gap-1.5 truncate text-muted-foreground">
-                    <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: colorFor(row.service, index) }} aria-hidden="true" />
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: colorFor(row.service, index) }}
+                      aria-hidden="true"
+                    />
                     {row.service}
                   </span>
-                  <span className="font-medium tabular-nums text-foreground">{row.count}</span>
+                  <span className="font-medium tabular-nums text-foreground">
+                    {row.count}
+                  </span>
                 </div>
               ))}
             </div>
@@ -771,4 +1093,3 @@ function ServiceEnrollmentsCard({ data, isLoading }: { data: ServiceCount[] | un
     </Section>
   );
 }
-

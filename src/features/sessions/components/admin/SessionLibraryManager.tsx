@@ -63,6 +63,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ChecklistSkeleton, TableSkeletonRows } from "@/components/ui/loading-skeletons";
 import { selectAuthUser } from "@/features/auth/authSelectors";
 import { useGetIntakesQuery } from "@/features/catalog/catalogApi";
 import { RecordingPreview } from "./RecordingPreview";
@@ -678,13 +679,7 @@ export default function SessionLibraryManager() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
-                  <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading library…
-                  </span>
-                </TableCell>
-              </TableRow>
+              <TableSkeletonRows columns={8} label="Loading library…" />
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={8} className="h-32 text-center">
@@ -1415,9 +1410,7 @@ export default function SessionLibraryManager() {
             ) : null}
             <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border p-2">
               {isIntakesFetching ? (
-                <p className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading intakes…
-                </p>
+                <ChecklistSkeleton label="Loading intakes…" />
               ) : eligibleAttachIntakes.length === 0 ? (
                 <p className="p-4 text-center text-sm text-muted-foreground">
                   No eligible intakes found.

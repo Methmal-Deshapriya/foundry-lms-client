@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingStatus } from "@/components/ui/loading-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TagInput } from "@/components/ui/tag-input";
 import { cn } from "@/lib/utils";
 import { useGetMyEnrollmentsQuery } from "@/features/enrollments/enrollmentsApi";
@@ -151,9 +153,10 @@ export function SubmitProjectDialog({
                 <div className="space-y-2">
                   <Label htmlFor="enrollmentId">Course</Label>
                   {isEnrollmentsLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading your courses…
-                    </div>
+                    <>
+                      <LoadingStatus label="Loading your courses…" />
+                      <Skeleton className="h-10 w-full" aria-hidden="true" />
+                    </>
                   ) : (
                     <select
                       id="enrollmentId"

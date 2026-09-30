@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Award, Loader2 } from "lucide-react";
+import { Award } from "lucide-react";
 import { useGetMyCertificatesQuery } from "@/features/certificates/certificatesApi";
 import { CertificateCard } from "@/features/certificates/components/CertificateCard";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { Button } from "@/components/ui/button";
+import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
 
 export default function MyCertificatesPage() {
   const { data, isLoading, isError } = useGetMyCertificatesQuery({ limit: 20 });
@@ -22,9 +23,13 @@ export default function MyCertificatesPage() {
         </div>
 
         {isLoading ? (
-          <div role="status" aria-live="polite" className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#191919]" aria-hidden="true" />
-            <p className="font-medium text-muted-foreground">Loading your certificates...</p>
+          <div className="@container">
+            <LoadingStatus label="Loading your certificates…" />
+            <CardGridSkeleton
+              count={4}
+              imageAspect="aspect-[1584/993]"
+              className="grid grid-cols-1 gap-4 @md:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-4"
+            />
           </div>
         ) : isError ? (
           <div role="alert" className="rounded-lg border border-red-100 bg-red-50 p-12 text-center">

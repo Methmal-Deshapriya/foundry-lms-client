@@ -1,9 +1,9 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { Bar, BarChart, XAxis } from "recharts";
 import { useGetIntakeAnalyticsQuery } from "@/features/catalog/catalogApi";
 import { Section } from "@/components/dataviz/StatPrimitives";
+import { ChartSkeleton, DonutSkeleton, ListSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
 import { StatusDonutCard } from "@/components/dataviz/StatusDonutCard";
 import { ENROLLMENT_STATUS_COLORS, TREND_COLOR } from "@/components/dataviz/chartColors";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
@@ -21,9 +21,24 @@ export function CourseOverviewAnalytics({ intakeId }: { intakeId: string }) {
 
   if (isLoading) {
     return (
-      <p role="status" aria-live="polite" className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading analytics…
-      </p>
+      <div className="space-y-4">
+        <LoadingStatus label="Loading analytics…" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-hidden="true">
+          {["Enrollment status", "Payments collected", "Projects", "Certificates"].map((title) => (
+            <Section key={title} title={title} className="w-full">
+              <DonutSkeleton className={CHART_BODY_HEIGHT} />
+            </Section>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-start gap-4" aria-hidden="true">
+          <Section title="Session engagement" className="min-w-64 flex-1">
+            <ListSkeleton rows={3} />
+          </Section>
+          <Section title="A/L stream" className="w-full sm:max-w-2xl">
+            <ChartSkeleton className={CHART_BODY_HEIGHT} />
+          </Section>
+        </div>
+      </div>
     );
   }
   if (isError || !data) {

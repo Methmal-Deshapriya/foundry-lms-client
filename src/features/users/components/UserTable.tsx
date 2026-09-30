@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
-  Loader2,
   Mail,
   MoreHorizontal,
 } from "lucide-react";
@@ -36,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useDemoteUserMutation, usePromoteUserMutation } from "../usersApi";
@@ -147,14 +147,7 @@ export default function UserTable({
         </TableHeader>
         <TableBody className={cn(isFetching && !isLoading && "opacity-60")}>
           {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                  Loading user records…
-                </span>
-              </TableCell>
-            </TableRow>
+            <TableSkeletonRows columns={5} label="Loading user records…" />
           ) : isError ? (
             <TableRow>
               <TableCell colSpan={5} className="h-24 whitespace-normal text-center text-destructive">

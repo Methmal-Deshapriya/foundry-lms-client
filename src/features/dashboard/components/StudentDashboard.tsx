@@ -9,12 +9,13 @@ import {
   ChevronRight,
   FolderGit2,
   LayoutDashboard,
-  Loader2,
 } from "lucide-react";
 import { Cell, Pie, PieChart } from "recharts";
 import { cn } from "@/lib/utils";
 import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile";
 import { Section } from "@/components/dataviz/StatPrimitives";
+import { DonutSkeleton, KpiValueSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PROJECT_STATUS_COLORS } from "@/components/dataviz/chartColors";
 import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
@@ -34,7 +35,7 @@ import { ActivityHeatmap } from "./ActivityHeatmap";
  */
 export default function StudentDashboard({ firstName }: { firstName?: string }) {
   const { data, isLoading } = useGetStudentDashboardQuery();
-  const { data: projectsPage } = useGetMyProjectsQuery({ limit: 50 });
+  const { data: projectsPage, isLoading: isProjectsLoading } = useGetMyProjectsQuery({ limit: 50 });
 
   const projects = projectsPage?.projects ?? [];
   const projectCounts: Record<ProjectStatus, number> = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
@@ -75,28 +76,28 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
           className="min-w-0"
           icon={BookOpen}
           label="Active courses"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : data?.coursesEnrolled ?? 0}
+          value={isLoading ? <KpiValueSkeleton /> : data?.coursesEnrolled ?? 0}
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={CheckCircle2}
           label="Completed"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : data?.coursesCompleted ?? 0}
+          value={isLoading ? <KpiValueSkeleton /> : data?.coursesCompleted ?? 0}
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={FolderGit2}
           label="Projects in review"
-          value={projectCounts.PENDING}
+          value={isProjectsLoading ? <KpiValueSkeleton /> : projectCounts.PENDING}
         />
         <CourseKpiTile
           size="sm"
           className="min-w-0"
           icon={Award}
           label="Certificates earned"
-          value={isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : data?.certificatesEarned ?? 0}
+          value={isLoading ? <KpiValueSkeleton /> : data?.certificatesEarned ?? 0}
         />
       </div>
 
@@ -120,8 +121,17 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
         }
       >
         {isLoading ? (
-          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          <div className="divide-y divide-border">
+            <LoadingStatus label="Loading your courses…" />
+            {[0, 1].map((key) => (
+              <div key={key} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0" aria-hidden="true">
+                <Skeleton className="aspect-video h-16 shrink-0 rounded-md" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : !data || data.recentEnrollments.length === 0 ? (
           <div className="py-8 text-center">
@@ -151,8 +161,8 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
           its column past the viewport instead of using its own internal
           horizontal scroll. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[7fr_3fr] *:min-w-0">
-        <ActivityHeatmap heatmap={data?.heatmap ?? []} />
-        <ProjectAnalyticsCard projects={projects} />
+        <ActivityHeatmap heatmap={data?.heatmap ?? []} isLoading={isLoading} />
+        <ProjectAnalyticsCard projects={projects} isLoading={isProjectsLoading} />
       </div>
     </div>
   );
@@ -322,7 +332,15 @@ const PROJECT_CHART_CONFIG = {
   rejected: { label: "Rejected", color: PROJECT_STATUS_COLORS.REJECTED },
 } satisfies ChartConfig;
 
-function ProjectAnalyticsCard({ projects, className }: { projects: StudentProject[]; className?: string }) {
+function ProjectAnalyticsCard({
+  projects,
+  isLoading,
+  className,
+}: {
+  projects: StudentProject[];
+  isLoading?: boolean;
+  className?: string;
+}) {
   const counts: Record<ProjectStatus, number> = { PENDING: 0, APPROVED: 0, REJECTED: 0 };
   for (const project of projects) counts[project.status]++;
   const totalLikes = projects.reduce((sum, project) => sum + project.likeCount, 0);
@@ -348,6 +366,9 @@ function ProjectAnalyticsCard({ projects, className }: { projects: StudentProjec
     // what it is via the tooltip, so the legend is dropped entirely rather
     // than stacked. Past 18rem, chart and legend sit side by side.
     <Section title="Project analytics" className={`@container xl:flex xl:flex-col ${className ?? ""}`}>
+      {isLoading ? (
+        <DonutSkeleton className="xl:min-h-0 xl:flex-1" />
+      ) : (
       <div className="flex items-center justify-center gap-4 @2xs:justify-start xl:min-h-0 xl:flex-1">
         <ChartContainer config={PROJECT_CHART_CONFIG} className="mx-auto aspect-square h-32 w-32 shrink-0">
           <PieChart>
@@ -396,6 +417,7 @@ function ProjectAnalyticsCard({ projects, className }: { projects: StudentProjec
           </p>
         </div>
       </div>
+      )}
     </Section>
   );
 }

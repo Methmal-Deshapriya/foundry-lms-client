@@ -2,7 +2,9 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { ExternalLink, Github, Globe, Loader2 } from "lucide-react";
+import { ExternalLink, Github, Globe } from "lucide-react";
+import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useGetPublicProjectDetailsQuery, useGetPublicShowcaseQuery } from "@/features/projects/projectsApi";
 import type { StudentProject } from "@/features/projects/projectsTypes";
 import { PageSlide } from "@/components/marketing/catalog/PageSlide";
@@ -26,11 +28,19 @@ export default function PublicProjectShowcasePage({
   if (isLoading) {
     return (
       <PageSlide background="#FAFAFA">
-        <div className="flex min-h-[50vh] items-center justify-center">
-          <p role="status" aria-live="polite" className="flex items-center gap-2 text-[#71717A]">
-            <Loader2 className="size-5 animate-spin" aria-hidden="true" />
-            Loading project…
-          </p>
+        <div className="mx-auto w-full max-w-4xl space-y-4">
+          <LoadingStatus label="Loading project…" />
+          <div className="space-y-3" aria-hidden="true">
+            <Skeleton className="h-3.5 w-40" />
+            <Skeleton className="h-9 w-2/3" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+          <Skeleton className="aspect-video w-full rounded-2xl" aria-hidden="true" />
+          <div className="space-y-2" aria-hidden="true">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
         </div>
       </PageSlide>
     );
@@ -128,8 +138,9 @@ function MoreStudentProjects({ excludeId }: { excludeId: string }) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto mt-20 flex w-full max-w-6xl justify-center">
-        <Loader2 className="size-5 animate-spin text-[#71717A]" aria-hidden="true" />
+      <div className="mx-auto mt-20 w-full max-w-6xl border-t border-zinc-200 pt-12">
+        <Skeleton className="mb-6 h-6 w-48" aria-hidden="true" />
+        <CardGridSkeleton count={4} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" />
       </div>
     );
   }

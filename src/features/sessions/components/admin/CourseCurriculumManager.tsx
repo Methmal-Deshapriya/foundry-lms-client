@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ChecklistSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Sheet,
   SheetContent,
@@ -511,9 +512,7 @@ export default function CourseCurriculumManager({
             ) : null}
             <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border p-2">
               {libraryLoading ? (
-                <p className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading sessions…
-                </p>
+                <ChecklistSkeleton label="Loading sessions…" />
               ) : attachableFiltered.length === 0 ? (
                 <p className="p-4 text-center text-sm text-muted-foreground">
                   {attachable.length === 0 ? "No ready sessions available." : "No sessions match your search."}

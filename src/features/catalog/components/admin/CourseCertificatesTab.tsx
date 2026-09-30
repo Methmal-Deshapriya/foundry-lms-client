@@ -41,6 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   useGetAllCertificatesAdminQuery,
@@ -176,13 +177,7 @@ export function CourseCertificatesTab({ intakeId }: { intakeId: string }) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                  <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading certificates…
-                  </span>
-                </TableCell>
-              </TableRow>
+              <TableSkeletonRows columns={5} label="Loading certificates…" />
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-destructive">

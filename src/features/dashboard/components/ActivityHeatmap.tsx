@@ -29,7 +29,7 @@ function levelFor(count: number, max: number) {
  * columns this is wider than the card it lives in, so the grid scrolls
  * horizontally within itself rather than widening the page.
  */
-export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapDay[] }) {
+export function ActivityHeatmap({ heatmap, isLoading }: { heatmap: HeatmapDay[]; isLoading?: boolean }) {
   const countByDate = new Map(heatmap.map((day) => [day.date, day.count]));
 
   const cells: { date: string; count: number }[] = [];
@@ -67,7 +67,9 @@ export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapDay[] }) {
       </div>
 
       <div className="overflow-x-auto pb-1">
-        <div className="flex w-fit gap-1">
+        {/* While loading, the empty grid itself is the skeleton — same
+            cells, pulsing — so the card never changes shape. */}
+        <div className={`flex w-fit gap-1 ${isLoading ? "animate-pulse" : ""}`} aria-busy={isLoading || undefined}>
           {weeks.map((week, weekIndex) => (
             <div key={weekIndex} className="flex flex-col gap-1">
               {week.map((cell) => (

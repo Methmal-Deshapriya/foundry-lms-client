@@ -5,6 +5,7 @@ import { Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ChecklistSkeleton } from "@/components/ui/loading-skeletons";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { getApiErrorMessage } from "@/lib/api";
@@ -131,10 +132,7 @@ export default function ManualEnrollmentForm({
           </label>
         ))}
         {isFetching ? (
-          <p className="flex items-center justify-center gap-2 p-3 text-sm text-muted-foreground" role="status">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {students.length ? "Loading more…" : "Searching…"}
-          </p>
+          <ChecklistSkeleton rows={students.length ? 2 : 4} label={students.length ? "Loading more…" : "Searching…"} />
         ) : null}
         {!isFetching && isError ? (
           <div className="space-y-2 p-4 text-center">

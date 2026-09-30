@@ -6,6 +6,8 @@ import { jsPDF } from "jspdf";
 import { CircleAlert, Download, FileDown, Loader2, ShieldX } from "lucide-react";
 import { useVerifyCertificateQuery } from "@/features/certificates/certificatesApi";
 import CertificateTemplate from "@/features/certificates/components/CertificateTemplate";
+import { LoadingStatus } from "@/components/ui/loading-skeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CertificateThumbnail } from "@/features/certificates/components/CertificateThumbnail";
 
 const primaryButtonClassName =
@@ -31,15 +33,15 @@ export default function PublicCertificateVerificationPage({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-dvh w-full items-center justify-center bg-white px-3 sm:px-6">
-        <p
-          role="status"
-          aria-live="polite"
-          className="flex items-center gap-2 font-alt text-[#5B6472]"
-        >
-          <Loader2 className="size-5 animate-spin" aria-hidden="true" />
-          Verifying certificate…
-        </p>
+      <div className="flex min-h-dvh w-full items-center justify-center bg-white px-3 py-16 sm:px-6">
+        <LoadingStatus label="Verifying certificate…" />
+        <div className="w-full max-w-4xl" aria-hidden="true">
+          <Skeleton className="aspect-[1.414] w-full rounded-2xl" />
+          <div className="mt-6 flex justify-end gap-2">
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-9 w-36" />
+          </div>
+        </div>
       </div>
     );
   }

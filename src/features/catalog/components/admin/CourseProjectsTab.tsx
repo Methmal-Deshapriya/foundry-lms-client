@@ -41,6 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useGetAllProjectsAdminQuery, useReviewProjectMutation } from "@/features/projects/projectsApi";
 import type { ProjectAdminSummary } from "@/features/projects/projectsApi";
@@ -186,13 +187,7 @@ export function CourseProjectsTab({ intakeId }: { intakeId: string }) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                  <span role="status" aria-live="polite" className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" /> Loading projects…
-                  </span>
-                </TableCell>
-              </TableRow>
+              <TableSkeletonRows columns={5} label="Loading projects…" />
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-destructive">

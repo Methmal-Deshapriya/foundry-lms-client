@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, ChevronRight, Loader2, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
+import { BookOpen, ChevronRight, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import StudentOnlyRoute from "@/components/access/StudentOnlyRoute";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import type {
   PublicExploreCourseCard,
   PublicLearningService,
 } from "@/features/catalog/catalogTypes";
+import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
 
 const LEVEL_OPTIONS: { value: CourseLevel; label: string }[] = [
   { value: "OPEN", label: "Open enrollment" },
@@ -315,10 +316,10 @@ export default function ExplorePage() {
           </div>
 
           {isFetching && courses.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="mb-4 h-10 w-10 animate-spin text-[#191919]" />
-              <p className="font-medium text-muted-foreground">Loading courses…</p>
-            </div>
+            <>
+              <LoadingStatus label="Loading courses…" />
+              <CardGridSkeleton count={6} className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4" />
+            </>
           ) : isError ? (
             <div className="rounded-2xl border border-red-100 bg-red-50 p-12 text-center">
               <h2 className="mb-2 text-2xl font-bold text-red-900">Something went wrong</h2>
