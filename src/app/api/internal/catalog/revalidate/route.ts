@@ -1,4 +1,5 @@
 import { revalidateTag } from "next/cache";
+import { hasBearerSecret } from "@/lib/secretCompare";
 
 const PUBLIC_CATALOG_TAG = "public-catalog";
 
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (request.headers.get("authorization") !== `Bearer ${configuredSecret}`) {
+  if (!hasBearerSecret(request.headers.get("authorization"), configuredSecret)) {
     return Response.json(
       { success: false, error: "Unauthorized." },
       { status: 401 },

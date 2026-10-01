@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { DEFAULT_INTAKE_TIME_ZONE, formatInZone, zoneLabel } from "@/lib/dates";
 import {
   DndContext,
   KeyboardSensor,
@@ -18,7 +19,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { format } from "date-fns";
 import { Archive, Clock, GripVertical, Link2, Loader2, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChecklistSkeleton } from "@/components/ui/loading-skeletons";
 import {
   Sheet,
@@ -189,7 +199,7 @@ function CurriculumCard({
       {item.availableAt ? (
         <div className="flex items-center gap-1 pl-9 text-xs text-muted-foreground">
           <Clock className="size-3" aria-hidden="true" />
-          {format(new Date(item.availableAt), "MMM d, yyyy · h:mm a")}
+          {formatInZone(item.availableAt, DEFAULT_INTAKE_TIME_ZONE)} ({zoneLabel(DEFAULT_INTAKE_TIME_ZONE)})
         </div>
       ) : null}
     </div>
@@ -212,8 +222,18 @@ export default function CourseCurriculumManager({
   const [q, setQ] = useState("");
   const [detailItem, setDetailItem] = useState<CourseSession | null>(null);
   const { data, isLoading, isError } = useGetCourseCurriculumQuery({ intakeId, includeRetired: true });
+  // The search goes to the server (debounced, 3+ characters) and asks for
+  // the API's largest page, so every attachable session can be found — not
+  // just the 20 newest (code review M07-03). The in-memory filter below
+  // still narrows instantly while the request is in flight.
+  const [serverAttachSearch, setServerAttachSearch] = useState("");
+  useEffect(() => {
+    const value = attachSearch.trim();
+    const timer = setTimeout(() => setServerAttachSearch(value.length >= 3 ? value : ""), 300);
+    return () => clearTimeout(timer);
+  }, [attachSearch]);
   const { data: library, isFetching: libraryLoading } = useGetSessionLibraryQuery(
-    { attachableIntakeId: intakeId },
+    { attachableIntakeId: intakeId, limit: 100, q: serverAttachSearch || undefined },
     { skip: readOnly },
   );
   const [attach, attachState] = useAttachCourseSessionMutation();
@@ -354,10 +374,31 @@ export default function CourseCurriculumManager({
   const removeItem = async (courseSessionId: string) => {
     try {
       const result = await remove({ intakeId, courseSessionId }).unwrap();
-      toast.success(result.action === "RETIRED" ? "Released history retired and preserved" : "Unused session detached");
+      toast.success(
+        result.action === "RETIRED"
+          ? "Removed from the curriculum. Students who already had it still see it."
+          : "Session removed from the curriculum",
+      );
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Could not remove session"));
     }
+  };
+
+  // Removing a session students have already seen keeps it visible to them
+  // (their history is preserved). The confirmation says so and offers to
+  // withdraw it first, which hides it (code review M07-08).
+  const [removeTarget, setRemoveTarget] = useState<CourseSession | null>(null);
+  const removeTargetReachedStudents = Boolean(
+    removeTarget && (removeTarget.firstReleasedAt || removeTarget.deliveryStatus === "RELEASED" || removeTarget.deliveryStatus === "SCHEDULED"),
+  );
+  const withdrawAndRemove = async (courseSessionId: string) => {
+    try {
+      await updateDelivery({ intakeId, courseSessionId, status: "WITHDRAWN", acknowledgeSequenceRisk: true }).unwrap();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Could not withdraw the session"));
+      return;
+    }
+    await removeItem(courseSessionId);
   };
 
   if (isLoading) return <p role="status" aria-live="polite" className="py-14 text-center text-muted-foreground">Loading curriculum…</p>;
@@ -401,7 +442,7 @@ export default function CourseCurriculumManager({
                   onRelease={() => changeDelivery(item.id, "RELEASED")}
                   onSchedule={() => setScheduleTarget(item.id)}
                   onWithdraw={() => changeDelivery(item.id, "WITHDRAWN")}
-                  onRemove={() => removeItem(item.id)}
+                  onRemove={() => setRemoveTarget(item)}
                 />
               ))}
             </div>
@@ -551,6 +592,54 @@ export default function CourseCurriculumManager({
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={Boolean(removeTarget)} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove &ldquo;{removeTarget?.session.title}&rdquo; from the curriculum?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {removeTargetReachedStudents
+                ? "Students have already had access to this session. Removing it keeps it visible to them as an earlier session. To hide it from students, withdraw it and remove it."
+                : "No student has seen this session yet, so it is simply taken out of this intake's curriculum. It stays in the Session Library."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            {removeTargetReachedStudents ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (removeTarget) void removeItem(removeTarget.id);
+                    setRemoveTarget(null);
+                  }}
+                >
+                  Remove, keep visible
+                </Button>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (removeTarget) void withdrawAndRemove(removeTarget.id);
+                    setRemoveTarget(null);
+                  }}
+                  className="bg-linear-to-r from-red-600 to-rose-500 bg-none text-white hover:opacity-90"
+                >
+                  Withdraw and remove
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                onClick={() => {
+                  if (removeTarget) void removeItem(removeTarget.id);
+                  setRemoveTarget(null);
+                }}
+                className="bg-[#191919] bg-none hover:bg-[#27272A]"
+              >
+                Remove
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ScheduleReleaseDialog
         open={Boolean(scheduleTarget)}
         onOpenChange={(open) => { if (!open) setScheduleTarget(null); }}
@@ -649,19 +738,19 @@ export default function CourseCurriculumManager({
                     {detailItem.availableAt ? (
                       <p className="flex justify-between gap-4">
                         <span className="text-muted-foreground">Available from</span>
-                        <span className="font-medium">{format(new Date(detailItem.availableAt), "MMM d, yyyy · h:mm a")}</span>
+                        <span className="font-medium">{formatInZone(detailItem.availableAt, DEFAULT_INTAKE_TIME_ZONE)} ({zoneLabel(DEFAULT_INTAKE_TIME_ZONE)})</span>
                       </p>
                     ) : null}
                     {detailItem.firstReleasedAt ? (
                       <p className="flex justify-between gap-4">
                         <span className="text-muted-foreground">First released</span>
-                        <span className="font-medium">{format(new Date(detailItem.firstReleasedAt), "MMM d, yyyy · h:mm a")}</span>
+                        <span className="font-medium">{formatInZone(detailItem.firstReleasedAt, DEFAULT_INTAKE_TIME_ZONE)}</span>
                       </p>
                     ) : null}
                     {detailItem.retiredAt ? (
                       <p className="flex justify-between gap-4">
                         <span className="text-muted-foreground">Retired</span>
-                        <span className="font-medium">{format(new Date(detailItem.retiredAt), "MMM d, yyyy · h:mm a")}</span>
+                        <span className="font-medium">{formatInZone(detailItem.retiredAt, DEFAULT_INTAKE_TIME_ZONE)}</span>
                       </p>
                     ) : null}
                   </div>

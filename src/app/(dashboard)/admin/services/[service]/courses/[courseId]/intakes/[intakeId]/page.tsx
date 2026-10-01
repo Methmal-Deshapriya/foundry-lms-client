@@ -23,6 +23,7 @@ import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile
 import { CourseOverviewAnalytics } from "@/features/catalog/components/admin/CourseOverviewAnalytics";
 import { CourseProjectsTab } from "@/features/catalog/components/admin/CourseProjectsTab";
 import { EnrollmentRequestsTab } from "@/features/catalog/components/admin/EnrollmentRequestsTab";
+import { CancelIntakeDialog } from "@/features/catalog/components/CancelIntakeDialog";
 import {
   type IntakeStatus,
   useGetIntakeAnalyticsQuery,
@@ -63,6 +64,7 @@ export default function IntakeWorkspacePage() {
   const { data: intake, isLoading } = useGetIntakeQuery(intakeId);
   const { data: analytics } = useGetIntakeAnalyticsQuery(intakeId, { skip: !intake });
   const [updateStatus, statusState] = useUpdateIntakeStatusMutation();
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   if (isLoading)
     return (
@@ -100,6 +102,14 @@ export default function IntakeWorkspacePage() {
 
   return (
     <div className="space-y-6 pb-20">
+      <CancelIntakeDialog
+        intakeCode={intake.code}
+        enrollmentCount={intake.enrollmentCount ?? null}
+        open={confirmingCancel}
+        isLoading={statusState.isLoading}
+        onOpenChange={setConfirmingCancel}
+        onConfirm={() => void move("CANCELLED")}
+      />
       <AdminCatalogBreadcrumbs
         crumbs={[
           { label: "Services", href: "/admin/services" },
@@ -133,9 +143,9 @@ export default function IntakeWorkspacePage() {
                         disabled={
                           (catalogLocked && status === "OPEN_ACTIVE") ||
                           statusState.isLoading ||
-                          (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED"].includes(status) && !canPublish)
+                          (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED", "CANCELLED"].includes(status) && !canPublish)
                         }
-                        onClick={() => move(status)}
+                        onClick={() => (status === "CANCELLED" ? setConfirmingCancel(true) : void move(status))}
                       >
                         Move to {status.replace("_", " ").toLowerCase()}
                       </Button>

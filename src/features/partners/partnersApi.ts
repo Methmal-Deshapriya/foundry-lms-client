@@ -67,6 +67,7 @@ export const {
   useCreateExpenseMutation,
   useReverseExpenseMutation,
   useGetPayoutsQuery,
+  useLazyGetPayoutsQuery,
   useCreatePayoutMutation,
   useReversePayoutMutation,
 } = partnersApi;

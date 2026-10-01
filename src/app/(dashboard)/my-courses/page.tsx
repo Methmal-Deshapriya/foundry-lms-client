@@ -1,6 +1,8 @@
 "use client";
 
-import { useGetMyEnrollmentsQuery } from "@/features/enrollments/enrollmentsApi";
+import { useGetMyEnrollmentsQuery, useLazyGetMyEnrollmentsQuery } from "@/features/enrollments/enrollmentsApi";
+import { useState } from "react";
+import type { MyEnrollment } from "@/features/enrollments/enrollmentsTypes";
 import EnrollmentCard from "@/features/enrollments/components/EnrollmentCard";
 import { BookOpen } from "lucide-react";
 import Link from "next/link";
@@ -17,8 +19,18 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Displays all courses the current student is enrolled in.
  */
 export default function MyCoursesPage() {
-  const { data, isLoading, isError } = useGetMyEnrollmentsQuery({ limit: 20 });
-  const enrollments = data?.enrollments ?? [];
+  const { data, isLoading, isError } = useGetMyEnrollmentsQuery({ limit: 50 });
+  // Older enrollments past the first 50, appended with the API's cursor
+  // (code review M07-12).
+  const [older, setOlder] = useState<{ items: MyEnrollment[]; cursor: string | null }>({ items: [], cursor: null });
+  const [fetchOlder, { isFetching: isLoadingOlder }] = useLazyGetMyEnrollmentsQuery();
+  const enrollments = [...(data?.enrollments ?? []), ...older.items];
+  const nextCursor = older.items.length ? older.cursor : data?.pagination.nextCursor ?? null;
+  const loadOlder = async () => {
+    if (!nextCursor) return;
+    const page = await fetchOlder({ limit: 50, cursor: nextCursor }).unwrap();
+    setOlder({ items: [...older.items, ...page.enrollments], cursor: page.pagination.nextCursor });
+  };
 
   return (
     <StudentOnlyRoute description="Admins use the catalog and enrollment tools instead of the student classroom.">
@@ -56,10 +68,19 @@ export default function MyCoursesPage() {
             </p>
           </div>
         ) : enrollments.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
-            {enrollments.map((enrollment) => (
-              <EnrollmentCard key={enrollment.id} enrollment={enrollment} />
-            ))}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-6">
+              {enrollments.map((enrollment) => (
+                <EnrollmentCard key={enrollment.id} enrollment={enrollment} />
+              ))}
+            </div>
+            {nextCursor ? (
+              <div className="flex justify-center">
+                <Button variant="outline" disabled={isLoadingOlder} onClick={() => void loadOlder()}>
+                  {isLoadingOlder ? "Loading…" : "Show older courses"}
+                </Button>
+              </div>
+            ) : null}
           </div>
         ) : (
           <EmptyState

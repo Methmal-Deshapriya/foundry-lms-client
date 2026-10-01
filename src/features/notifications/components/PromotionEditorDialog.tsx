@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ObjectUploadField } from "@/features/storage/components/ObjectUploadField";
 import { getApiErrorMessage, isNormalizedApiError } from "@/lib/api";
+import { linkTarget } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import { useCreatePromotionMutation, useUpdatePromotionMutation } from "../notificationsApi";
 import type { AdminPromotion, PromotionTheme } from "../notificationsTypes";
@@ -95,7 +96,7 @@ export function PromotionEditorDialog({
       if (!draft.internalName.trim()) next.internalName = "Name this promotion (only admins see it).";
       if (draft.headline.trim().length < 3) next.headline = "The headline needs at least 3 characters.";
       if (draft.ctaUrl.trim() && !draft.ctaLabel.trim()) next.ctaLabel = "Add a label for the button.";
-      if (draft.ctaUrl.trim() && !/^\/(?!\/)/.test(draft.ctaUrl.trim()) && !/^https:\/\//.test(draft.ctaUrl.trim())) {
+      if (draft.ctaUrl.trim() && !linkTarget(draft.ctaUrl)) {
         next.ctaUrl = "Use a page path like /bootcamps, or a full https:// link.";
       }
     }

@@ -297,6 +297,9 @@ export default function ClassRosterTable({
   const [completePaymentTarget, setCompletePaymentTarget] = useState<ClassRosterEntry | null>(null);
   const [topUpDraft, setTopUpDraft] = useState<{ method: PaymentMethod | null; reference: string }>({ method: null, reference: "" });
   const [detailEntry, setDetailEntry] = useState<ClassRosterEntry | null>(null);
+  // Completing (permanent) and cancelling (removes access at once) are
+  // confirmed first; reactivating runs straight away (code review M05-03).
+  const [statusTarget, setStatusTarget] = useState<{ entry: ClassRosterEntry; status: EnrollmentStatus } | null>(null);
   const [evidenceDraft, setEvidenceDraft] = useState({ reference: "", note: "" });
 
   // Keep the sheet showing live data (status/payment can change from the row
@@ -518,7 +521,9 @@ export default function ClassRosterTable({
                         canRecordPayment={canRecordPayment}
                         canIssueCertificate={canIssueCertificate}
                         isIssuing={isIssuing}
-                        onChangeStatus={(status) => changeStatus(entry, status)}
+                        onChangeStatus={(status) =>
+                          status === "COMPLETED" || status === "CANCELLED" ? setStatusTarget({ entry, status }) : void changeStatus(entry, status)
+                        }
                         onRecordPayment={() => setCompletePaymentTarget(entry)}
                         onIssueCertificate={() => setCertificateTarget(entry)}
                       />
@@ -548,6 +553,33 @@ export default function ClassRosterTable({
         />
       ) : null}
 
+      <AlertDialog open={Boolean(statusTarget)} onOpenChange={(open) => !open && setStatusTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusTarget?.status === "COMPLETED" ? "Mark this enrollment completed?" : "Cancel this enrollment?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {statusTarget?.status === "COMPLETED"
+                ? `${statusTarget.entry.user?.firstName ?? ""} ${statusTarget.entry.user?.lastName ?? ""} will be marked as having finished this intake. Every released session is marked done and their progress history becomes read-only. This can't be undone.`
+                : `${statusTarget?.entry.user?.firstName ?? ""} ${statusTarget?.entry.user?.lastName ?? ""} loses classroom access immediately. You can reactivate the enrollment later while the intake is open.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep as is</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (statusTarget) void changeStatus(statusTarget.entry, statusTarget.status);
+                setStatusTarget(null);
+              }}
+              className={statusTarget?.status === "CANCELLED" ? "bg-linear-to-r from-red-600 to-rose-500 bg-none text-white hover:opacity-90" : "bg-[#191919] bg-none hover:bg-[#27272A]"}
+            >
+              {statusTarget?.status === "COMPLETED" ? "Mark completed" : "Cancel enrollment"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={Boolean(certificateTarget)} onOpenChange={(open) => !open && setCertificateTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -575,7 +607,7 @@ export default function ClassRosterTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Record remaining payment?</AlertDialogTitle>
             <AlertDialogDescription>
-              Confirms {completePaymentTarget?.user?.firstName} {completePaymentTarget?.user?.lastName} has now paid the other half of this course&apos;s price. This marks payment as fully complete and enables certificate issuance.
+              Confirms {completePaymentTarget?.user?.firstName} {completePaymentTarget?.user?.lastName} has now paid the rest of the price they enrolled at (normally the second half). This marks payment as fully complete and enables certificate issuance.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -655,6 +687,11 @@ export default function ClassRosterTable({
                 {deliveryMode === "PAID" ? (
                   <div className="space-y-2">
                     <p className="text-sm font-semibold">Payment evidence</p>
+                    {/* A note on the enrollment only: the payment ledger keeps its own
+                        reference, edited from Payments (code review M05-08). */}
+                    <p className="text-xs text-muted-foreground">
+                      An internal note on this enrollment. It doesn&apos;t change the recorded payment or its receipt; a super admin edits those in Payments.
+                    </p>
                     <Input
                       aria-label="External payment reference"
                       value={evidenceDraft.reference}

@@ -44,9 +44,14 @@ export function ObjectUploadField({
   const [uploading, setUploading] = useState(false);
   const selected = value ? object ?? initialObject ?? null : null;
 
+  // Keyed on the id, not the object: a parent that passes a fresh object
+  // literal on every render must not wipe out a file just uploaded here
+  // (code review M04-09).
+  const initialObjectId = initialObject?.id ?? null;
   useEffect(() => {
     setObject(initialObject ?? null);
-  }, [initialObject]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on the id only
+  }, [initialObjectId]);
 
   const upload = async (file: File) => {
     setUploading(true);

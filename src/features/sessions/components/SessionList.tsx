@@ -25,22 +25,31 @@ export default function SessionList({
     );
   }
 
+  // The live curriculum, then earlier (retired) sessions the learner still
+  // has, in their own labelled group (code review M07-02).
+  const live = sessions.filter((session) => !session.retired);
+  const earlier = sessions.filter((session) => session.retired);
+  const grid = (items: ClassroomSession[]) => (
+    <div className="grid grid-cols-1 items-start gap-4 @lg:grid-cols-2 @3xl:grid-cols-3 @6xl:grid-cols-4">
+      {items.map((session) => (
+        <SessionItem key={session.courseSessionId} enrollmentId={enrollmentId} session={session} isReadOnly={isReadOnly} />
+      ))}
+    </div>
+  );
+
   return (
     // @container: this list sits inside a section whose actual width is
     // viewport minus the dashboard sidebar and (at lg+) a sticky aside —
     // two fixed-width siblings a viewport breakpoint can't see, so the
     // column count needs to track this container's own width instead.
-    <div className="@container">
-      <div className="grid grid-cols-1 items-start gap-4 @lg:grid-cols-2 @3xl:grid-cols-3 @6xl:grid-cols-4">
-        {sessions.map((session) => (
-          <SessionItem
-            key={session.courseSessionId}
-            enrollmentId={enrollmentId}
-            session={session}
-            isReadOnly={isReadOnly}
-          />
-        ))}
-      </div>
+    <div className="@container space-y-6">
+      {grid(live)}
+      {earlier.length > 0 ? (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-muted-foreground">Earlier sessions</h3>
+          {grid(earlier)}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -207,9 +207,12 @@ export const sessionsApi = baseApi.injectEndpoints({
         url: `/enrollments/${enrollmentId}/sessions/${courseSessionId}/complete`,
         method: "POST",
       }),
+      // Bare "Enrollments" too: My Courses' progress bars come from
+      // getMyEnrollments, which an id'd tag alone doesn't reach (M07-06).
       invalidatesTags: (_result, _error, { enrollmentId }) => [
         { type: "Enrollments", id: `CLASSROOM-${enrollmentId}` },
         { type: "Enrollments", id: `PROGRESS-${enrollmentId}` },
+        "Enrollments",
       ],
     }),
     uncompleteClassroomSession: builder.mutation<
@@ -220,9 +223,12 @@ export const sessionsApi = baseApi.injectEndpoints({
         url: `/enrollments/${enrollmentId}/sessions/${courseSessionId}/complete`,
         method: "DELETE",
       }),
+      // Bare "Enrollments" too: My Courses' progress bars come from
+      // getMyEnrollments, which an id'd tag alone doesn't reach (M07-06).
       invalidatesTags: (_result, _error, { enrollmentId }) => [
         { type: "Enrollments", id: `CLASSROOM-${enrollmentId}` },
         { type: "Enrollments", id: `PROGRESS-${enrollmentId}` },
+        "Enrollments",
       ],
     }),
   }),

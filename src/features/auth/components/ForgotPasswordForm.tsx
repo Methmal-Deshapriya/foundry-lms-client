@@ -27,37 +27,27 @@ const inputClassName =
 /**
  * ForgotPasswordForm Component
  *
- * Requests a password reset email. Deliberately reveals whether the email
- * is registered (product choice favoring UX over enumeration-hardening) —
- * an unregistered email surfaces as an inline field error with a sign-up
- * link, instead of the generic "check your email" screen.
+ * Requests a password reset email. The server answers the same way for
+ * registered and unknown addresses (so nobody can use this form to find out
+ * who has an account), so the confirmation is worded "if it's registered".
  */
 export default function ForgotPasswordForm() {
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const [submitted, setSubmitted] = useState(false);
-  const [notRegistered, setNotRegistered] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
   } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
   });
 
   const onSubmit = async (data: ForgotPasswordFormValues) => {
-    setNotRegistered(false);
-
     try {
       await forgotPassword(data).unwrap();
     } catch (error: unknown) {
-      if (isNormalizedApiError(error) && error.code === "NOT_FOUND") {
-        setError("email", { type: "server", message: error.message });
-        setNotRegistered(true);
-        return;
-      }
       toast.error(
         isNormalizedApiError(error)
           ? error.message
@@ -73,7 +63,7 @@ export default function ForgotPasswordForm() {
       <div className="w-full max-w-md space-y-4 text-center">
         <h2 className="font-sans text-3xl font-bold text-[#191919]">Check your email</h2>
         <p className="font-alt text-[#71717A]">
-          We&apos;ve sent a link to reset your password. The link expires in 1 hour.
+          If that email has an account, we&apos;ve sent it a link to reset your password. The link expires in 1 hour.
         </p>
         <Link
           href="/sign-in"
@@ -112,14 +102,6 @@ export default function ForgotPasswordForm() {
           </div>
           {errors.email && (
             <p className="text-xs font-medium text-[#C91414]">{errors.email.message}</p>
-          )}
-          {notRegistered && (
-            <p className="font-alt text-xs text-[#71717A]">
-              <Link href="/sign-up" className="font-semibold text-[#191919] hover:text-[#E91717]">
-                Create an account
-              </Link>{" "}
-              instead?
-            </p>
           )}
         </div>
 

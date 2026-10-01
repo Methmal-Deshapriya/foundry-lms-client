@@ -1,3 +1,5 @@
+import { colomboYearMonth } from "./dates";
+
 /**
  * LinkedIn's "Add licence or certification" form, pre-filled — just a link,
  * so there's no API, no app review and no cost. The student lands on their
@@ -14,13 +16,14 @@ export function getLinkedInAddCertificationUrl({
   certificateCode: string;
   verifyUrl: string;
 }) {
-  const issued = new Date(issuedDate);
+  // The Sri Lanka calendar, the same as the certificate (code review M08-12).
+  const issued = colomboYearMonth(issuedDate);
   const params = new URLSearchParams({
     startTask: "CERTIFICATION_NAME",
     name: courseName,
     organizationName: "Foundry Academy",
-    issueYear: String(issued.getFullYear()),
-    issueMonth: String(issued.getMonth() + 1),
+    issueYear: String(issued.year),
+    issueMonth: String(issued.month),
     certId: certificateCode,
     certUrl: verifyUrl,
   });

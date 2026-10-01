@@ -12,6 +12,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, formatLKR } from "@/lib/utils";
 import {
   useGetPublicExploreQuery,
+  useLazyGetPublicExploreQuery,
   useGetPublicLearningServicesQuery,
 } from "@/features/catalog/catalogApi";
 import type {
@@ -187,6 +188,9 @@ function FiltersPanel({
   );
 }
 
+// The API returns at most 50 courses per request.
+const PAGE_SIZE = 50;
+
 export default function ExplorePage() {
   const [q, setQ] = useState("");
   const [service, setService] = useState("");
@@ -201,19 +205,30 @@ export default function ExplorePage() {
   const debouncedMaxPrice = useDebouncedValue(maxPrice, 400);
 
   const { data: servicesData } = useGetPublicLearningServicesQuery();
-  const { data, isFetching, isError } = useGetPublicExploreQuery({
+  const filters = {
     q: debouncedQ || undefined,
     service: service || undefined,
     level: level || undefined,
     accessType: accessType || undefined,
     minPrice: debouncedMinPrice ? Number(debouncedMinPrice) : undefined,
     maxPrice: debouncedMaxPrice ? Number(debouncedMaxPrice) : undefined,
-    limit: 50,
-  });
+  };
+  const { data, isFetching, isError } = useGetPublicExploreQuery({ ...filters, limit: PAGE_SIZE });
+  // Pages after the first, appended by "Load more" (code review M07-12).
+  // Keyed on the filters, so changing a filter starts again from page 1.
+  const filterKey = JSON.stringify(filters);
+  const [more, setMore] = useState<{ key: string; courses: PublicExploreCourseCard[] }>({ key: "", courses: [] });
+  const [fetchPage, { isFetching: isLoadingMore }] = useLazyGetPublicExploreQuery();
+  const extraCourses = more.key === filterKey ? more.courses : [];
 
   const services = servicesData?.services ?? [];
-  const courses = data?.courses ?? [];
+  const courses = [...(data?.courses ?? []), ...extraCourses];
   const total = data?.pagination.total ?? 0;
+  const canLoadMore = courses.length < total;
+  const loadMore = async () => {
+    const page = await fetchPage({ ...filters, limit: PAGE_SIZE, offset: courses.length }).unwrap();
+    setMore({ key: filterKey, courses: [...extraCourses, ...page.courses] });
+  };
   const hasFilters = Boolean(
     debouncedQ || service || level || accessType || debouncedMinPrice || debouncedMaxPrice,
   );
@@ -336,10 +351,19 @@ export default function ExplorePage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
-              {courses.map((course) => (
-                <ExploreCourseCard key={course.id} course={course} />
-              ))}
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4">
+                {courses.map((course) => (
+                  <ExploreCourseCard key={course.id} course={course} />
+                ))}
+              </div>
+              {canLoadMore ? (
+                <div className="flex justify-center">
+                  <Button variant="outline" disabled={isLoadingMore} onClick={() => void loadMore()}>
+                    {isLoadingMore ? "Loading…" : `Show more (${total - courses.length} left)`}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           )}
         </div>

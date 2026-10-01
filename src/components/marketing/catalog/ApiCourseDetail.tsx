@@ -29,17 +29,19 @@ import { CertificatePreview } from "./CertificatePreview";
 import { CourseExplainerVideo } from "./CourseExplainerVideo";
 import { PageSlide } from "./PageSlide";
 
+// A fixed locale and Sri Lanka time, so the server-rendered text and the
+// browser's match exactly (no hydration mismatch, no day shift for viewers
+// in other time zones) — code review M06-10.
+const DATE_FORMAT = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "Asia/Colombo" });
+const NUMBER_FORMAT = new Intl.NumberFormat("en-US");
+
 function formatDate(value: string | null) {
   if (!value) return null;
-  return new Date(value).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return DATE_FORMAT.format(new Date(value));
 }
 
 function formatPrice(price: number, currency: string) {
-  return `${currency} ${price.toLocaleString()}`;
+  return `${currency} ${NUMBER_FORMAT.format(price)}`;
 }
 
 const PRIMARY_CTA_CLASS =
@@ -122,19 +124,21 @@ export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
               </div>
             )}
 
-            <div className="bg-white border border-zinc-200 rounded-2xl p-6 mb-8">
-              <h2 className="font-sans font-semibold text-lg text-[#191919] mb-4">
-                What you&apos;ll cover
-              </h2>
-              <ul className="space-y-3">
-                {course.highlights.map((item) => (
-                  <li key={item} className="flex gap-2.5 font-alt text-sm text-[#71717A]">
-                    <Check className="h-4 w-4 text-[#191919] shrink-0 mt-0.5" aria-hidden="true" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {course.highlights.length > 0 && (
+              <div className="bg-white border border-zinc-200 rounded-2xl p-6 mb-8">
+                <h2 className="font-sans font-semibold text-lg text-[#191919] mb-4">
+                  What you&apos;ll cover
+                </h2>
+                <ul className="space-y-3">
+                  {course.highlights.map((item) => (
+                    <li key={item} className="flex gap-2.5 font-alt text-sm text-[#71717A]">
+                      <Check className="h-4 w-4 text-[#191919] shrink-0 mt-0.5" aria-hidden="true" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {course.whyPursueSteps.length > 0 && (
               <div className="mb-8">
@@ -259,7 +263,13 @@ export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
                 </div>
               ) : course.enrollmentStatus === "OPEN" && openIntake ? (
                 <div className="space-y-3">
-                  {course.accessType === "FREE" ? (
+                  {openIntake.seatsRemaining === 0 ? (
+                    // A full intake offers no enroll button that would only
+                    // fail on the next page (M06-10).
+                    <div className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-100 px-6 font-alt text-sm font-semibold text-[#71717A]">
+                      <Users className="h-4 w-4" aria-hidden="true" /> This intake is full
+                    </div>
+                  ) : course.accessType === "FREE" ? (
                     <Link href={`${intentBase}?enrollCourse=${openIntake.id}`} className={PRIMARY_CTA_CLASS}>
                       {isAuthenticated ? "Add to My Courses" : "Sign in and add to My Courses"}
                     </Link>

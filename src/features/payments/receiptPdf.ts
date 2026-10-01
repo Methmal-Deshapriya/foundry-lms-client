@@ -42,9 +42,22 @@ export async function downloadReceiptPdf(payment: PaymentDetail) {
   doc.setFontSize(22);
   doc.text(formatLKR(Math.abs(payment.amount)), margin, y + 10);
 
+  // A receipt for money that was later reversed (recorded by mistake) or
+  // refunded must say so, so it can't pass as clean proof of payment
+  // (code review M03-24).
+  const reversal = !isCredit ? payment.corrections.find((entry) => entry.type === "REVERSAL") : undefined;
+  const refundedTotal = !isCredit
+    ? payment.corrections.filter((entry) => entry.type === "REFUND").reduce((sum, entry) => sum + Math.abs(entry.amount), 0)
+    : 0;
+  const correctionNote = reversal
+    ? `REVERSED on ${format(new Date(reversal.paidAt), "MMM d, yyyy")} (${reversal.receiptNumber}): this entry was cancelled as a mistake.`
+    : refundedTotal > 0
+      ? `${formatLKR(refundedTotal)} of this payment was refunded (${payment.corrections.filter((entry) => entry.type === "REFUND").map((entry) => entry.receiptNumber).join(", ")}).`
+      : null;
+
   const rows: [string, string][] = [
     ["Date", format(new Date(payment.paidAt), "MMMM d, yyyy")],
-    ["Received from", payment.student?.name ?? "—"],
+    [isCredit ? "Refunded to" : "Received from", payment.student?.name ?? "—"],
     ["Email", payment.student?.email ?? "—"],
     ["Course", payment.course.title],
     ["Intake", payment.intake.code],
@@ -57,6 +70,16 @@ export async function downloadReceiptPdf(payment: PaymentDetail) {
   ];
 
   y += 22;
+  if (correctionNote) {
+    doc.setFillColor(254, 226, 226);
+    const noteLines = doc.splitTextToSize(correctionNote, width - margin * 2 - 6);
+    doc.rect(margin, y - 4, width - margin * 2, 5 * noteLines.length + 4, "F");
+    doc.setTextColor(185, 28, 28);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text(noteLines, margin + 3, y + 1);
+    y += 5 * noteLines.length + 6;
+  }
   doc.setDrawColor(228, 228, 231);
   doc.line(margin, y, width - margin, y);
   y += 7;

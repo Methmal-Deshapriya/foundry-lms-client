@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { Github, Globe, Loader2 } from "lucide-react";
+import { Github, Globe, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -26,10 +26,10 @@ function formFromProject(project: StudentProject) {
 }
 
 /**
- * Editing a PENDING project — a Dialog opened from ProjectDetailSheet's
- * "Edit Submission" button, replacing the old dedicated /projects/edit/[id]
- * page. Same "Sheet for detail, Dialog for forms" split as the admin
- * catalog pages.
+ * Editing a PENDING project, or fixing a REJECTED one and sending it back
+ * for review (code review M08-02) — a Dialog opened from
+ * ProjectDetailSheet. Same "Sheet for detail, Dialog for forms" split as the
+ * admin catalog pages.
  */
 export function ProjectEditDialog({
   project,
@@ -42,6 +42,7 @@ export function ProjectEditDialog({
 }) {
   const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
   const [form, setForm] = useState(() => formFromProject(project));
+  const isResubmission = project.status === "REJECTED";
 
   // Reset the form to the project's current data whenever this transitions
   // from closed to open — adjusted during render rather than an effect, per
@@ -60,11 +61,13 @@ export function ProjectEditDialog({
         id: project.id,
         data: {
           title: form.title,
-          description: form.description || undefined,
+          // A cleared field is sent as null so the server actually clears it
+          // (undefined means "leave unchanged") — code review M08-06.
+          description: form.description.trim() || null,
           thumbnailObjectId: form.thumbnailObjectId,
-          projectUrl: form.projectUrl || undefined,
-          githubUrl: form.githubUrl || undefined,
-          demoUrl: form.demoUrl || undefined,
+          projectUrl: form.projectUrl.trim() || null,
+          githubUrl: form.githubUrl.trim() || null,
+          demoUrl: form.demoUrl.trim() || null,
           technologies: form.technologies
             .split(",")
             .map((tech) => tech.trim())
@@ -72,7 +75,7 @@ export function ProjectEditDialog({
           isPublic: form.isPublic,
         },
       }).unwrap();
-      toast.success("Project updated successfully!");
+      toast.success(isResubmission ? "Project sent back for review" : "Project updated successfully!");
       onOpenChange(false);
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Failed to update project."));
@@ -83,8 +86,12 @@ export function ProjectEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] border-border bg-white sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Edit project</DialogTitle>
-          <DialogDescription>Update your submission while it&apos;s still pending review.</DialogDescription>
+          <DialogTitle>{isResubmission ? "Edit and resubmit" : "Edit project"}</DialogTitle>
+          <DialogDescription>
+            {isResubmission
+              ? "Make the changes your instructor asked for. Saving sends the project back for review."
+              : "Update your submission while it’s still pending review."}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -134,6 +141,18 @@ export function ProjectEditDialog({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="edit-projectUrl" className="flex items-center gap-1.5">
+              <Link2 className="size-3.5" /> Project link
+            </Label>
+            <Input
+              id="edit-projectUrl"
+              placeholder="https://..."
+              value={form.projectUrl}
+              onChange={(event) => setForm({ ...form, projectUrl: event.target.value })}
+            />
+          </div>
+
           <ObjectUploadField
             label="Thumbnail image"
             purpose="PROJECT_THUMBNAIL"
@@ -173,7 +192,7 @@ export function ProjectEditDialog({
             </Button>
             <Button type="submit" disabled={isUpdating} className="bg-[#191919] bg-none hover:bg-[#27272A]">
               {isUpdating ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
-              Save Changes
+              {isResubmission ? "Save and resubmit" : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>

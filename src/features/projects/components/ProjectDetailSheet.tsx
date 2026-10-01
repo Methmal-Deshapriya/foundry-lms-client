@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { BookOpen, Calendar, ExternalLink, Github, Globe, MessageSquare, Pencil } from "lucide-react";
+import { toast } from "sonner";
+import { BookOpen, Calendar, Eye, EyeOff, ExternalLink, Github, Globe, Link2, MessageSquare, Pencil } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,8 @@ import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { cn } from "@/lib/utils";
 import { PROJECT_STATUS_STYLES } from "@/lib/statusColors";
 import type { StudentProject } from "@/features/projects/projectsTypes";
+import { useSetProjectVisibilityMutation } from "@/features/projects/projectsApi";
+import { getApiErrorMessage } from "@/lib/api";
 import { ProjectEditDialog } from "./ProjectEditDialog";
 
 /**
@@ -35,8 +38,25 @@ export function ProjectDetailSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const [editOpen, setEditOpen] = useState(false);
+  const [setVisibility, { isLoading: isChangingVisibility }] = useSetProjectVisibilityMutation();
 
   if (!project) return null;
+
+  // Students can take a project off the showcase (and their profile) at any
+  // time, including after approval — code review M08-01.
+  const toggleVisibility = async () => {
+    try {
+      await setVisibility({ id: project.id, isPublic: !project.isPublic }).unwrap();
+      toast.success(project.isPublic ? "Project hidden from the showcase" : "Project will show on the showcase once approved");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Could not change the project's visibility."));
+    }
+  };
+  const visibilityNote = project.isPublic
+    ? project.status === "APPROVED"
+      ? "Public: shown on the showcase and your profile."
+      : "Public: it will be shown on the showcase once approved."
+    : "Hidden: only you and your instructors can see it.";
 
   return (
     <>
@@ -90,7 +110,7 @@ export function ProjectDetailSheet({
               </div>
             ) : null}
 
-            {project.githubUrl || project.demoUrl ? (
+            {project.githubUrl || project.demoUrl || project.projectUrl ? (
               <div className="space-y-2">
                 {project.githubUrl ? (
                   <Button asChild className="w-full justify-start bg-[#191919] bg-none hover:bg-[#27272A] text-white">
@@ -105,6 +125,14 @@ export function ProjectDetailSheet({
                     <a href={project.demoUrl} target="_blank" rel="noopener noreferrer">
                       <Globe className="mr-2 h-4 w-4 text-[#191919]" />
                       Live Demo
+                    </a>
+                  </Button>
+                ) : null}
+                {project.projectUrl ? (
+                  <Button asChild variant="outline" className="w-full justify-start">
+                    <a href={project.projectUrl} target="_blank" rel="noopener noreferrer">
+                      <Link2 className="mr-2 h-4 w-4 text-[#191919]" />
+                      Project Link
                     </a>
                   </Button>
                 ) : null}
@@ -143,6 +171,26 @@ export function ProjectDetailSheet({
                   Edit Submission
                 </Button>
               ) : null}
+              {project.status === "REJECTED" ? (
+                <Button className="w-full bg-[#191919] bg-none text-white hover:bg-[#27272A]" onClick={() => setEditOpen(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit and resubmit
+                </Button>
+              ) : null}
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">{visibilityNote}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={isChangingVisibility}
+                  onClick={() => void toggleVisibility()}
+                >
+                  {project.isPublic ? <EyeOff className="mr-1.5 h-3.5 w-3.5" /> : <Eye className="mr-1.5 h-3.5 w-3.5" />}
+                  {project.isPublic ? "Hide" : "Make public"}
+                </Button>
+              </div>
               {project.status === "APPROVED" && project.isPublic ? (
                 <Button asChild variant="outline" className="w-full">
                   <Link href={`/projects/showcase/${project.id}`} target="_blank" rel="noopener noreferrer">

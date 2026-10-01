@@ -60,7 +60,10 @@ export default function EnrollmentRequestIntentHandler() {
 
   const existingEnrollment = courseId
     ? (myEnrollments?.enrollments ?? []).find(
-        (enrollment) => enrollment.courseId === courseId && enrollment.status !== "CANCELLED",
+        // Only a current (ACTIVE) enrollment counts: a student who finished
+        // an earlier intake may request the new one. The server refuses a
+        // second seat in the same open intake (code review M05-11/M05-04).
+        (enrollment) => enrollment.courseId === courseId && enrollment.status === "ACTIVE",
       )
     : undefined;
   const redirectedFor = useRef<string | null>(null);

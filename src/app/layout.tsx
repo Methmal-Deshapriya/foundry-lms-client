@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ORGANIZATION_JSON_LD, jsonLd } from "@/lib/seo";
 import { Geist, Geist_Mono, Inter, Poppins } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -82,28 +83,6 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
     creator: "@foundrylms",
   },
-
-  other: {
-    "script:ld+json": JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "Foundry Academy",
-      url: "https://foundrylms.com",
-      description:
-        "Foundry Academy delivers industry-ready bootcamps in AI/ML, Full-Stack Development, Cybersecurity, Data Science, and UX/UI for Sri Lankan students.",
-      sameAs: [
-        "https://www.facebook.com/foundrylms",
-        "https://www.instagram.com/foundrylms",
-        "https://www.linkedin.com/company/foundrylms",
-      ],
-      logo: "https://foundrylms.com/favicon.png",
-      brand: "Foundry Academy",
-      address: {
-        "@type": "PostalAddress",
-        addressCountry: "LK",
-      },
-    }),
-  },
 };
 
 export default function RootLayout({
@@ -117,6 +96,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${poppins.variable}`}
     >
       <body className="font-sans antialiased">
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(ORGANIZATION_JSON_LD)} />
         <StoreProvider>
           <AuthInitializer>{children}</AuthInitializer>
         </StoreProvider>

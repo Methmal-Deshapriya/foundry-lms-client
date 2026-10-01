@@ -28,6 +28,11 @@ export const usersApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_result, _error, id) => ["Users", { type: "Users", id }],
     }),
+    // Super admins: end every session, suspend, reactivate (code review M10-05).
+    setUserAccess: builder.mutation<UserRecord, { id: string; action: "revoke-sessions" | "suspend" | "reactivate" }>({
+      query: ({ id, action }) => ({ url: `/users/${id}/${action}`, method: "POST" }),
+      invalidatesTags: (_result, _error, { id }) => ["Users", { type: "Users", id }],
+    }),
   }),
 });
 
@@ -36,4 +41,5 @@ export const {
   useGetUserDetailQuery,
   usePromoteUserMutation,
   useDemoteUserMutation,
+  useSetUserAccessMutation,
 } = usersApi;

@@ -36,10 +36,18 @@ async function toSquareWebp(file: File): Promise<Blob> {
     AVATAR_SIZE,
   );
   bitmap.close();
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.85));
+  // Some browsers (older Safari) can't encode WebP and quietly hand back a
+  // PNG instead, which is much larger and would be mislabelled. Fall back to
+  // JPEG, and always declare the type the browser actually produced
+  // (code review M04-10).
+  const encode = (type: string) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.85));
+  let blob = await encode("image/webp");
+  if (!blob || blob.type !== "image/webp") blob = await encode("image/jpeg");
   if (!blob) throw new Error("Could not prepare the image.");
   return blob;
 }
+
+const AVATAR_EXTENSIONS: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png" };
 
 export function AvatarUpload({
   name,
@@ -72,10 +80,11 @@ export function AvatarUpload({
     setUploading(true);
     try {
       const webp = await toSquareWebp(file);
+      const contentType = webp.type || "image/jpeg";
       const intent = await createIntent({
         purpose: "STUDENT_AVATAR",
-        fileName: "avatar.webp",
-        contentType: "image/webp",
+        fileName: `avatar.${AVATAR_EXTENSIONS[contentType] ?? "jpg"}`,
+        contentType,
         sizeBytes: webp.size,
       }).unwrap();
       const response = await fetch(intent.upload.url, { method: intent.upload.method, headers: intent.upload.headers, body: webp });

@@ -40,6 +40,11 @@ export default function ManualEnrollmentForm({
   const deferredSearch = useDeferredValue(search.trim());
   const [cursor, setCursor] = useState<string>();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // Names of everyone ever selected (the search list pages, so a selected
+  // student may no longer be on screen when results come back).
+  const [knownNames, setKnownNames] = useState<Record<string, string>>({});
+  // After a partial bulk enrollment: who failed and why (code review M05-07).
+  const [failures, setFailures] = useState<{ userId: string; name: string; error: string }[]>([]);
   const [paymentStatus, setPaymentStatus] = useState<PaidStatus>("COMPLETED");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [reference, setReference] = useState("");
@@ -65,6 +70,10 @@ export default function ManualEnrollmentForm({
   const [bulkCreate, bulkState] = useBulkCreateEnrollmentsMutation();
 
   const toggle = (id: string) => {
+    const student = students.find((entry) => entry.id === id);
+    if (student) {
+      setKnownNames((current) => ({ ...current, [id]: `${student.firstName} ${student.lastName}`.trim() || student.email }));
+    }
     setSelectedIds((current) => {
       if (current.includes(id)) {
         return current.filter((value) => value !== id);
@@ -95,11 +104,17 @@ export default function ManualEnrollmentForm({
           students: selectedIds.map((userId) => ({ userId, ...payment })),
         }).unwrap();
         if (result.summary.failed) {
-          toast.warning(`${result.summary.created} enrolled; ${result.summary.failed} failed. Review capacity or duplicates.`);
-        } else {
-          toast.success(`${result.summary.created} students enrolled`);
+          // Keep the form open with only the students who failed still
+          // selected, each listed with the reason.
+          const failed = result.results.filter((row) => row.status === "FAILED");
+          setFailures(failed.map((row) => ({ userId: row.userId, name: knownNames[row.userId] ?? row.userId, error: row.error ?? "Could not be enrolled." })));
+          setSelectedIds(failed.map((row) => row.userId));
+          toast.warning(`${result.summary.created} enrolled; ${result.summary.failed} could not be. See the list below.`);
+          return;
         }
+        toast.success(`${result.summary.created} students enrolled`);
       }
+      setFailures([]);
       setSelectedIds([]);
       onSuccess?.();
     } catch (error) {
@@ -160,6 +175,18 @@ export default function ManualEnrollmentForm({
           </div>
         ) : null}
       </div>
+      {failures.length ? (
+        <div role="alert" className="space-y-1 rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
+          <p className="font-semibold text-red-900">Not enrolled ({failures.length})</p>
+          <ul className="space-y-0.5 text-red-800">
+            {failures.map((failure) => (
+              <li key={failure.userId}>
+                <span className="font-medium">{failure.name}</span>: {failure.error}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <p className="text-xs text-muted-foreground" aria-live="polite">
         {selectedIds.length} selected · up to 100 students per enrollment request
       </p>

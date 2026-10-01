@@ -39,9 +39,27 @@ export interface AdminNotification {
   emailSentCount: number;
   emailSentAt: string | null;
   createdBy: string | null;
-  reach: number;
+  /** Null for archived notifications, which reach nobody. */
+  reach: number | null;
   readCount: number;
   updatedAt: string;
+  /** Only on a publish that emailed: how many went out and how many failed. */
+  emailResult?: { sent: number; failed: number };
+}
+
+/** Live counts for the admin list's status pills. */
+export interface PublishStatusSummary {
+  all: number;
+  draft: number;
+  published: number;
+  archived: number;
+}
+
+/** Who a payment reminder's email goes to (code review M09-02). */
+export interface ReminderEmailRecipients {
+  total: number;
+  alreadyEmailed: number;
+  pending: number;
 }
 
 export interface SaveNotificationRequest {

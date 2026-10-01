@@ -11,6 +11,8 @@ export type UserRecord = {
   email: string;
   role: Role;
   emailVerified: boolean;
+  /** Set while a super admin has suspended the account (code review M10-05). */
+  disabledAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -118,6 +120,7 @@ export type UserDetail = {
   dateOfBirth: string | null;
   alStream: string | null;
   emailVerified: boolean;
+  disabledAt: string | null;
   createdAt: string;
   updatedAt: string;
   enrollments: UserActivitySection<UserEnrollmentActivity>;
@@ -127,5 +130,6 @@ export type UserDetail = {
   certificates: UserActivitySection<UserCertificateActivity>;
   studentProjects: UserActivitySection<UserProjectActivity>;
   enrollmentRequests: UserActivitySection<UserEnrollmentRequestActivity>;
-  auditActions: UserActivitySection<UserAuditActivity>;
+  /** Null unless the viewer can read the audit log (super admins) — code review M10-02. */
+  auditActions: UserActivitySection<UserAuditActivity> | null;
 };

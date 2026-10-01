@@ -1,6 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
+import { API_BASE_URL } from "@/lib/constants";
 import {
   Clock,
   ExternalLink,
@@ -70,7 +71,9 @@ export default function SessionItem({
       <div className="space-y-1 p-4">
         <div className="flex items-start justify-between gap-3">
           <p className="text-[11px] font-bold uppercase tracking-tight text-muted-foreground">
-            Session {(session.orderIndex ?? 0) + 1}
+            {/* A retired session's old number can clash with the live
+                curriculum's, so it is labelled instead (M07-02). */}
+            {session.retired ? "Earlier session" : `Session ${(session.orderIndex ?? 0) + 1}`}
           </p>
           {session.durationMinutes ? (
             <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
@@ -87,14 +90,32 @@ export default function SessionItem({
         ) : null}
 
         <div className="grid grid-cols-2 gap-1.5 pt-1.5">
-          <ResourceLink href={session.recordingUrl} label="Recording" icon={Video} />
-          <ResourceLink href={session.materialUrl} label="Materials" icon={FileText} />
+          <ResourceLink href={resolveFileHref(session.recordingUrl, session.recordingIsFile)} label="Recording" icon={Video} />
+          <ResourceLink href={resolveFileHref(session.materialUrl, session.materialIsFile)} label="Materials" icon={FileText} />
           <ResourceLink href={session.quizUrl} label="Quiz" icon={HelpCircle} />
           <ResourceLink href={session.feedbackUrl} label="Feedback" icon={MessageSquare} />
         </div>
       </div>
     </article>
   );
+}
+
+// Uploaded recordings and materials come as an API path that checks access
+// and redirects to a freshly signed link on every click, so a link never
+// goes stale while the page is open (code review M07-01). It is resolved
+// against the API's origin; with a relative API base (dev proxy) it stays
+// relative to this site.
+const API_ORIGIN = (() => {
+  try {
+    return new URL(API_BASE_URL).origin;
+  } catch {
+    return "";
+  }
+})();
+
+function resolveFileHref(href: string | null | undefined, isFile?: boolean) {
+  if (!href || !isFile) return href;
+  return `${API_ORIGIN}${href}`;
 }
 
 // One consistent, neutral style for every resource type instead of a

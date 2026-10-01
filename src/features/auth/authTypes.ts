@@ -68,6 +68,11 @@ export type ResetPasswordRequest = {
   newPassword: string;
 };
 
+export type ChangePasswordRequest = {
+  currentPassword: string;
+  newPassword: string;
+};
+
 export type VerifyOtpRequest = {
   email: string;
   code: string;

@@ -34,6 +34,14 @@ export interface SaveStudentProfileRequest {
   publishConsent: true;
 }
 
+/**
+ * GET /profiles/public/:slug for a link the student has since changed: the
+ * page should move to the current one (code review M08-09).
+ */
+export interface PublicStudentProfileRedirect {
+  redirectToSlug: string;
+}
+
 /** A published profile, exactly as the public sees it (GET /profiles/public/:slug). */
 export interface PublicStudentProfile {
   slug: string;

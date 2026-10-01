@@ -77,6 +77,9 @@ export const enrollmentsApi = baseApi.injectEndpoints({
         "Intakes",
         "Services",
         "Courses",
+        // A paid enrollment writes a ledger row (code review M03-19).
+        "Payments",
+        "Partners",
       ],
     }),
     bulkCreateEnrollments: builder.mutation<
@@ -94,6 +97,9 @@ export const enrollmentsApi = baseApi.injectEndpoints({
         "Intakes",
         "Services",
         "Courses",
+        // A paid enrollment writes a ledger row (code review M03-19).
+        "Payments",
+        "Partners",
       ],
     }),
     updateEnrollment: builder.mutation<
@@ -106,9 +112,11 @@ export const enrollmentsApi = baseApi.injectEndpoints({
         "Enrollments",
         "Services",
         "Courses",
+        // Reactivation can move a refunded enrollment back to "still owes".
+        "Payments",
       ],
     }),
-    getAtRiskStudents: builder.query<{ thresholdDays: number; rows: AtRiskRow[] }, void>({
+    getAtRiskStudents: builder.query<{ thresholdDays: number; rows: AtRiskRow[]; truncated?: boolean }, void>({
       query: () => "/enrollments/at-risk",
       providesTags: ["Enrollments"],
     }),
@@ -121,6 +129,8 @@ export const enrollmentsApi = baseApi.injectEndpoints({
         { type: "Enrollments", id },
         "Enrollments",
         "Courses",
+        "Payments",
+        "Partners",
       ],
     }),
   }),
@@ -128,6 +138,7 @@ export const enrollmentsApi = baseApi.injectEndpoints({
 
 export const {
   useGetMyEnrollmentsQuery,
+  useLazyGetMyEnrollmentsQuery,
   useGetAtRiskStudentsQuery,
   useGetCourseRosterQuery,
   useLazyGetCourseRosterQuery,

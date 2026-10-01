@@ -6,6 +6,7 @@ import type {
   UpdateProfileRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
+  ChangePasswordRequest,
   VerifyOtpRequest,
   ResendOtpRequest,
   LoginResult,
@@ -101,6 +102,23 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
     }),
+    changePassword: builder.mutation<User, ChangePasswordRequest>({
+      // The server ends every other session and re-issues this browser's
+      // cookie, so the user stays signed in here.
+      query: (body) => ({
+        url: "/auth/change-password",
+        method: "POST",
+        body,
+      }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(setUser(data));
+        } catch {
+          // Error is handled by the form
+        }
+      },
+    }),
     verifyOtp: builder.mutation<User, VerifyOtpRequest>({
       // This is the real login moment for a newly registered user —
       // the server sets the auth cookie on success, so we mirror
@@ -139,6 +157,7 @@ export const {
   useLogoutMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useChangePasswordMutation,
   useVerifyOtpMutation,
   useResendOtpMutation,
 } = authApi;

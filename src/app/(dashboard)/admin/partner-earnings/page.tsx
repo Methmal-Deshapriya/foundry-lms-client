@@ -24,6 +24,8 @@ import {
   useGetEarningsByIntakeQuery,
   useGetEarningsOverviewQuery,
   useGetExpensesQuery,
+  useLazyGetExpensesQuery,
+  useLazyGetPayoutsQuery,
   useGetPayoutsQuery,
   useGetSharesQuery,
   useReverseExpenseMutation,
@@ -36,6 +38,7 @@ import { getApiErrorMessage } from "@/lib/api";
 import { downloadCsv, toCsv } from "@/lib/csv";
 import { Icons } from "@/lib/icons";
 import { cn, formatLKR } from "@/lib/utils";
+import { dayEndIso, dayStartIso } from "@/lib/dates";
 import { useAppSelector } from "@/store/hooks";
 
 const BLACK = "bg-[#191919] bg-none text-white hover:bg-[#27272A]";
@@ -45,9 +48,18 @@ const stamp = () => format(new Date(), "yyyy-MM-dd");
 
 function toQueryRange(range: DateRange) {
   return {
-    from: range.from ? `${range.from}T00:00:00` : undefined,
-    to: range.to ? `${range.to}T23:59:59.999` : undefined,
+    // Local (Sri Lanka) day boundaries as real instants (M03-07).
+    from: range.from ? dayStartIso(range.from) : undefined,
+    to: range.to ? dayEndIso(range.to) : undefined,
   };
+}
+
+// The split in effect now: the newest one that has started (sets come
+// newest first). A split saved for a future date is "Scheduled" until then,
+// matching the engine's own rule (code review M03-25).
+function currentShareSet<T extends { effectiveFrom: string }>(sets: T[]) {
+  const now = Date.now();
+  return sets.find((set) => new Date(set.effectiveFrom).getTime() <= now) ?? null;
 }
 
 function Money({ value, className }: { value: number; className?: string }) {
@@ -260,26 +272,35 @@ function ByIntakeTab({ range }: { range: DateRange }) {
 function ExpensesTab({ range, partners, canManage }: { range: DateRange; partners: Partner[]; canManage: boolean }) {
   const [offset, setOffset] = useState(0);
   const { data, isLoading } = useGetExpensesQuery({ ...toQueryRange(range), limit: 50, offset });
+  const [fetchExpenses, { isFetching: isExporting }] = useLazyGetExpensesQuery();
   const [adding, setAdding] = useState(false);
   const [reversing, setReversing] = useState<Expense | null>(null);
   const [reverseExpense, { isLoading: isReversing }] = useReverseExpenseMutation();
   const rows = data?.expenses ?? [];
 
-  const exportCsv = () =>
+  // Every page in the range, not just the visible 50 (code review M03-17).
+  const exportCsv = async () => {
+    const all: Expense[] = [];
+    for (let pageOffset = 0; ; pageOffset += 100) {
+      const page = await fetchExpenses({ ...toQueryRange(range), limit: 100, offset: pageOffset }).unwrap();
+      all.push(...page.expenses);
+      if (!page.pagination.hasMore) break;
+    }
     downloadCsv(
       `expenses-${stamp()}.csv`,
       toCsv([
         ["Date", "Category", "Description", "Intake", "Paid from", "Amount (LKR)", "Type", "Recorded by"],
-        ...rows.map((row) => [isoDay(row.spentAt), EXPENSE_CATEGORY_LABELS[row.category], row.description ?? "", row.intake?.code ?? "General", row.paidBy ? row.paidBy.name : "Business account", row.amount, row.kind === "REVERSAL" ? "Reversal" : "Expense", row.recordedBy ?? ""]),
+        ...all.map((row) => [isoDay(row.spentAt), EXPENSE_CATEGORY_LABELS[row.category], row.description ?? "", row.intake?.code ?? "General", row.paidBy ? row.paidBy.name : "Business account", row.amount, row.kind === "REVERSAL" ? "Reversal" : "Expense", row.recordedBy ?? ""]),
       ]),
     );
+  };
 
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">{data ? `Total in this view: ${formatLKR(data.sum)}` : " "}</p>
         <div className="flex gap-2">
-          <Button variant="outline" className="h-9" disabled={rows.length === 0} onClick={exportCsv}>
+          <Button variant="outline" className="h-9" disabled={rows.length === 0 || isExporting} onClick={exportCsv}>
             <Download className="size-4" aria-hidden="true" />
             Export CSV
           </Button>
@@ -379,24 +400,32 @@ function ExpensesTab({ range, partners, canManage }: { range: DateRange; partner
 function PayoutsTab({ range, partners, canManage, owedByPartner }: { range: DateRange; partners: Partner[]; canManage: boolean; owedByPartner: Map<string, number> }) {
   const [offset, setOffset] = useState(0);
   const { data, isLoading } = useGetPayoutsQuery({ ...toQueryRange(range), limit: 50, offset });
+  const [fetchPayouts, { isFetching: isExporting }] = useLazyGetPayoutsQuery();
   const [adding, setAdding] = useState(false);
   const [reversing, setReversing] = useState<Payout | null>(null);
   const [reversePayout, { isLoading: isReversing }] = useReversePayoutMutation();
   const rows = data?.payouts ?? [];
 
-  const exportCsv = () =>
+  const exportCsv = async () => {
+    const all: Payout[] = [];
+    for (let pageOffset = 0; ; pageOffset += 100) {
+      const page = await fetchPayouts({ ...toQueryRange(range), limit: 100, offset: pageOffset }).unwrap();
+      all.push(...page.payouts);
+      if (!page.pagination.hasMore) break;
+    }
     downloadCsv(
       `payouts-${stamp()}.csv`,
       toCsv([
         ["Date", "Partner", "Amount (LKR)", "Method", "Reference", "Note", "Type", "Recorded by"],
-        ...rows.map((row) => [isoDay(row.paidAt), row.partner.name, row.amount, row.method ? PAYMENT_METHOD_LABELS[row.method] : "", row.reference ?? "", row.note ?? "", row.kind === "REVERSAL" ? "Reversal" : "Payout", row.recordedBy ?? ""]),
+        ...all.map((row) => [isoDay(row.paidAt), row.partner.name, row.amount, row.method ? PAYMENT_METHOD_LABELS[row.method] : "", row.reference ?? "", row.note ?? "", row.kind === "REVERSAL" ? "Reversal" : "Payout", row.recordedBy ?? ""]),
       ]),
     );
+  };
 
   return (
     <div className="space-y-3">
       <div className="flex justify-end gap-2">
-        <Button variant="outline" className="h-9" disabled={rows.length === 0} onClick={exportCsv}>
+        <Button variant="outline" className="h-9" disabled={rows.length === 0 || isExporting} onClick={exportCsv}>
           <Download className="size-4" aria-hidden="true" />
           Export CSV
         </Button>
@@ -498,7 +527,8 @@ function SharesTab({ canManage }: { canManage: boolean }) {
   const [changing, setChanging] = useState(false);
   const partners = data?.partners ?? [];
   const sets = data?.shareSets ?? [];
-  const current = new Map((sets[0]?.entries ?? []).map((entry) => [entry.partnerId, entry.percent]));
+  const currentSet = currentShareSet(sets);
+  const current = new Map((currentSet?.entries ?? []).map((entry) => [entry.partnerId, entry.percent]));
 
   return (
     <div className="space-y-3">
@@ -514,12 +544,16 @@ function SharesTab({ canManage }: { canManage: boolean }) {
         <Skeleton className="h-32 w-full" />
       ) : (
         <ol className="space-y-3">
-          {sets.map((set, index) => (
+          {sets.map((set) => (
             <li key={set.id} className="rounded-xl border border-border bg-card p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-semibold text-foreground">
                   From {day(set.effectiveFrom)}
-                  {index === 0 ? <Badge className="ml-2 bg-[#191919] text-white">Current</Badge> : null}
+                  {set.id === currentSet?.id ? (
+                    <Badge className="ml-2 bg-[#191919] text-white">Current</Badge>
+                  ) : new Date(set.effectiveFrom) > new Date() ? (
+                    <Badge variant="outline" className="ml-2">Scheduled</Badge>
+                  ) : null}
                 </p>
                 <p className="text-xs text-muted-foreground">{set.note ?? ""}{set.createdBy ? ` · by ${set.createdBy}` : ""}</p>
               </div>
@@ -548,6 +582,8 @@ function SharesTab({ canManage }: { canManage: boolean }) {
 export default function PartnerEarningsPage() {
   const user = useAppSelector(selectAuthUser);
   const [range, setRange] = useState<DateRange>({});
+  // Paged tabs remount when the range changes, so they start again at page 1.
+  const rangeKey = `${range.from ?? ""}_${range.to ?? ""}`;
   const { data: sharesData } = useGetSharesQuery(undefined, { skip: !canViewPayments(user) });
   const { data: overview } = useGetEarningsOverviewQuery({}, { skip: !canViewPayments(user) });
 
@@ -561,7 +597,7 @@ export default function PartnerEarningsPage() {
   }
   const canManage = canManagePayments(user);
   const partners = sharesData?.partners ?? [];
-  const currentShares = new Map((sharesData?.shareSets[0]?.entries ?? []).map((entry) => [entry.partnerId, entry.percent]));
+  const currentShares = new Map((currentShareSet(sharesData?.shareSets ?? [])?.entries ?? []).map((entry) => [entry.partnerId, entry.percent]));
   // "Currently owed" in the payout dialog is always all-time, whatever range is shown.
   const owedByPartner = new Map((overview?.partners ?? []).map((row) => [row.partnerId, row.owed]));
 
@@ -590,10 +626,10 @@ export default function PartnerEarningsPage() {
           <ByIntakeTab range={range} />
         </TabsContent>
         <TabsContent value="expenses">
-          <ExpensesTab range={range} partners={partners} canManage={canManage} />
+          <ExpensesTab key={rangeKey} range={range} partners={partners} canManage={canManage} />
         </TabsContent>
         <TabsContent value="payouts">
-          <PayoutsTab range={range} partners={partners} canManage={canManage} owedByPartner={owedByPartner} />
+          <PayoutsTab key={rangeKey} range={range} partners={partners} canManage={canManage} owedByPartner={owedByPartner} />
         </TabsContent>
         <TabsContent value="shares">
           <SharesTab canManage={canManage} />

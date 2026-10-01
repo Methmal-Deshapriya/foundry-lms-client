@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DEFAULT_INTAKE_TIME_ZONE, formatInZone, wallTimeInZone, zoneLabel } from "@/lib/dates";
 import {
   addMonths,
   eachDayOfInterval,
@@ -44,11 +45,14 @@ export function ScheduleReleaseDialog({
   onOpenChange,
   onConfirm,
   isLoading,
+  timeZone = DEFAULT_INTAKE_TIME_ZONE,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (isoDate: string) => void;
   isLoading?: boolean;
+  /** The intake's time zone; the picked time means this zone's clock. */
+  timeZone?: string;
 }) {
   // Refreshed each time `open` flips to true, rather than once at mount —
   // the parent keeps this component mounted for the page's whole lifetime,
@@ -86,13 +90,14 @@ export function ScheduleReleaseDialog({
     [today],
   );
 
+  // The picked day and time are read as the intake's own clock (Sri Lanka by
+  // default), not the admin's computer clock (code review M07-05).
   const combined = useMemo(() => {
     if (!selectedDate || !time) return null;
     const [hours, minutes] = time.split(":").map(Number);
-    const date = new Date(selectedDate);
-    date.setHours(hours, minutes, 0, 0);
-    return date;
-  }, [selectedDate, time]);
+    const day = new Date(selectedDate);
+    return wallTimeInZone(day.getFullYear(), day.getMonth(), day.getDate(), hours, minutes, timeZone);
+  }, [selectedDate, time, timeZone]);
 
   const isInPast = combined != null && combined.getTime() <= now.getTime();
   const isPreviousMonthDisabled = !isSameMonth(viewMonth, today) && isBefore(startOfMonth(viewMonth), startOfMonth(today));
@@ -198,6 +203,10 @@ export function ScheduleReleaseDialog({
               onChange={(event) => setTime(event.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none"
             />
+            <p className="text-xs text-muted-foreground">
+              Times are {zoneLabel(timeZone)} ({timeZone}).
+              {combined ? ` Students get it on ${formatInZone(combined, timeZone)}.` : ""}
+            </p>
             {isInPast ? <p className="text-xs text-destructive">Pick a date and time in the future.</p> : null}
           </div>
         </div>

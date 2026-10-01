@@ -15,6 +15,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
+import { Input } from "@/components/ui/input";
+import { OffsetPagination } from "@/components/ui/offset-pagination";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TableSkeletonRows } from "@/components/ui/loading-skeletons";
@@ -31,10 +35,11 @@ import {
   useGetAdminNotificationsQuery,
   useGetAdminPromotionsQuery,
   useGetEmailQuotaQuery,
+  useGetReminderEmailRecipientsQuery,
   usePublishNotificationMutation,
   usePublishPromotionMutation,
 } from "@/features/notifications/notificationsApi";
-import type { AdminNotification, AdminPromotion, PublishStatus } from "@/features/notifications/notificationsTypes";
+import type { AdminNotification, AdminPromotion, PublishStatus, PublishStatusSummary } from "@/features/notifications/notificationsTypes";
 import { getApiErrorMessage } from "@/lib/api";
 import { Icons } from "@/lib/icons";
 import { cn } from "@/lib/utils";
@@ -73,65 +78,206 @@ function windowText(item: { startsAt: string | null; endsAt: string | null }) {
   return `${from} → ${to}`;
 }
 
+// ------------------------------------------------------------- list filters
+// Search, status pills with live counts, and paging, the same pattern as the
+// other admin tables (code review M09-10). Older notifications and
+// promotions used to drop off after the newest 50.
+const DEFAULT_PAGE_SIZE = 20;
+const MIN_FILTER_LENGTH = 3;
+const STATUS_PILLS: { key: PublishStatus | ""; label: string; countKey: keyof PublishStatusSummary; activeClassName: string }[] = [
+  { key: "", label: "All", countKey: "all", activeClassName: "border-zinc-300 bg-zinc-100 text-[#191919]" },
+  { key: "DRAFT", label: "Draft", countKey: "draft", activeClassName: STATUS_STYLES.Draft },
+  { key: "PUBLISHED", label: "Published", countKey: "published", activeClassName: STATUS_STYLES.Live },
+  { key: "ARCHIVED", label: "Archived", countKey: "archived", activeClassName: STATUS_STYLES.Archived },
+];
+
+function useListFilters() {
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState<PublishStatus | "">("");
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [offset, setOffset] = useState(0);
+  const debouncedQ = useDebouncedValue(q.trim(), 300);
+  const appliedQ = debouncedQ.length === 0 || debouncedQ.length >= MIN_FILTER_LENGTH ? debouncedQ : "";
+  return {
+    params: { q: appliedQ || undefined, status: status || undefined, limit: pageSize, offset },
+    q,
+    setQ: (value: string) => {
+      setQ(value);
+      setOffset(0);
+    },
+    status,
+    setStatus: (value: PublishStatus | "") => {
+      setStatus(value);
+      setOffset(0);
+    },
+    pageSize,
+    setPageSize: (size: number) => {
+      setPageSize(size);
+      setOffset(0);
+    },
+    setOffset,
+  };
+}
+
+function ListToolbar({
+  filters,
+  summary,
+  searchLabel,
+  placeholder,
+}: {
+  filters: ReturnType<typeof useListFilters>;
+  summary: PublishStatusSummary | undefined;
+  searchLabel: string;
+  placeholder: string;
+}) {
+  const options: FilterPillOption<PublishStatus | "">[] = STATUS_PILLS.map(({ key, label, countKey, activeClassName }) => ({
+    key,
+    label,
+    count: summary?.[countKey] ?? 0,
+    activeClassName,
+  }));
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Input aria-label={searchLabel} value={filters.q} onChange={(event) => filters.setQ(event.target.value)} placeholder={placeholder} className="h-9 w-full sm:w-56 sm:shrink-0" />
+      <FilterPills ariaLabel="Filter by status" options={options} active={filters.status} onChange={filters.setStatus} />
+    </div>
+  );
+}
+
+function ListPagination({
+  id,
+  filters,
+  pagination,
+  shownCount,
+}: {
+  id: string;
+  filters: ReturnType<typeof useListFilters>;
+  pagination: { total: number; offset: number; hasMore: boolean } | undefined;
+  shownCount: number;
+}) {
+  if (!pagination || pagination.total === 0) return null;
+  return (
+    <OffsetPagination
+      id={id}
+      total={pagination.total}
+      offset={pagination.offset}
+      pageSize={filters.pageSize}
+      shownCount={shownCount}
+      hasMore={pagination.hasMore}
+      onOffsetChange={filters.setOffset}
+      onPageSizeChange={filters.setPageSize}
+    />
+  );
+}
+
 // ------------------------------------------------------------- publish dialog
+function reminderTiming(item: { startsAt: string | null; endsAt: string | null } | null, now = Date.now()) {
+  return {
+    startsLater: Boolean(item?.startsAt && new Date(item.startsAt).getTime() > now),
+    hasEnded: Boolean(item?.endsAt && new Date(item.endsAt).getTime() < now),
+  };
+}
+
 function PublishNotificationDialog({ notification, onClose }: { notification: AdminNotification | null; onClose: () => void }) {
   const isReminder = notification?.audience === "PARTIAL_PAYERS";
-  const { data: quota } = useGetEmailQuotaQuery(undefined, { skip: !isReminder });
+  // Publishing a draft, or emailing a reminder that's already published
+  // (first time, or the students missed last time — code review M09-02).
+  const isEmailOnly = notification?.status === "PUBLISHED";
+  // Email goes out straight away, so only while the reminder is showing
+  // (code review M09-05).
+  const { startsLater, hasEnded } = reminderTiming(notification);
+  const canEmail = isReminder && !startsLater && !hasEnded;
+  const { data: quota } = useGetEmailQuotaQuery(undefined, { skip: !canEmail });
+  const { data: recipients } = useGetReminderEmailRecipientsQuery(notification?.id ?? "", { skip: !canEmail || !notification });
   const [sendEmail, setSendEmail] = useState(false);
+  // The tick belongs to one notification: opening another, or cancelling,
+  // starts unticked (code review M09-08).
+  const [forId, setForId] = useState<string | null>(notification?.id ?? null);
+  if ((notification?.id ?? null) !== forId) {
+    setForId(notification?.id ?? null);
+    setSendEmail(false);
+  }
   const [publish, { isLoading }] = usePublishNotificationMutation();
-  const recipients = notification?.reach ?? 0;
-  const fits = quota ? recipients <= quota.availableForNotifications : false;
-  const alreadyEmailed = Boolean(notification?.emailSentAt);
+  const emailing = canEmail && (isEmailOnly || sendEmail);
+  const pending = recipients?.pending ?? 0;
+  const fits = quota && recipients ? pending <= quota.availableForNotifications : false;
+  const reach = notification?.reach ?? 0;
+  const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
   const confirm = async () => {
     if (!notification) return;
     try {
-      const result = await publish({ id: notification.id, sendEmail: isReminder && sendEmail }).unwrap();
-      toast.success(sendEmail ? `Published and emailed ${result.emailSentCount} student(s).` : "Published — students will see it in their bell.");
-      setSendEmail(false);
+      const result = await publish({ id: notification.id, sendEmail: emailing }).unwrap();
+      const email = result.emailResult;
+      if (email) {
+        const failedText = email.failed ? ` ${plural(email.failed, "email")} failed. Use "Email students not yet emailed" to try them again.` : "";
+        (email.failed ? toast.warning : toast.success)(`${isEmailOnly ? "Emailed" : "Published and emailed"} ${plural(email.sent, "student")}.${failedText}`);
+      } else {
+        toast.success("Published — students will see it in their bell.");
+      }
       onClose();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "The notification could not be published."));
     }
   };
 
+  const title = isEmailOnly ? `Email “${notification?.title}”?` : `Publish “${notification?.title}”?`;
+  const actionLabel = isEmailOnly ? `Send ${plural(pending, "email")}` : emailing ? "Publish & email" : "Publish";
+
   return (
     <AlertDialog open={Boolean(notification)} onOpenChange={(open) => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Publish “{notification?.title}”?</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            {notification ? `${AUDIENCE_LABELS[notification.audience]} · reaches ${recipients} student${recipients === 1 ? "" : "s"} in the system.` : null}
+            {notification ? `${AUDIENCE_LABELS[notification.audience]} · reaches ${plural(reach, "student")} in the system.` : null}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {isReminder && !alreadyEmailed ? (
+        {isReminder && !canEmail ? (
+          <p className="rounded-lg border border-border p-3 text-xs text-muted-foreground">
+            {startsLater
+              ? `Email goes out straight away, but this reminder only shows from ${format(new Date(notification!.startsAt!), "MMM d, HH:mm")}. Publish it now, then email it once it's showing.`
+              : "This reminder has ended, so it can't be emailed."}
+          </p>
+        ) : null}
+        {canEmail ? (
           <div className="space-y-3">
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 text-sm">
-              <input type="checkbox" checked={sendEmail} onChange={(event) => setSendEmail(event.target.checked)} className="mt-0.5 size-4 accent-[#191919]" />
-              <span>
-                <span className="block font-medium text-foreground">Also send as email</span>
-                <span className="block text-xs text-muted-foreground">Each student gets one email listing what they still owe.</span>
-              </span>
-            </label>
-            {sendEmail && quota ? (
+            {!isEmailOnly ? (
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 text-sm">
+                <input type="checkbox" checked={sendEmail} onChange={(event) => setSendEmail(event.target.checked)} className="mt-0.5 size-4 accent-[#191919]" />
+                <span>
+                  <span className="block font-medium text-foreground">Also send as email</span>
+                  <span className="block text-xs text-muted-foreground">Each student gets one email listing what they still owe.</span>
+                </span>
+              </label>
+            ) : null}
+            {emailing && recipients && recipients.alreadyEmailed > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {plural(recipients.alreadyEmailed, "student")} already had this email and won&apos;t get it again.
+              </p>
+            ) : null}
+            {emailing && quota && recipients ? (
               <div className={cn("rounded-lg border p-3 text-sm", fits ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800")}>
                 <p className="font-semibold">
-                  {fits ? `This will send ${recipients} email${recipients === 1 ? "" : "s"}.` : `Not enough emails left today for ${recipients} student${recipients === 1 ? "" : "s"}.`}
+                  {pending === 0
+                    ? "Everyone in this reminder has already been emailed."
+                    : fits
+                      ? `This will send ${plural(pending, "email")}.`
+                      : `Not enough emails left for ${plural(pending, "student")}.`}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed">
                   Free plan limit: {quota.dailyLimit} emails a day and {quota.monthlyLimit.toLocaleString()} a month — {quota.sentToday} sent today, {quota.sentThisMonth}{" "}
-                  this month. {quota.reserve} are always kept free for sign-in codes and password resets, so {quota.availableForNotifications} can be used now. Using them
-                  up means those emails can&apos;t go out until tomorrow.
+                  this month. {quota.reserve} a day (for today and every day left this month) are kept free for sign-in codes and password resets, so{" "}
+                  {quota.availableForNotifications} can be used now.
                 </p>
               </div>
             ) : null}
           </div>
         ) : null}
-        {isReminder && alreadyEmailed ? <p className="text-xs text-muted-foreground">This reminder was already emailed on {format(new Date(notification.emailSentAt!), "MMM d")}.</p> : null}
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            disabled={isLoading || (sendEmail && !fits)}
+            disabled={isLoading || (emailing && (!fits || pending === 0)) || (isEmailOnly && !canEmail)}
             onClick={(event) => {
               event.preventDefault();
               void confirm();
@@ -139,7 +285,7 @@ function PublishNotificationDialog({ notification, onClose }: { notification: Ad
             className={BLACK_BUTTON}
           >
             {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
-            {sendEmail ? "Publish & email" : "Publish"}
+            {isLoading && emailing ? "Sending…" : actionLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -149,7 +295,8 @@ function PublishNotificationDialog({ notification, onClose }: { notification: Ad
 
 // ---------------------------------------------------------- notifications tab
 function NotificationsTab() {
-  const { data, isLoading } = useGetAdminNotificationsQuery({ limit: 50 });
+  const filters = useListFilters();
+  const { data, isLoading } = useGetAdminNotificationsQuery(filters.params);
   const [editing, setEditing] = useState<AdminNotification | "new" | null>(null);
   const [publishing, setPublishing] = useState<AdminNotification | null>(null);
   const [archive] = useArchiveNotificationMutation();
@@ -174,6 +321,7 @@ function NotificationsTab() {
           New notification
         </Button>
       </div>
+      <ListToolbar filters={filters} summary={data?.summary} searchLabel="Search notifications" placeholder="Search title or message" />
       <div className="overflow-hidden rounded-md border bg-card">
         <Table className="table-fixed">
           <TableCaption className="sr-only">Notifications</TableCaption>
@@ -193,7 +341,7 @@ function NotificationsTab() {
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                  No notifications yet — create one to reach your students.
+                  {filters.params.q || filters.params.status ? "No notifications match these filters." : "No notifications yet — create one to reach your students."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -220,7 +368,7 @@ function NotificationsTab() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{windowText(row)}</TableCell>
                     <TableCell className="text-right text-sm tabular-nums">
-                      {row.reach} · {row.readCount}
+                      {row.reach ?? "—"} · {row.readCount}
                     </TableCell>
                     <TableCell className="pr-4 text-right" data-no-row-navigation>
                       <DropdownMenu>
@@ -235,9 +383,9 @@ function NotificationsTab() {
                               <Pencil /> Edit
                             </DropdownMenuItem>
                           ) : null}
-                          {row.status === "DRAFT" || (row.audience === "PARTIAL_PAYERS" && row.status === "PUBLISHED" && !row.emailSentAt) ? (
+                          {row.status === "DRAFT" || (row.audience === "PARTIAL_PAYERS" && row.status === "PUBLISHED") ? (
                             <DropdownMenuItem onSelect={() => setPublishing(row)}>
-                              <Send /> {row.status === "DRAFT" ? "Publish" : "Email this reminder"}
+                              <Send /> {row.status === "DRAFT" ? "Publish" : row.emailSentAt ? "Email students not yet emailed" : "Email this reminder"}
                             </DropdownMenuItem>
                           ) : null}
                           {row.status === "PUBLISHED" ? (
@@ -263,6 +411,7 @@ function NotificationsTab() {
           </TableBody>
         </Table>
       </div>
+      <ListPagination id="notifications-page-size" filters={filters} pagination={data?.pagination} shownCount={rows.length} />
       <NotificationEditorDialog open={editing !== null} notification={editing === "new" ? null : editing} onOpenChange={(open) => !open && setEditing(null)} />
       <PublishNotificationDialog notification={publishing} onClose={() => setPublishing(null)} />
     </div>
@@ -271,7 +420,8 @@ function NotificationsTab() {
 
 // ------------------------------------------------------------- promotions tab
 function PromotionsTab() {
-  const { data, isLoading } = useGetAdminPromotionsQuery({ limit: 50 });
+  const filters = useListFilters();
+  const { data, isLoading } = useGetAdminPromotionsQuery(filters.params);
   const [editing, setEditing] = useState<AdminPromotion | "new" | null>(null);
   const [publish] = usePublishPromotionMutation();
   const [archive] = useArchivePromotionMutation();
@@ -296,6 +446,7 @@ function PromotionsTab() {
           New promotion
         </Button>
       </div>
+      <ListToolbar filters={filters} summary={data?.summary} searchLabel="Search promotions" placeholder="Search name or headline" />
       <div className="overflow-hidden rounded-md border bg-card">
         <Table className="table-fixed">
           <TableCaption className="sr-only">Landing-page promotions</TableCaption>
@@ -314,7 +465,7 @@ function PromotionsTab() {
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                  No promotions yet — design one to announce an offer on the landing page.
+                  {filters.params.q || filters.params.status ? "No promotions match these filters." : "No promotions yet — design one to announce an offer on the landing page."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -377,6 +528,7 @@ function PromotionsTab() {
           </TableBody>
         </Table>
       </div>
+      <ListPagination id="promotions-page-size" filters={filters} pagination={data?.pagination} shownCount={rows.length} />
       <PromotionEditorDialog open={editing !== null} promotion={editing === "new" ? null : editing} onOpenChange={(open) => !open && setEditing(null)} />
     </div>
   );

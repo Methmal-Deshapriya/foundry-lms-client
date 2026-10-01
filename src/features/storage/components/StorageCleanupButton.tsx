@@ -25,6 +25,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   STUDENT_AVATAR: "Profile photo",
   PAYMENT_PROOF: "Payment proof",
   PROMOTION_IMAGE: "Promotion image",
+  EXPENSE_RECEIPT: "Expense receipt",
 };
 
 /**

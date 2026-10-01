@@ -38,7 +38,10 @@ export function ActivityHeatmap({ heatmap, isLoading }: { heatmap: HeatmapDay[];
   for (let i = DAYS - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const key = date.toISOString().slice(0, 10);
+    // The local calendar day. toISOString() gave the UTC day, which in Sri
+    // Lanka is the day before, so today's work never showed (code review
+    // M10-13). The server keys days by the Sri Lanka calendar too.
+    const key = format(date, "yyyy-MM-dd");
     cells.push({ date: key, count: countByDate.get(key) ?? 0 });
   }
 

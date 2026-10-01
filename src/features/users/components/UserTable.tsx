@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -193,7 +194,14 @@ export default function UserTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <RoleBadge role={user.role} />
+                    <div className="flex flex-wrap items-center gap-1">
+                      <RoleBadge role={user.role} />
+                      {user.disabledAt ? (
+                        <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+                          Suspended
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <VerifiedBadge verified={user.emailVerified} />

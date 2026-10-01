@@ -16,11 +16,7 @@ import { selectAuthRole, selectIsAuthenticated } from "@/features/auth/authSelec
 import { getDashboardPath } from "@/lib/access";
 import { scrollToHash } from "@/lib/scrollToHash";
 
-const COURSE_LINKS = [
-  { label: "Bootcamps", href: "/bootcamps" },
-  { label: "Pretech Courses", href: "/pretech-courses" },
-  { label: "Free Learning", href: "/free-learning" },
-];
+export type ServiceLink = { label: string; href: string };
 
 /**
  * MarketingNavbar
@@ -31,7 +27,8 @@ const COURSE_LINKS = [
  * "Academy" wordmark — matching the LMS color system doc (red is a
  * signature accent, not a background/CTA color).
  */
-export function MarketingNavbar() {
+export function MarketingNavbar({ serviceLinks }: { serviceLinks: ServiceLink[] }) {
+  const COURSE_LINKS = serviceLinks;
   const pathname = usePathname();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const role = useAppSelector(selectAuthRole);

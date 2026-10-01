@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowRight, X } from "lucide-react";
+import { linkTarget } from "@/lib/links";
 import { cn } from "@/lib/utils";
 import type { PromotionTheme, PublicPromotion } from "../notificationsTypes";
 
@@ -71,6 +72,7 @@ export function PromotionBannerView({
   preview?: boolean;
 }) {
   const theme = THEMES[promotion.theme];
+  const target = linkTarget(promotion.ctaUrl);
   const cta =
     promotion.ctaLabel && promotion.ctaUrl ? (
       <span className={cn("inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 font-alt text-sm font-semibold transition-colors", theme.button)}>
@@ -96,9 +98,9 @@ export function PromotionBannerView({
         {promotion.message ? <p className={cn("mt-0.5 line-clamp-2 font-alt text-xs sm:text-sm", theme.muted)}>{promotion.message}</p> : null}
       </div>
       {cta ? (
-        preview || !promotion.ctaUrl ? (
+        preview || !promotion.ctaUrl || !target ? (
           cta
-        ) : /^https?:/.test(promotion.ctaUrl) ? (
+        ) : target === "external" ? (
           <a href={promotion.ctaUrl} target="_blank" rel="noopener noreferrer">
             {cta}
           </a>
@@ -139,8 +141,12 @@ export function FloatingPromotionBanner({ promotion }: { promotion: PublicPromot
   const version = promotion ? `${promotion.id}:${promotion.updatedAt}` : null;
   const stored = useSyncExternalStore(subscribeNoop, readDismissed, () => null);
   const [dismissedNow, setDismissedNow] = useState<string | null>(null);
+  // The server only sends live promotions, but a visitor can be on the page
+  // when one ends: hide it then, instead of a countdown stuck at zero
+  // (code review M09-12).
+  const now = useNow(Boolean(promotion?.endsAt));
   if (!promotion || !version || stored === version || dismissedNow === version) return null;
-  // Promotions past their end date are already filtered out by the server.
+  if (promotion.endsAt && new Date(promotion.endsAt).getTime() <= now) return null;
 
   const close = () => {
     setDismissedNow(version);

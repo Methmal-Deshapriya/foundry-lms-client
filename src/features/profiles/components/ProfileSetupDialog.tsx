@@ -382,7 +382,8 @@ export function ProfileSetupDialog({
                       <ShieldCheck className="size-3.5 text-emerald-600" aria-hidden="true" /> Shown publicly
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      Your name, photo, headline, about, interests, goals and links — plus your approved projects and the certificates you earn.
+                      Your name, photo, headline, about, interests, goals and links; your approved projects and the certificates you earn, each
+                      with its course name; and the month you joined (&ldquo;Learning since&rdquo;).
                     </p>
                   </div>
                   <div className="rounded-lg border border-border p-3">
@@ -390,13 +391,14 @@ export function ProfileSetupDialog({
                       <EyeOff className="size-3.5 text-muted-foreground" aria-hidden="true" /> Never shown
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      Your email, phone number, address, date of birth, district, A/L stream, courses and payments.
+                      Your email, phone number, address, date of birth, district, A/L stream, enrollments and payments.
                     </p>
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Your page goes live at <span className="font-medium text-foreground">/students/{form.slug}</span> once your first project is
-                  approved by our instructors. Visitors who want to hire you contact Foundry Academy, and we connect you.
+                  approved by our instructors. Visitors who want to hire you contact Foundry Academy, and we connect you. You can hide
+                  your page again at any time.
                 </p>
                 <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 text-sm">
                   <input

@@ -41,6 +41,7 @@ import {
   useUpdateIntakeStatusMutation,
 } from "../catalogApi";
 import { IntakeForm } from "./IntakeForm";
+import { CancelIntakeDialog } from "./CancelIntakeDialog";
 
 const transitions: Record<IntakeStatus, IntakeStatus[]> = {
   DRAFT: ["OPEN_ACTIVE", "CANCELLED"],
@@ -95,7 +96,7 @@ function IntakeActionsMenu({
             disabled={
               (courseReadOnly && target === "OPEN_ACTIVE") ||
               isChangingStatus ||
-              (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED"].includes(target) && !canPublish)
+              (["OPEN_ACTIVE", "CLOSED_ACTIVE", "ARCHIVED", "CANCELLED"].includes(target) && !canPublish)
             }
             onSelect={() => onMove(target)}
           >
@@ -138,6 +139,8 @@ export function IntakeTable({
   const base = `/admin/services/${serviceSlug}/courses/${course.id}/intakes`;
   const courseReadOnly = Boolean(course.archivedAt) || course.status === "ARCHIVED";
   const evergreenLocked = course.service.courseMode === "EVERGREEN" && intakes.length > 0;
+
+  const [cancelTarget, setCancelTarget] = useState<AdminIntake | null>(null);
 
   const move = async (intake: AdminIntake, status: IntakeStatus) => {
     try {
@@ -247,7 +250,7 @@ export function IntakeTable({
                       canDelete={canDelete}
                       isChangingStatus={statusState.isLoading}
                       onEdit={() => setIntakeDialog({ intake })}
-                      onMove={(target) => move(intake, target)}
+                      onMove={(target) => (target === "CANCELLED" ? setCancelTarget(intake) : void move(intake, target))}
                       onDelete={() => removeIntake(intake)}
                     />
                   </TableCell>
@@ -277,6 +280,16 @@ export function IntakeTable({
           ) : null}
         </DialogContent>
       </Dialog>
+      <CancelIntakeDialog
+        intakeCode={cancelTarget?.code ?? ""}
+        enrollmentCount={cancelTarget?.enrollmentCount ?? null}
+        open={Boolean(cancelTarget)}
+        isLoading={statusState.isLoading}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+        onConfirm={() => {
+          if (cancelTarget) void move(cancelTarget, "CANCELLED");
+        }}
+      />
     </>
   );
 }

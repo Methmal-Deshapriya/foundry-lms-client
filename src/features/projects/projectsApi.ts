@@ -103,6 +103,25 @@ export const projectsApi = baseApi.injectEndpoints({
       ],
     }),
 
+    // Student: show or hide one of their own projects on the showcase and
+    // their public profile, in any status (code review M08-01).
+    setProjectVisibility: builder.mutation<StudentProject, { id: string; isPublic: boolean }>({
+      query: ({ id, isPublic }) => ({
+        url: `projects/${id}/visibility`,
+        method: "PATCH",
+        body: { isPublic },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Projects", id },
+        { type: "Projects", id: "MY" },
+        { type: "Projects", id: "ADMIN-LIST" },
+        { type: "Projects", id: "SHOWCASE" },
+        // The public profile lists approved public projects, and goes live
+        // or offline with them.
+        "Profiles",
+      ],
+    }),
+
     // Admin: Review project
     reviewProject: builder.mutation<StudentProject, { id: string; data: ReviewProjectRequest }>({
       query: ({ id, data }) => ({
@@ -128,5 +147,6 @@ export const {
   useGetPublicProjectDetailsQuery,
   useSubmitProjectMutation,
   useUpdateProjectMutation,
+  useSetProjectVisibilityMutation,
   useReviewProjectMutation,
 } = projectsApi;

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { useGuestGuard } from "../hooks/useGuestGuard";
 import { LoadingStatus } from "@/components/ui/loading-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,15 +10,24 @@ import { Skeleton } from "@/components/ui/skeleton";
  * GuestGuard Component
  *
  * Protects routes that should only be accessible to guests (e.g.
- * forgot-password, reset-password, verify-email). If the user IS
- * authenticated, it redirects them to the dashboard.
+ * forgot-password, verify-email). If the user IS authenticated, it
+ * redirects them to the dashboard.
+ *
+ * /reset-password is the exception: a signed-in student who suspects a
+ * leaked password must be able to open the emailed link on the same device.
  */
+const SIGNED_IN_ALLOWED_PATHS = new Set(["/reset-password"]);
+
 export default function GuestGuard({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthResolved, isAuthenticated } = useGuestGuard();
+  const pathname = usePathname();
+  const allowSignedIn = SIGNED_IN_ALLOWED_PATHS.has(pathname);
+  const { isAuthResolved, isAuthenticated } = useGuestGuard({ enabled: !allowSignedIn });
+
+  if (allowSignedIn) return <>{children}</>;
 
   // While checking or if already authenticated (before redirect happens)
   if (!isAuthResolved || isAuthenticated) {

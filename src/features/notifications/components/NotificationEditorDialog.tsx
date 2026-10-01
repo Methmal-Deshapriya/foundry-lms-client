@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { useGetCoursesQuery, useGetIntakesQuery } from "@/features/catalog/catalogApi";
 import { getApiErrorMessage, isNormalizedApiError } from "@/lib/api";
+import { linkTarget } from "@/lib/links";
 import { cn } from "@/lib/utils";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useCreateNotificationMutation, useGetAudienceReachQuery, useUpdateNotificationMutation } from "../notificationsApi";
 import type { AdminNotification, NotificationAudience, SaveNotificationRequest } from "../notificationsTypes";
 
@@ -30,6 +32,27 @@ export const AUDIENCE_LABELS = {
 } as Record<NotificationAudience, string>;
 
 const ALL_PAYERS = "All partial payers";
+const MIN_SEARCH_LENGTH = 3;
+
+/**
+ * Picker options keyed by id, with labels made unique (code review M09-11):
+ * two courses with the same title in different services can both be
+ * chosen, and a label always maps back to exactly one id.
+ */
+function uniqueOptions<T extends { id: string }>(items: T[], labelOf: (item: T) => string) {
+  const seen = new Map<string, number>();
+  const options = items.map((item) => {
+    const base = labelOf(item);
+    const count = (seen.get(base) ?? 0) + 1;
+    seen.set(base, count);
+    return { id: item.id, label: count === 1 ? base : `${base} (${count})` };
+  });
+  return {
+    labels: options.map((option) => option.label),
+    labelOf: (id: string | null) => options.find((option) => option.id === id)?.label ?? "",
+    idOf: (label: string) => options.find((option) => option.label === label)?.id ?? null,
+  };
+}
 
 type Draft = {
   audience: NotificationAudience;
@@ -81,6 +104,7 @@ export function NotificationEditorDialog({
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(() => initialDraft(notification));
   const [errors, setErrors] = useState<Partial<Record<keyof Draft, string>>>({});
+  const [intakeSearch, setIntakeSearch] = useState("");
   const [trackedKey, setTrackedKey] = useState<string | null>(null);
   const key = open ? (notification?.id ?? "new") : null;
   if (key !== trackedKey) {
@@ -89,13 +113,24 @@ export function NotificationEditorDialog({
       setStep(0);
       setDraft(initialDraft(notification));
       setErrors({});
+      setIntakeSearch("");
     }
   }
 
   const { data: courses } = useGetCoursesQuery(undefined, { skip: !open });
-  const { data: intakes } = useGetIntakesQuery(undefined, { skip: !open });
+  // The intake picker searches the server (newest first), so every intake
+  // can be found, not just the first 100 (code review M09-11).
+  const debouncedIntakeSearch = useDebouncedValue(intakeSearch.trim(), 300);
+  const appliedIntakeSearch = debouncedIntakeSearch.length >= MIN_SEARCH_LENGTH ? debouncedIntakeSearch : "";
+  const { data: intakes } = useGetIntakesQuery({ sort: "recent", q: appliedIntakeSearch || undefined }, { skip: !open });
   const courseList = courses?.courses ?? [];
-  const intakeList = intakes?.intakes ?? [];
+  // The intake already chosen stays in the list even when a search hides it.
+  const savedIntake = notification?.intake && notification.intake.id === draft.intakeId ? notification.intake : null;
+  const fetchedIntakes = intakes?.intakes ?? [];
+  const intakeList: { id: string; code: string; course?: { title: string } | null }[] =
+    savedIntake && !fetchedIntakes.some((intake) => intake.id === savedIntake.id) ? [{ ...savedIntake, course: notification?.course ?? null }, ...fetchedIntakes] : fetchedIntakes;
+  // Who sees a published notification can't change (code review M09-04).
+  const audienceLocked = notification?.status === "PUBLISHED";
   const { data: reachData } = useGetAudienceReachQuery(
     { audience: draft.audience, courseId: draft.courseId ?? undefined, intakeId: draft.intakeId ?? undefined },
     { skip: !open || (draft.audience === "COURSE" && !draft.courseId) || (draft.audience === "INTAKE" && !draft.intakeId) },
@@ -115,7 +150,7 @@ export function NotificationEditorDialog({
       if (draft.title.trim().length < 3) next.title = "The title needs at least 3 characters.";
       if (!draft.message.trim()) next.message = "Write the message.";
       if (draft.linkUrl.trim() && !draft.linkLabel.trim()) next.linkLabel = "Add a label for the button.";
-      if (draft.linkUrl.trim() && !/^\/(?!\/)/.test(draft.linkUrl.trim()) && !/^https:\/\//.test(draft.linkUrl.trim())) {
+      if (draft.linkUrl.trim() && !linkTarget(draft.linkUrl)) {
         next.linkUrl = "Use a page path like /explore, or a full https:// link.";
       }
     }
@@ -167,17 +202,27 @@ export function NotificationEditorDialog({
       </p>
     ) : null;
 
-  const courseLabels = courseList.map((course) => course.title);
-  const intakeLabels = intakeList.map((intake) => `${intake.code} — ${intake.course?.title ?? ""}`.trim());
-  const selectedCourseLabel = courseList.find((course) => course.id === draft.courseId)?.title ?? "";
-  const selectedIntake = intakeList.find((intake) => intake.id === draft.intakeId);
-  const selectedIntakeLabel = selectedIntake ? `${selectedIntake.code} — ${selectedIntake.course?.title ?? ""}`.trim() : "";
+  const courseOptions = uniqueOptions(courseList, (course) => (course.service?.title ? `${course.title} · ${course.service.title}` : course.title));
+  const intakeOptions = uniqueOptions(intakeList, (intake) => `${intake.code} — ${intake.course?.title ?? ""}`.trim());
+  const courseLabels = courseOptions.labels;
+  const intakeLabels = intakeOptions.labels;
+  const selectedCourseLabel = courseOptions.labelOf(draft.courseId);
+  const selectedIntakeLabel = intakeOptions.labelOf(draft.intakeId);
   const payerScopeLabels = [ALL_PAYERS, ...courseLabels.map((label) => `Course: ${label}`), ...intakeLabels.map((label) => `Intake: ${label}`)];
   const payerScopeValue = draft.intakeId ? `Intake: ${selectedIntakeLabel}` : draft.courseId ? `Course: ${selectedCourseLabel}` : ALL_PAYERS;
+  const intakeSearchField = (
+    <Input
+      aria-label="Search intakes by code or course"
+      value={intakeSearch}
+      onChange={(event) => setIntakeSearch(event.target.value)}
+      placeholder="Search intakes (code or course, 3+ letters)"
+      className="h-9"
+    />
+  );
 
   const textareaClass = "min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none";
   const reachText =
-    reachData === undefined ? "Counting…" : `This will reach ${reachData.reach} student${reachData.reach === 1 ? "" : "s"}${draft.audience === "PARTIAL_PAYERS" ? " (right now — the list updates as people pay)" : ""}.`;
+    reachData === undefined ? "Counting…" : `This will reach ${reachData.reach} student${reachData.reach === 1 ? "" : "s"}${draft.audience === "PARTIAL_PAYERS" ? " who still owe money (right now — the list updates as people pay)" : ""}.`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -209,7 +254,19 @@ export function NotificationEditorDialog({
         </div>
 
         <form onSubmit={submit} className="space-y-5 pt-1">
-          {step === 0 ? (
+          {step === 0 && audienceLocked ? (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-sm font-semibold text-foreground">{AUDIENCE_LABELS[draft.audience]}</p>
+                <p className="text-xs text-muted-foreground">{notification?.intake?.code ?? notification?.course?.title ?? "Everyone in this audience"}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Students already have this notification, so who sees it can&apos;t change. To reach a different group, archive it and create a new one. Changing the
+                title or message shows it as unread again.
+              </p>
+            </div>
+          ) : null}
+          {step === 0 && !audienceLocked ? (
             <>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {AUDIENCE_OPTIONS.map(({ value, label, description, icon: Icon }) => (
@@ -240,7 +297,7 @@ export function NotificationEditorDialog({
                     placeholder="Choose a course"
                     value={selectedCourseLabel}
                     options={courseLabels}
-                    onChange={(label) => update({ courseId: courseList.find((course) => course.title === label)?.id ?? null })}
+                    onChange={(label) => update({ courseId: courseOptions.idOf(label) })}
                     className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                   />
                   {errorText("courseId")}
@@ -249,13 +306,14 @@ export function NotificationEditorDialog({
               {draft.audience === "INTAKE" ? (
                 <div className="space-y-2">
                   <Label htmlFor="notification-intake">Intake</Label>
+                  {intakeSearchField}
                   <Select
                     id="notification-intake"
                     accent="black"
                     placeholder="Choose an intake"
                     value={selectedIntakeLabel}
                     options={intakeLabels}
-                    onChange={(label) => update({ intakeId: intakeList[intakeLabels.indexOf(label)]?.id ?? null })}
+                    onChange={(label) => update({ intakeId: intakeOptions.idOf(label) })}
                     className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                   />
                   {errorText("intakeId")}
@@ -264,6 +322,7 @@ export function NotificationEditorDialog({
               {draft.audience === "PARTIAL_PAYERS" ? (
                 <div className="space-y-2">
                   <Label htmlFor="notification-payer-scope">Which partial payers?</Label>
+                  {intakeSearchField}
                   <Select
                     id="notification-payer-scope"
                     accent="black"
@@ -271,8 +330,8 @@ export function NotificationEditorDialog({
                     options={payerScopeLabels}
                     onChange={(label) => {
                       if (label === ALL_PAYERS) update({ courseId: null, intakeId: null });
-                      else if (label.startsWith("Course: ")) update({ courseId: courseList[courseLabels.indexOf(label.slice(8))]?.id ?? null, intakeId: null });
-                      else update({ intakeId: intakeList[intakeLabels.indexOf(label.slice(8))]?.id ?? null, courseId: null });
+                      else if (label.startsWith("Course: ")) update({ courseId: courseOptions.idOf(label.slice(8)), intakeId: null });
+                      else update({ intakeId: intakeOptions.idOf(label.slice(8)), courseId: null });
                     }}
                     className="h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm"
                   />

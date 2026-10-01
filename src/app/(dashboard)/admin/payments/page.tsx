@@ -36,6 +36,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { canManagePayments, canViewPayments } from "@/lib/access";
 import { getApiErrorMessage } from "@/lib/api";
 import { downloadCsv, toCsv } from "@/lib/csv";
+import { dayEndIso, dayStartIso } from "@/lib/dates";
 import { Icons } from "@/lib/icons";
 import { cn, formatLKR, formatLKRCompact } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
@@ -83,8 +84,9 @@ function LedgerTab({ canManage, onOpen }: { canManage: boolean; onOpen: (id: str
 
   const filters: LedgerFilters = {
     q: appliedQ || undefined,
-    from: range.from ? `${range.from}T00:00:00` : undefined,
-    to: range.to ? `${range.to}T23:59:59.999` : undefined,
+    // Local (Sri Lanka) day boundaries as real instants (M03-07).
+    from: range.from ? dayStartIso(range.from) : undefined,
+    to: range.to ? dayEndIso(range.to) : undefined,
     type: type || undefined,
     method,
   };
@@ -99,7 +101,8 @@ function LedgerTab({ canManage, onOpen }: { canManage: boolean; onOpen: (id: str
     try {
       const all = [];
       for (let pageOffset = 0; ; pageOffset += EXPORT_PAGE_SIZE) {
-        const page = await fetchPage({ ...filters, limit: EXPORT_PAGE_SIZE, offset: pageOffset }).unwrap();
+        // summary=false: the export only needs rows, not the totals (M03-16).
+        const page = await fetchPage({ ...filters, limit: EXPORT_PAGE_SIZE, offset: pageOffset, summary: "false" }).unwrap();
         all.push(...page.entries);
         if (!page.pagination.hasMore) break;
       }

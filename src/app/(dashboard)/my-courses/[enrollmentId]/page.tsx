@@ -25,6 +25,8 @@ import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { SubmitProjectDialog } from "@/features/projects/components/SubmitProjectDialog";
+import { ProfileSetupDialog } from "@/features/profiles/components/ProfileSetupDialog";
+import { useGetMyProfileQuery } from "@/features/profiles/profilesApi";
 import { CardGridSkeleton, LoadingStatus } from "@/components/ui/loading-skeletons";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -76,6 +78,15 @@ export default function LearningPage() {
   } = useGetClassroomQuery(enrollmentId);
   const { data: projectsPage } = useGetMyProjectsQuery({ limit: 50 });
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  // A first submission starts with setting up the public profile (the
+  // server refuses a project without one), same as on My Projects — code
+  // review M08-03.
+  const { data: myProfile } = useGetMyProfileQuery();
+  const [profileSetupOpen, setProfileSetupOpen] = useState(false);
+  const startSubmission = () => {
+    if (myProfile?.profile) setSubmitDialogOpen(true);
+    else setProfileSetupOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -283,7 +294,7 @@ export default function LearningPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setSubmitDialogOpen(true)}
+                    onClick={startSubmission}
                     className="inline-flex items-center gap-1 text-[#191919] hover:text-[#E91717]"
                   >
                     Submit project
@@ -319,6 +330,12 @@ export default function LearningPage() {
         open={submitDialogOpen}
         onOpenChange={setSubmitDialogOpen}
         defaultEnrollmentId={enrollment.id}
+      />
+      <ProfileSetupDialog
+        open={profileSetupOpen}
+        onOpenChange={setProfileSetupOpen}
+        mode="setup"
+        onSaved={() => setSubmitDialogOpen(true)}
       />
     </StudentOnlyRoute>
   );

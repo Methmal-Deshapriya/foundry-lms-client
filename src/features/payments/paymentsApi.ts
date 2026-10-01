@@ -22,18 +22,18 @@ export const paymentsApi = baseApi.injectEndpoints({
     refundPayment: builder.mutation<PaymentDetail, { id: string; amount: number; reason: string; method?: PaymentMethod | null; paidAt?: string }>({
       query: ({ id, ...body }) => ({ url: `/payments/${id}/refund`, method: "POST", body }),
       // Revenue figures elsewhere (dashboards, course analytics) read the same ledger.
-      invalidatesTags: ["Payments", "Enrollments", "Courses", "Intakes"],
+      invalidatesTags: ["Payments", "Enrollments", "Courses", "Intakes", "Partners"],
     }),
     reversePayment: builder.mutation<PaymentDetail, { id: string; reason: string }>({
       query: ({ id, ...body }) => ({ url: `/payments/${id}/reverse`, method: "POST", body }),
-      invalidatesTags: ["Payments", "Enrollments", "Courses", "Intakes"],
+      invalidatesTags: ["Payments", "Enrollments", "Courses", "Intakes", "Partners"],
     }),
     updatePaymentDetails: builder.mutation<
       PaymentDetail,
       { id: string; method?: PaymentMethod | null; paidAt?: string; externalReference?: string | null; proofObjectId?: string | null }
     >({
       query: ({ id, ...body }) => ({ url: `/payments/${id}/details`, method: "PATCH", body }),
-      invalidatesTags: ["Payments"],
+      invalidatesTags: ["Payments", "Partners"],
     }),
   }),
 });

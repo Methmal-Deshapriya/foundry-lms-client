@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { formatColomboDay } from "@/lib/dates";
 import { QRCodeSVG } from "qrcode.react";
 
 export interface CertificateTemplateProps {
@@ -41,7 +41,7 @@ export default function CertificateTemplate({
             className="h-9 w-auto"
           />
           <p className="mt-2 text-[0.75rem]/[1rem] text-gray-500">
-            {format(new Date(issuedDate), "MMM d, yyyy")}
+            {formatColomboDay(issuedDate)}
           </p>
           <h1 className="mt-2 text-[1.25rem] leading-tight font-extrabold text-black">
             {displayName}

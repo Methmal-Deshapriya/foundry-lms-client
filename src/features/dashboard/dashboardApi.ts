@@ -35,6 +35,9 @@ export const dashboardApi = baseApi.injectEndpoints({
         "Certificates",
         "Users",
         { type: "Projects", id: "ADMIN-LIST" },
+        // Revenue tiles and the intake cards (code review M10-15).
+        "Payments",
+        "Intakes",
       ],
     }),
   }),

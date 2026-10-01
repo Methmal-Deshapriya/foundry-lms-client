@@ -460,7 +460,8 @@ export const catalogApi = baseApi.injectEndpoints({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["Courses"],
+      // The intake workspace reads its course through getIntake (M06-11).
+      invalidatesTags: ["Courses", "Intakes"],
     }),
     publishCourse: builder.mutation<AdminCourse, string>({
       query: (id) => ({ url: `/courses/${id}/publish`, method: "PATCH" }),
@@ -490,6 +491,7 @@ export const catalogApi = baseApi.injectEndpoints({
         courseId?: string;
         status?: IntakeStatus;
         q?: string;
+        sort?: "catalog" | "recent";
       } | void
     >({
       query: (params) => ({
@@ -517,7 +519,7 @@ export const catalogApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Courses", "Intakes", "Curriculum"],
+      invalidatesTags: ["Courses", "Intakes", "Curriculum", "Services"],
     }),
     getIntake: builder.query<AdminIntake, string>({
       query: (id) => `/intakes/${id}`,
@@ -550,11 +552,12 @@ export const catalogApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: { status, expectedStatus },
       }),
-      invalidatesTags: ["Courses", "Intakes", "Curriculum", "Enrollments"],
+      invalidatesTags: ["Courses", "Intakes", "Curriculum", "Enrollments", "Services"],
     }),
     deleteIntakePermanently: builder.mutation<PermanentDeleteResult, string>({
       query: (id) => ({ url: `/intakes/${id}`, method: "DELETE" }),
       invalidatesTags: [
+        "Services",
         "Courses",
         "Intakes",
         "Sessions",
@@ -577,6 +580,7 @@ export const {
   useGetPublicLearningServicesQuery,
   useGetPublicCoursesForServiceQuery,
   useGetPublicExploreQuery,
+  useLazyGetPublicExploreQuery,
   useGetAdminLearningServiceSummariesQuery,
   useGetLearningServiceQuery,
   useCreateLearningServiceMutation,

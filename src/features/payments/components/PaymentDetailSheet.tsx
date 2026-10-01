@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { dayOf, dayToInstant } from "@/lib/dates";
 import { Download, ExternalLink, FileImage, Loader2, RotateCcw, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -56,7 +57,7 @@ function RefundDialog({ payment, open, onOpenChange }: { payment: PaymentDetail;
 
   const submit = async () => {
     try {
-      await refund({ id: payment.id, amount: Number(amount), reason: reason.trim(), method: methodFromLabel(method), paidAt }).unwrap();
+      await refund({ id: payment.id, amount: Number(amount), reason: reason.trim(), method: methodFromLabel(method), paidAt: dayToInstant(paidAt) }).unwrap();
       toast.success("Refund recorded.");
       onOpenChange(false);
     } catch (error) {
@@ -271,8 +272,8 @@ export function PaymentDetailSheet({ paymentId, canManage, onOpenChange }: { pay
                     <DatePicker
                       id="payment-date"
                       disabled={!canManage || isSaving}
-                      value={payment.paidAt.slice(0, 10)}
-                      onChange={(value) => value && void save({ paidAt: value })}
+                      value={dayOf(payment.paidAt)}
+                      onChange={(value) => value && value !== dayOf(payment.paidAt) && void save({ paidAt: dayToInstant(value) })}
                       className="h-10 rounded-md"
                     />
                   </div>

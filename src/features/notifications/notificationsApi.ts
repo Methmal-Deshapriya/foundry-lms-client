@@ -6,6 +6,8 @@ import type {
   NotificationAudience,
   PublicPromotion,
   PublishStatus,
+  PublishStatusSummary,
+  ReminderEmailRecipients,
   SaveNotificationRequest,
   SavePromotionRequest,
   StudentNotification,
@@ -21,9 +23,26 @@ export const notificationsApi = baseApi.injectEndpoints({
       query: () => "/notifications/me",
       providesTags: [{ type: "Notifications", id: "ME" }],
     }),
+    // Updated in place rather than refetched: hovering across the list used
+    // to send one read and one full refetch per item (code review M09-13).
     markNotificationRead: builder.mutation<void, string>({
       query: (id) => ({ url: `/notifications/me/${id}/read`, method: "POST" }),
-      invalidatesTags: [{ type: "Notifications", id: "ME" }],
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          notificationsApi.util.updateQueryData("getMyNotifications", undefined, (draft) => {
+            const item = draft.notifications.find((notification) => notification.id === id);
+            if (item && !item.read) {
+              item.read = true;
+              draft.unreadCount = Math.max(0, draft.unreadCount - 1);
+            }
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
     }),
     markAllNotificationsRead: builder.mutation<void, void>({
       query: () => ({ url: "/notifications/me/read-all", method: "POST" }),
@@ -35,7 +54,7 @@ export const notificationsApi = baseApi.injectEndpoints({
     }),
 
     // ---- admin: notifications
-    getAdminNotifications: builder.query<{ notifications: AdminNotification[]; pagination: Pagination }, ListParams>({
+    getAdminNotifications: builder.query<{ notifications: AdminNotification[]; summary: PublishStatusSummary; pagination: Pagination }, ListParams>({
       query: (params) => ({ url: "/notifications/admin", params }),
       providesTags: ["Notifications"],
     }),
@@ -45,6 +64,10 @@ export const notificationsApi = baseApi.injectEndpoints({
     getEmailQuota: builder.query<EmailQuota, void>({
       query: () => "/notifications/admin/email-quota",
       providesTags: [{ type: "Notifications", id: "QUOTA" }],
+    }),
+    getReminderEmailRecipients: builder.query<ReminderEmailRecipients, string>({
+      query: (id) => `/notifications/admin/${id}/email-recipients`,
+      providesTags: (_result, _error, id) => [{ type: "Notifications", id: `EMAIL-${id}` }],
     }),
     createNotification: builder.mutation<AdminNotification, SaveNotificationRequest>({
       query: (body) => ({ url: "/notifications/admin", method: "POST", body }),
@@ -90,7 +113,7 @@ export const notificationsApi = baseApi.injectEndpoints({
         response && typeof response === "object" && "headline" in response ? (response as PublicPromotion) : null,
       providesTags: [{ type: "Promotions", id: "ACTIVE" }],
     }),
-    getAdminPromotions: builder.query<{ promotions: AdminPromotion[]; pagination: Pagination }, ListParams>({
+    getAdminPromotions: builder.query<{ promotions: AdminPromotion[]; summary: PublishStatusSummary; pagination: Pagination }, ListParams>({
       query: (params) => ({ url: "/notifications/admin/promotions", params }),
       providesTags: ["Promotions"],
     }),
@@ -125,6 +148,7 @@ export const {
   useGetAdminNotificationsQuery,
   useGetAudienceReachQuery,
   useGetEmailQuotaQuery,
+  useGetReminderEmailRecipientsQuery,
   useCreateNotificationMutation,
   useUpdateNotificationMutation,
   usePublishNotificationMutation,

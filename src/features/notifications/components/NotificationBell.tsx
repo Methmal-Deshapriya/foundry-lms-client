@@ -7,6 +7,7 @@ import { ArrowRight, Bell, CheckCheck, Pin, Wallet, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { linkTarget } from "@/lib/links";
 import { cn, formatLKR } from "@/lib/utils";
 import {
   useDismissNotificationMutation,
@@ -17,7 +18,9 @@ import {
 import type { StudentNotification } from "../notificationsTypes";
 
 export function NotificationLink({ notification, onNavigate }: { notification: StudentNotification; onNavigate?: () => void }) {
-  if (!notification.linkUrl || !notification.linkLabel) return null;
+  // Only a safe in-app path or an https link is rendered (code review M09-07).
+  const target = linkTarget(notification.linkUrl);
+  if (!notification.linkUrl || !notification.linkLabel || !target) return null;
   const className = "inline-flex items-center gap-1 text-sm font-semibold text-foreground underline-offset-2 hover:underline";
   const content = (
     <>
@@ -25,7 +28,7 @@ export function NotificationLink({ notification, onNavigate }: { notification: S
       <ArrowRight className="size-3.5" aria-hidden="true" />
     </>
   );
-  return /^https?:/.test(notification.linkUrl) ? (
+  return target === "external" ? (
     <a href={notification.linkUrl} target="_blank" rel="noopener noreferrer" className={className} onClick={onNavigate}>
       {content}
     </a>

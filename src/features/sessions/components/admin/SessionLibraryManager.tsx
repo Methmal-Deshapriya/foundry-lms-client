@@ -283,8 +283,10 @@ export default function SessionLibraryManager() {
   const [pendingSave, setPendingSave] = useState<CreateSessionRequest | null>(null);
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
 
+  // Newest intakes first (the API returns at most 100), so the intakes being
+  // built right now are always in the picker (M07-03).
   const { data: intakesData, isFetching: isIntakesFetching } = useGetIntakesQuery(
-    undefined,
+    { sort: "recent" },
     { skip: !attachTarget },
   );
 

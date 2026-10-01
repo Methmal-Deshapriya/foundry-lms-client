@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import { Loader2, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { isNormalizedApiError } from "@/lib/api";
+import { useAppDispatch } from "@/store/hooks";
+import { baseApi } from "@/store/baseApi";
+import { clearUser } from "../authSlice";
 
 // 1. Define Validation Schema (Matches backend resetPasswordSchema + confirm password)
 const resetPasswordSchema = z
@@ -50,6 +53,7 @@ export default function ResetPasswordForm() {
   const token = searchParams.get("token");
 
   const [resetPassword, { isLoading }] = useResetPasswordMutation();
+  const dispatch = useAppDispatch();
 
   const {
     register,
@@ -66,6 +70,10 @@ export default function ResetPasswordForm() {
 
     try {
       await resetPassword({ token, newPassword: values.newPassword }).unwrap();
+      // The reset ends every session, including this browser's if it was
+      // signed in, so drop that state before going to sign-in.
+      dispatch(clearUser());
+      dispatch(baseApi.util.resetApiState());
       toast.success("Password reset successful. Please sign in.");
       router.push("/sign-in");
     } catch (error: unknown) {

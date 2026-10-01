@@ -48,8 +48,8 @@ import {
   type DateRange,
 } from "@/components/ui/date-range-picker";
 import { useAppSelector } from "@/store/hooks";
-import { selectAuthRole } from "@/features/auth/authSelectors";
-import { isSuperAdmin } from "@/lib/access";
+import { selectAuthUser } from "@/features/auth/authSelectors";
+import { PERMISSIONS, canViewAuditLogs, hasPermission } from "@/lib/access";
 import { useGetAuditLogsQuery } from "@/features/audit/auditApi";
 import type { AuditLogsResponse } from "@/features/audit/auditTypes";
 import { Icons } from "@/lib/icons";
@@ -58,7 +58,6 @@ import {
   ENROLLMENT_REQUEST_STATUS_STYLES,
   INTAKE_STATUS_STYLES,
 } from "@/lib/statusColors";
-import type { Role } from "@/lib/constants";
 import { useGetAdminDashboardQuery } from "../dashboardApi";
 import type {
   AdminDashboardSummary,
@@ -97,7 +96,11 @@ type TrendFilter =
  * only page-switching — matching the rest of this session's admin pages.
  */
 export default function AdminDashboard() {
-  const role = useAppSelector(selectAuthRole);
+  const authUser = useAppSelector(selectAuthUser);
+  // Gated on capabilities, not the role name: the activity feed is the
+  // audit log, and the cleanup button runs a permanent delete.
+  const showActivity = canViewAuditLogs(authUser);
+  const canCleanUpStorage = hasPermission(authUser, PERMISSIONS.CATALOG_DELETE_PERMANENTLY);
   const [page, setPage] = useState<1 | 2>(1);
   const [trendFilter, setTrendFilter] = useState<TrendFilter>({
     mode: "preset",
@@ -112,7 +115,7 @@ export default function AdminDashboard() {
   );
   const { data: auditData, isLoading: isAuditLoading } = useGetAuditLogsQuery(
     { limit: 8 },
-    { skip: !isSuperAdmin(role) || page !== 2 },
+    { skip: !showActivity || page !== 2 },
   );
 
   const maxTopCourse = Math.max(
@@ -210,7 +213,8 @@ export default function AdminDashboard() {
         <AdminDashboardPageTwo
           data={data}
           isLoading={isLoading}
-          role={role}
+          showActivity={showActivity}
+          canCleanUpStorage={canCleanUpStorage}
           auditData={auditData}
           isAuditLoading={isAuditLoading}
           maxTopCourse={maxTopCourse}
@@ -493,14 +497,16 @@ function AdminDashboardPageOne({
 function AdminDashboardPageTwo({
   data,
   isLoading,
-  role,
+  showActivity,
+  canCleanUpStorage,
   auditData,
   isAuditLoading,
   maxTopCourse,
 }: {
   data: AdminDashboardSummary | undefined;
   isLoading: boolean;
-  role: Role | null;
+  showActivity: boolean;
+  canCleanUpStorage: boolean;
   auditData: AuditLogsResponse | undefined;
   isAuditLoading: boolean;
   maxTopCourse: number;
@@ -561,13 +567,13 @@ function AdminDashboardPageTwo({
       <div
         className={cn(
           "grid flex-1 grid-cols-1 gap-4 xl:min-h-0",
-          isSuperAdmin(role) && "xl:grid-cols-3",
+          showActivity && "xl:grid-cols-3",
         )}
       >
         <div
           className={cn(
             "flex flex-col gap-4 xl:min-h-0",
-            isSuperAdmin(role) && "xl:col-span-2",
+            showActivity && "xl:col-span-2",
           )}
         >
           <div className="flex-1 xl:min-h-0">
@@ -586,13 +592,13 @@ function AdminDashboardPageTwo({
           </div>
         </div>
 
-        {isSuperAdmin(role) ? (
+        {showActivity ? (
           <Section
             title="Recent activity"
             className="flex flex-col xl:min-h-0"
             action={
               <div className="flex items-center gap-3">
-                <StorageCleanupButton />
+                {canCleanUpStorage ? <StorageCleanupButton /> : null}
                 <Link
                   href="/admin/audit"
                   className="text-xs font-semibold text-[#E91717] hover:text-[#C91414]"

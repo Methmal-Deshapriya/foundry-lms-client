@@ -4,6 +4,7 @@ import {
   getPublicLearningServices,
   getPublicServiceCatalog,
 } from "@/lib/catalog";
+import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -16,10 +17,12 @@ export async function generateMetadata({
     (item) => item.slug === service,
   );
   return definition
-    ? {
-        title: `${definition.title} | Foundry Academy`,
-        description: definition.description,
-      }
+    ? pageMetadata({
+        title: definition.title,
+        description: definition.summary || definition.description,
+        path: `/${service}`,
+        image: definition.heroImageUrl ?? definition.cardImageUrl,
+      })
     : {};
 }
 

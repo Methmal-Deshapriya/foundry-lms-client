@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Check, Copy, Loader2, MoreHorizontal, RotateCcw, UserCheck, XCircle } from "lucide-react";
+import { Check, Copy, Loader2, MessageCircle, MoreHorizontal, Phone, RotateCcw, UserCheck, XCircle } from "lucide-react";
+import { toWhatsAppNumber } from "@/features/payments/paymentLabels";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -49,6 +50,7 @@ import { formatLKR } from "@/lib/utils";
 import { ENROLLMENT_REQUEST_STATUS_STYLES } from "@/lib/statusColors";
 import {
   useEnrollFromRequestMutation,
+  useGetEnrollmentRequestQuery,
   useGetIntakeEnrollmentRequestsQuery,
   useUpdateEnrollmentRequestStatusMutation,
 } from "@/features/enrollments/enrollmentRequestsApi";
@@ -148,6 +150,34 @@ function RequestActionsMenu({
  * Enrollment + Payment through the same enroll mutation the direct
  * search-and-enroll flow (the Enrollments tab) uses.
  */
+// Call or WhatsApp the number the student left, in one tap (M05-13).
+function PhoneActions({ phone, name, courseTitle }: { phone: string; name: string; courseTitle: string }) {
+  const whatsApp = toWhatsAppNumber(phone);
+  const message = `Hi ${name}, this is Foundry Academy about your enrollment request${courseTitle ? ` for ${courseTitle}` : ""}.`;
+  return (
+    <>
+      {whatsApp ? (
+        <a
+          href={`https://wa.me/${whatsApp}?text=${encodeURIComponent(message)}`}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`WhatsApp ${phone}`}
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <MessageCircle className="size-3.5" aria-hidden="true" />
+        </a>
+      ) : null}
+      <a
+        href={`tel:${phone}`}
+        aria-label={`Call ${phone}`}
+        className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        <Phone className="size-3.5" aria-hidden="true" />
+      </a>
+    </>
+  );
+}
+
 export function EnrollmentRequestsTab({
   intakeId,
   coursePrice,
@@ -179,9 +209,15 @@ export function EnrollmentRequestsTab({
   const [updateStatus, { isLoading: isUpdatingStatus }] = useUpdateEnrollmentRequestStatusMutation();
   const [enrollFromRequest, { isLoading: isEnrolling }] = useEnrollFromRequestMutation();
 
-  const [detailRequest, setDetailRequest] = useState<EnrollmentRequest | null>(
-    () => (initialRequestId ? requests.find((request) => request.id === initialRequestId) ?? null : null),
-  );
+  // The sheet tracks a request *id* and always shows live data: from the
+  // current page when it's there, otherwise fetched on its own (a deep link
+  // from the admin email may point at another page or a retargeted request).
+  // Code review M05-05/M05-06.
+  const [detailRequestId, setDetailRequestId] = useState<string | null>(initialRequestId ?? null);
+  const requestOnPage = detailRequestId ? requests.find((request) => request.id === detailRequestId) : undefined;
+  const { data: fetchedDetail } = useGetEnrollmentRequestQuery(detailRequestId ?? "", { skip: !detailRequestId || Boolean(requestOnPage) });
+  const detailRequest: EnrollmentRequest | null = detailRequestId ? requestOnPage ?? fetchedDetail ?? null : null;
+  const setDetailRequest = (request: EnrollmentRequest | null) => setDetailRequestId(request?.id ?? null);
   const [enrollTarget, setEnrollTarget] = useState<EnrollmentRequest | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PaidStatus>("COMPLETED");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
@@ -231,6 +267,8 @@ export function EnrollmentRequestsTab({
 
   const openEnroll = (request: EnrollmentRequest) => {
     setPaymentStatus("COMPLETED");
+    // Never carry the previous student's payment method over (M05-05).
+    setPaymentMethod(null);
     setReference("");
     setNote("");
     setEnrollTarget(request);
@@ -350,6 +388,7 @@ export function EnrollmentRequestsTab({
                   <TableCell className="font-mono text-sm">
                     <div className="flex items-center gap-1.5">
                       <span className="truncate">{request.contactPhone}</span>
+                      <PhoneActions phone={request.contactPhone} name={request.student?.firstName ?? ""} courseTitle={request.course?.title ?? ""} />
                       <Button
                         aria-label="Copy phone number"
                         variant="ghost"
@@ -449,7 +488,7 @@ export function EnrollmentRequestsTab({
         </DialogContent>
       </Dialog>
 
-      <Sheet open={Boolean(detailRequest)} onOpenChange={(open) => !open && setDetailRequest(null)}>
+      <Sheet open={Boolean(detailRequestId)} onOpenChange={(open) => !open && setDetailRequest(null)}>
         <SheetContent className="flex flex-col border-border bg-white sm:max-w-lg" style={{ backgroundImage: "none" }}>
           {detailRequest ? (
             <>
@@ -468,7 +507,10 @@ export function EnrollmentRequestsTab({
                 <div className="space-y-1.5 text-sm">
                   <p className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Phone</span>
-                    <span className="font-mono font-medium">{detailRequest.contactPhone}</span>
+                    <span className="flex items-center gap-1 font-mono font-medium">
+                      {detailRequest.contactPhone}
+                      <PhoneActions phone={detailRequest.contactPhone} name={detailRequest.student?.firstName ?? ""} courseTitle={detailRequest.course?.title ?? ""} />
+                    </span>
                   </p>
                   <p className="flex justify-between gap-4">
                     <span className="text-muted-foreground">Requested</span>

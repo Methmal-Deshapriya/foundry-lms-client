@@ -33,16 +33,23 @@ async function fetchCatalog<T>(path: string): Promise<T | null> {
   }
 }
 
-export const getPublicServiceCatalog = (service: LearningServiceSlug) =>
-  fetchCatalog<PublicServiceCatalog>(`/catalog/${service}/courses`);
+// Route params come straight from the URL. Anything that isn't a real slug
+// is "not found" without calling the API, and real slugs are still encoded,
+// so a crafted address can never steer this server-side fetch to another
+// API path (code review M06-14).
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const isCatalogSlug = (value: string) => SLUG_PATTERN.test(value);
 
-export const getPublicCourse = (
+export const getPublicServiceCatalog = async (service: LearningServiceSlug) =>
+  isCatalogSlug(service) ? fetchCatalog<PublicServiceCatalog>(`/catalog/${encodeURIComponent(service)}/courses`) : null;
+
+export const getPublicCourse = async (
   service: LearningServiceSlug,
   courseSlug: string,
 ) =>
-  fetchCatalog<PublicCourseDetail>(
-    `/catalog/${service}/courses/${courseSlug}`,
-  );
+  isCatalogSlug(service) && isCatalogSlug(courseSlug)
+    ? fetchCatalog<PublicCourseDetail>(`/catalog/${encodeURIComponent(service)}/courses/${encodeURIComponent(courseSlug)}`)
+    : null;
 
 export const getPublicLearningServices = () =>
   fetchCatalog<{ services: PublicLearningService[] }>("/catalog/services");

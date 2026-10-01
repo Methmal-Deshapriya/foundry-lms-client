@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { CalendarDays, FolderCode, Mail, Phone, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import AccountProfileForm from "@/features/auth/components/AccountProfileForm";
+import ChangePasswordForm from "@/features/auth/components/ChangePasswordForm";
 import { selectAuthUser } from "@/features/auth/authSelectors";
 import { RoleBadge } from "@/features/users/components/RoleBadge";
 import { VerifiedBadge } from "@/features/users/components/VerifiedBadge";
@@ -98,6 +99,11 @@ export default function AccountPage() {
             <p className="text-sm text-muted-foreground">Keep these up to date so certificates and enrollments use the right details.</p>
           </div>
           <AccountProfileForm user={user} />
+          <div className="pt-3">
+            <h2 className="text-base font-semibold text-foreground">Security</h2>
+            <p className="text-sm text-muted-foreground">Change your password any time; you&apos;ll stay signed in on this device.</p>
+          </div>
+          <ChangePasswordForm />
         </section>
 
         <aside className="space-y-4 xl:sticky xl:top-6">

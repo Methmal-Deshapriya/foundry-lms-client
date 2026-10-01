@@ -11,8 +11,7 @@ import { Testimonials } from "@/components/marketing/Testimonials";
 import { ProjectGallery } from "@/components/marketing/ProjectGallery";
 import { useGetActivePromotionQuery } from "@/features/notifications/notificationsApi";
 import { FloatingPromotionBanner } from "@/features/notifications/components/PromotionBanner";
-import { PathProvider } from "@/components/marketing/companion/PathContext";
-import { PathChoice } from "@/components/marketing/companion/PathChoice";
+import { Outcomes } from "@/components/marketing/Outcomes";
 import { WelcomeSlide } from "@/components/marketing/companion/WelcomeSlide";
 import { useAppSelector } from "@/store/hooks";
 import {
@@ -37,7 +36,7 @@ function HomeSections() {
   const { data: promotion } = useGetActivePromotionQuery();
 
   return (
-    <PathProvider>
+    <>
       <FloatingPromotionBanner promotion={promotion} />
       <div className="w-full bg-[#FAFAFA]">
         <section id="welcome" className="px-3 py-16 sm:px-6 sm:py-24">
@@ -45,7 +44,7 @@ function HomeSections() {
         </section>
 
         <section className="px-3 pb-16 sm:px-6 sm:pb-24">
-          <PathChoice />
+          <Outcomes />
         </section>
 
         <section id="services" className="px-3 pb-16 sm:px-6 sm:pb-24">
@@ -108,7 +107,7 @@ function HomeSections() {
           </div>
         </section>
       </div>
-    </PathProvider>
+    </>
   );
 }
 

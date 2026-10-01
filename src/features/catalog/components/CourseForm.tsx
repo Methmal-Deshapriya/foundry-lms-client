@@ -11,6 +11,9 @@ import { Select } from "@/components/ui/select";
 import { TagInput } from "@/components/ui/tag-input";
 import { cn, formatLKR } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api";
+import { PERMISSIONS, hasPermission } from "@/lib/access";
+import { selectAuthUser } from "@/features/auth/authSelectors";
+import { useAppSelector } from "@/store/hooks";
 import { ObjectUploadField } from "@/features/storage/components/ObjectUploadField";
 import type { StoredObjectSummary } from "@/features/storage/storageApi";
 import {
@@ -69,6 +72,10 @@ export function CourseForm({
 }) {
   const isFree = service.accessType === "FREE";
   const isEditing = Boolean(initial);
+  // Once a course has left Draft, only super admins may change its price
+  // (the server enforces this too; the slug is never editable here).
+  const authUser = useAppSelector(selectAuthUser);
+  const isPriceLocked = Boolean(initial && initial.status !== "DRAFT" && !hasPermission(authUser, PERMISSIONS.CATALOG_PUBLISH));
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [intakeCodePrefix, setIntakeCodePrefix] = useState(initial?.intakeCodePrefix ?? "");
@@ -107,7 +114,10 @@ export function CourseForm({
   const isBasicsValid = title.trim().length >= 3 && /^[a-z0-9-]+$/.test(slug) && /^[A-Z0-9-]+$/.test(intakeCodePrefix);
   const isContentValid =
     summary.trim().length >= 10 && description.trim().length >= 20 && (isFree || Number(price) > 0);
-  const isPolicyValid = certificateEnabled !== null;
+  // The discount is fixed once the course exists, so it must be less than
+  // the price now (code review M06-02; the server enforces it too).
+  const discountTooLarge = !isFree && Number(discountAmount) > 0 && Number(discountAmount) >= Number(price);
+  const isPolicyValid = certificateEnabled !== null && !discountTooLarge;
 
   const performSave = async () => {
     const trimmedVideoUrl = explainerVideoUrl.trim();
@@ -123,7 +133,9 @@ export function CourseForm({
       highlights,
       skills,
       prerequisites,
-      thumbnailUrl: null,
+      // Only clear a legacy external image URL when an uploaded image replaces
+      // it; otherwise saving any other field would wipe it (M06-13).
+      ...(thumbnailObjectId ? { thumbnailUrl: null } : {}),
       thumbnailObjectId,
       targetAudience: targetAudience.trim() ? targetAudience.trim() : null,
       whyPursueSteps,
@@ -367,12 +379,15 @@ export function CourseForm({
             <Input
               id="price"
               required={!isFree}
-              disabled={isFree}
+              disabled={isFree || isPriceLocked}
               type="number"
               min={isFree ? 0 : 1}
               value={price}
               onChange={(event) => setPrice(event.target.value)}
             />
+            {isPriceLocked ? (
+              <p className="text-xs text-muted-foreground">This course is published, so only a super admin can change its price.</p>
+            ) : null}
           </div>
         </div>
 
@@ -588,11 +603,22 @@ export function CourseForm({
                   id="course-discount-amount"
                   type="number"
                   min={0}
+                  max={Math.max(0, (Number(price) || 0) - 1)}
                   step={1}
                   value={discountAmount}
                   onChange={(event) => setDiscountAmount(event.target.value)}
                   placeholder="0"
+                  error={discountTooLarge}
                 />
+                {discountTooLarge ? (
+                  <p role="alert" className="text-xs font-medium text-destructive">
+                    The discount must be less than the {formatLKR(Number(price) || 0)} price.
+                  </p>
+                ) : Number(discountAmount) > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Paying in full will cost {formatLKR((Number(price) || 0) - Number(discountAmount))}.
+                  </p>
+                ) : null}
                 <p className="text-xs text-muted-foreground">
                   Students who pay an intake&apos;s full price in one go get this much off. Paying in two halves never gets a discount. Applies to every intake and cannot be changed later.
                 </p>
@@ -660,6 +686,12 @@ export function CourseForm({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Full-payment discount</span>
                   <span className="font-medium">LKR {discountAmount}</span>
+                </div>
+              ) : null}
+              {service.accessType === "PAID" && Number(discountAmount) > 0 && !discountTooLarge ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Paying in full costs</span>
+                  <span className="font-medium">{formatLKR((Number(price) || 0) - Number(discountAmount))}</span>
                 </div>
               ) : null}
               <div className="flex items-center justify-between">

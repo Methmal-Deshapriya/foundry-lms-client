@@ -15,7 +15,7 @@ import { withEnrollIntent } from "@/lib/enrollIntent";
  * verify-email/sign-in/sign-up routes) and the home page itself, which
  * isn't nested under GuestGuard's route group.
  */
-export function useGuestGuard() {
+export function useGuestGuard({ enabled = true }: { enabled?: boolean } = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -23,10 +23,10 @@ export function useGuestGuard() {
   const role = useAppSelector(selectAuthRole);
 
   useEffect(() => {
-    if (isAuthResolved && isAuthenticated) {
+    if (enabled && isAuthResolved && isAuthenticated) {
       router.replace(withEnrollIntent(getDashboardPath(role), searchParams));
     }
-  }, [isAuthenticated, isAuthResolved, role, router, searchParams]);
+  }, [enabled, isAuthenticated, isAuthResolved, role, router, searchParams]);
 
   return { isAuthResolved, isAuthenticated };
 }

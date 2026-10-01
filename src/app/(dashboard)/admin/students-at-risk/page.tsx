@@ -26,7 +26,9 @@ function nudgeUrl(row: AtRiskRow) {
  * WhatsApp, so it costs nothing.
  */
 export default function StudentsAtRiskPage() {
-  const { data, isLoading } = useGetAtRiskStudentsQuery();
+  // A failed request must never read as "nobody is falling behind"
+  // (code review M05-09).
+  const { data, isLoading, isError, isFetching, refetch } = useGetAtRiskStudentsQuery();
   const rows = data?.rows ?? [];
   const days = data?.thresholdDays ?? 14;
 
@@ -34,11 +36,17 @@ export default function StudentsAtRiskPage() {
     <div className="space-y-6 pb-20">
       <AdminCatalogPageHeader
         title="Students at risk"
-        description={`Active students who haven't completed a session in ${days}+ days, with sessions still waiting for them. A quick nudge keeps them going.`}
+        description={`Students in paid courses who haven't completed a session in ${days}+ days, with sessions still waiting for them. A quick nudge keeps them going.`}
         icon={Icons.attention}
       />
       <p className="text-sm text-muted-foreground">
-        {isLoading ? "Checking…" : rows.length === 0 ? "Nobody is falling behind right now." : `${rows.length} student${rows.length === 1 ? "" : "s"} could use a nudge.`}
+        {isLoading
+          ? "Checking…"
+          : isError
+            ? "Couldn't load the list."
+            : rows.length === 0
+              ? "Nobody is falling behind right now."
+              : `${rows.length} student${rows.length === 1 ? "" : "s"} could use a nudge.${data?.truncated ? " Showing the first 500; nudge these and check again." : ""}`}
       </p>
       <div className="overflow-hidden rounded-md border bg-card">
         <Table className="table-fixed">
@@ -56,6 +64,15 @@ export default function StudentsAtRiskPage() {
           <TableBody>
             {isLoading ? (
               <TableSkeletonRows columns={6} label="Loading students at risk…" />
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  <p className="text-sm text-destructive">The list could not be loaded.</p>
+                  <Button variant="outline" size="sm" className="mt-2" disabled={isFetching} onClick={() => void refetch()}>
+                    Try again
+                  </Button>
+                </TableCell>
+              </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">

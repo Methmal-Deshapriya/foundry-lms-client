@@ -5,10 +5,15 @@
 // Student-supplied text (names, addresses) must never execute on an admin's
 // machine, so such cells are prefixed with an apostrophe (shown as text).
 const FORMULA_TRIGGERS = /^[=+\-@\t\r]/;
+// A plain number, e.g. -5000 or -5000.00, is data, not a formula: it is left
+// alone so refunds and reversals stay numeric and =SUM() includes them
+// (code review M03-06).
+const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
 
-function escapeCell(value: string | number | null | undefined) {
+export function escapeCell(value: string | number | null | undefined) {
   let text = value == null ? "" : String(value);
-  if (FORMULA_TRIGGERS.test(text)) text = `'${text}`;
+  const isNumber = typeof value === "number" || PLAIN_NUMBER.test(text);
+  if (!isNumber && FORMULA_TRIGGERS.test(text)) text = `'${text}`;
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

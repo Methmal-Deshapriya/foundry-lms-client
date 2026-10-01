@@ -106,6 +106,9 @@ export interface ClassroomSession {
   deliveryStatus: CourseSessionDeliveryStatus;
   availableAt: string | null;
   retired: boolean;
+  /** recordingUrl / materialUrl is an API path that redirects to a fresh signed link (an uploaded file), not an external URL. */
+  recordingIsFile?: boolean;
+  materialIsFile?: boolean;
   completed: boolean;
   completedAt: string | null;
 }

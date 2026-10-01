@@ -27,12 +27,21 @@ export type StudentProject = {
   updatedAt: string;
   // Included fields
   user?: {
+    id?: string;
     firstName: string;
     lastName: string;
+    /** Owner and admin views only. */
+    email?: string;
     /** Set when the student has a published public profile (/students/<slug>). */
     profileSlug?: string | null;
   };
+  intake?: {
+    id: string;
+    code: string;
+    course?: { id: string; title: string };
+  };
   course?: {
+    id?: string;
     title: string;
   };
 };

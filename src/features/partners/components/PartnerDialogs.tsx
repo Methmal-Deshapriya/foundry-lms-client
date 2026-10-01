@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { dayStartIso, dayToInstant } from "@/lib/dates";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ const CATEGORIES = Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[];
 const BLACK = "bg-[#191919] bg-none text-white hover:bg-[#27272A]";
 const FIELD = "h-10 w-full rounded-md py-0 pl-3 pr-8 text-sm";
 const today = () => format(new Date(), "yyyy-MM-dd");
+const tomorrow = () => format(new Date(Date.now() + 24 * 60 * 60 * 1000), "yyyy-MM-dd");
 
 function FieldError({ message }: { message?: string }) {
   return message ? (
@@ -54,7 +56,8 @@ export function AddExpenseDialog({ open, onOpenChange, partners }: { open: boole
   const [paidByLabel, setPaidByLabel] = useState(BUSINESS);
   const [receiptObjectId, setReceiptObjectId] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { data: intakes } = useGetIntakesQuery(undefined, { skip: !open });
+  // Newest first, so the current intakes are always among the 100 offered (M03-18).
+  const { data: intakes } = useGetIntakesQuery({ sort: "recent" }, { skip: !open });
   const [createExpense, { isLoading }] = useCreateExpenseMutation();
 
   const intakeList = intakes?.intakes ?? [];
@@ -80,7 +83,7 @@ export function AddExpenseDialog({ open, onOpenChange, partners }: { open: boole
     if (Object.keys(next).length) return;
     try {
       await createExpense({
-        spentAt: new Date(`${spentAt}T12:00:00`).toISOString(),
+        spentAt: dayToInstant(spentAt),
         amount: Number(amount),
         category,
         description: description.trim() || null,
@@ -214,7 +217,7 @@ export function AddPayoutDialog({
       await createPayout({
         partnerId: partner.id,
         amount: Number(amount),
-        paidAt: new Date(`${paidAt}T12:00:00`).toISOString(),
+        paidAt: dayToInstant(paidAt),
         method,
         reference: reference.trim() || null,
         note: note.trim() || null,
@@ -300,7 +303,10 @@ export function NewSplitDialog({
   partners: Partner[];
   current: Map<string, number>;
 }) {
-  const [effectiveFrom, setEffectiveFrom] = useState(today());
+  // A split always starts on a future day (the server refuses today or
+  // earlier), so nothing already recorded changes split (M03-05).
+  const [effectiveFrom, setEffectiveFrom] = useState(tomorrow());
+  const startsInFuture = effectiveFrom > today();
   const [note, setNote] = useState("");
   const [percents, setPercents] = useState<Record<string, string>>({});
   const [createShareSet, { isLoading }] = useCreateShareSetMutation();
@@ -311,7 +317,7 @@ export function NewSplitDialog({
   const submit = async () => {
     try {
       await createShareSet({
-        effectiveFrom: new Date(`${effectiveFrom}T00:00:00`).toISOString(),
+        effectiveFrom: dayStartIso(effectiveFrom),
         note: note.trim() || null,
         entries: partners.map((partner) => ({ partnerId: partner.id, percent: Number(value(partner.id)) || 0 })),
       }).unwrap();
@@ -332,7 +338,12 @@ export function NewSplitDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="split-from">Starts on</Label>
-            <DatePicker id="split-from" value={effectiveFrom} onChange={(next) => setEffectiveFrom(next || today())} className="h-10 rounded-md" />
+            <DatePicker id="split-from" value={effectiveFrom} onChange={(next) => setEffectiveFrom(next || tomorrow())} className="h-10 rounded-md" />
+            {startsInFuture ? null : (
+              <p role="alert" className="text-xs font-medium text-destructive">
+                Choose tomorrow or a later day. A new split never changes figures already recorded.
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             {partners.map((partner) => (

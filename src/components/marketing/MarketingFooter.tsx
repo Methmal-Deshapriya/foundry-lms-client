@@ -26,13 +26,7 @@ const SOCIAL_LINKS = [
   { label: "Email", href: `mailto:${EMAIL}`, icon: Mail },
 ];
 
-const EXPLORE_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Bootcamps", href: "/bootcamps" },
-  { label: "PreTech Courses", href: "/pretech-courses" },
-  { label: "Free Learning", href: "/free-learning" },
-  { label: "Consultations", href: "/consultations" },
-];
+type ServiceLink = { label: string; href: string };
 
 /**
  * MarketingFooter
@@ -41,7 +35,9 @@ const EXPLORE_LINKS = [
  * The one place Foundry Academy's contact/social details live — update
  * here, not per-page.
  */
-export function MarketingFooter() {
+export function MarketingFooter({ serviceLinks }: { serviceLinks: ServiceLink[] }) {
+  // Home, every live service, then Consultations (M06-09).
+  const EXPLORE_LINKS = [{ label: "Home", href: "/" }, ...serviceLinks, { label: "Consultations", href: "/consultations" }];
   return (
     <footer className="border-t border-zinc-200 bg-white">
       <div className="mx-auto w-full max-w-6xl px-3 py-12 sm:px-6 sm:py-16">

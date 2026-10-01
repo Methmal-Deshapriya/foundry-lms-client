@@ -4,31 +4,15 @@ import type { ElementType } from "react";
 import Link from "next/link";
 import { ChevronRight, LockKeyhole } from "lucide-react";
 import type { MyEnrollment } from "../enrollmentsTypes";
+import { getAccessMessage } from "../enrollmentAccess";
+
+// Kept exported from here for existing imports.
+export { getAccessMessage };
 import { Progress } from "@/components/ui/progress";
 import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 
 interface EnrollmentCardProps {
   enrollment: MyEnrollment;
-}
-
-const accessibleCourseStatuses = new Set([
-  "OPEN_ACTIVE",
-  "CLOSED_ACTIVE",
-  "COMPLETED",
-  "ARCHIVED",
-]);
-
-export function getAccessMessage(enrollment: MyEnrollment) {
-  if (enrollment.status === "CANCELLED") {
-    return "This enrollment was cancelled. Contact support if this is unexpected.";
-  }
-  if (enrollment.source === "ADMIN" && enrollment.paymentStatus !== "COMPLETED") {
-    return "Classroom access opens after an admin confirms the completed payment.";
-  }
-  if (!accessibleCourseStatuses.has(enrollment.course.intakeStatus)) {
-    return "This intake is not currently available for learning.";
-  }
-  return null;
 }
 
 export default function EnrollmentCard({ enrollment }: EnrollmentCardProps) {

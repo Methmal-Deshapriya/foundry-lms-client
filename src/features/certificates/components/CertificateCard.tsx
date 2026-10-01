@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { format } from "date-fns";
+import { formatColomboDay } from "@/lib/dates";
 import { Linkedin } from "lucide-react";
 import { getLinkedInAddCertificationUrl } from "@/lib/linkedin";
 import type { Certificate } from "../certificatesTypes";
@@ -36,7 +36,7 @@ export function CertificateCard({ certificate }: { certificate: Certificate }) {
             {certificate.courseName}
           </p>
           <p className="text-xs text-muted-foreground">
-            {isIssued ? `Issued ${format(new Date(certificate.issuedDate), "MMM d, yyyy")}` : "Revoked"}
+            {isIssued ? `Issued ${formatColomboDay(certificate.issuedDate)}` : "Revoked"}
           </p>
         </div>
         {isIssued && verifyUrl ? (

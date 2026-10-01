@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ThumbnailImage } from "@/components/ui/thumbnail-image";
 import { CursorPagination } from "@/components/ui/cursor-pagination";
 import {
   DropdownMenu,
@@ -343,6 +344,16 @@ export default function AdminProjectsPage() {
                 </SheetDescription>
               </SheetHeader>
               <div className="flex-1 space-y-5 overflow-y-auto px-4">
+                {/* The reviewer sees the picture that approval puts on the
+                    public site (code review M08-07). */}
+                <div className="relative aspect-1280/780 overflow-hidden rounded-lg border border-border">
+                  <ThumbnailImage
+                    src={detailProject.thumbnailUrl}
+                    alt=""
+                    label={detailProject.title}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className={statusStyles[detailProject.status]}>
                     {detailProject.status}
@@ -393,6 +404,13 @@ export default function AdminProjectsPage() {
                     <Button asChild variant="outline" size="sm">
                       <Link href={detailProject.demoUrl} target="_blank">
                         Live demo
+                      </Link>
+                    </Button>
+                  ) : null}
+                  {detailProject.projectUrl ? (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={detailProject.projectUrl} target="_blank">
+                        Project link
                       </Link>
                     </Button>
                   ) : null}

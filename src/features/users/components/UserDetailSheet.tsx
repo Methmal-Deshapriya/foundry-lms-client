@@ -4,6 +4,9 @@ import { format } from "date-fns";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  Ban,
+  LogOut,
+  RotateCcw,
   Award,
   ClipboardList,
   CreditCard,
@@ -17,6 +20,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useResendOtpMutation } from "@/features/auth/authApi";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +51,10 @@ import {
   PROJECT_STATUS_STYLES,
 } from "@/lib/statusColors";
 import { formatLKR } from "@/lib/utils";
-import { useDemoteUserMutation, useGetUserDetailQuery, usePromoteUserMutation } from "../usersApi";
+import { useState } from "react";
+import { selectAuthUser } from "@/features/auth/authSelectors";
+import { useAppSelector } from "@/store/hooks";
+import { useDemoteUserMutation, useGetUserDetailQuery, usePromoteUserMutation, useSetUserAccessMutation } from "../usersApi";
 import { RoleBadge } from "./RoleBadge";
 import { VerifiedBadge } from "./VerifiedBadge";
 
@@ -57,6 +73,43 @@ function SectionHeading({ icon: Icon, label, total }: { icon: React.ComponentTyp
   );
 }
 
+type PendingAction = "promote" | "demote" | "revoke-sessions" | "suspend" | "reactivate";
+
+const ACTION_COPY: Record<PendingAction, { title: (name: string) => string; description: string; confirm: string; success: (name: string) => string; destructive?: boolean }> = {
+  promote: {
+    title: (name) => `Promote ${name} to admin?`,
+    description: "They get the admin dashboard and sign in with an emailed code from now on. Every session they have now ends.",
+    confirm: "Promote to admin",
+    success: (name) => `${name} has been promoted to ADMIN`,
+  },
+  demote: {
+    title: (name) => `Demote ${name} to student?`,
+    description: "They lose admin access straight away, and every session they have now ends.",
+    confirm: "Demote to student",
+    success: (name) => `${name} has been demoted to STUDENT`,
+    destructive: true,
+  },
+  "revoke-sessions": {
+    title: (name) => `Sign ${name} out everywhere?`,
+    description: "Every browser and device they're signed in on is signed out now. They can sign in again with their password. Use this for a lost or shared device.",
+    confirm: "Sign out everywhere",
+    success: (name) => `${name} was signed out of every session`,
+  },
+  suspend: {
+    title: (name) => `Suspend ${name}?`,
+    description: "They're signed out everywhere and can't sign in until a super admin reactivates the account. Their courses, payments and certificates stay as they are.",
+    confirm: "Suspend account",
+    success: (name) => `${name}'s account is suspended`,
+    destructive: true,
+  },
+  reactivate: {
+    title: (name) => `Reactivate ${name}?`,
+    description: "They can sign in again with their password.",
+    confirm: "Reactivate",
+    success: (name) => `${name}'s account is active again`,
+  },
+};
+
 function EmptySection({ label }: { label: string }) {
   return <p className="pl-6 text-xs text-muted-foreground">{label}</p>;
 }
@@ -73,27 +126,28 @@ export default function UserDetailSheet({
   const { data: detail, isLoading, isError } = useGetUserDetailQuery(userId ?? "", { skip: !userId });
   const [promote, { isLoading: isPromoting }] = usePromoteUserMutation();
   const [demote, { isLoading: isDemoting }] = useDemoteUserMutation();
+  const [setAccess, { isLoading: isChangingAccess }] = useSetUserAccessMutation();
   const [resendOtp, { isLoading: isSendingVerification }] = useResendOtpMutation();
+  const currentUser = useAppSelector(selectAuthUser);
+  // Confirmed in the page itself, never window.confirm (admin page patterns).
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const name = detail ? `${detail.firstName} ${detail.lastName}` : "";
+  const isSelf = Boolean(detail && currentUser?.id === detail.id);
+  const isSuspended = Boolean(detail?.disabledAt);
+  const isBusy = isPromoting || isDemoting || isChangingAccess;
 
-  const handlePromote = async () => {
-    if (!detail || !window.confirm(`Are you sure you want to promote "${name}" to ADMIN?`)) return;
+  const runPendingAction = async () => {
+    if (!detail || !pendingAction) return;
+    const copy = ACTION_COPY[pendingAction];
     try {
-      await promote(detail.id).unwrap();
-      toast.success(`${name} has been promoted to ADMIN`);
+      if (pendingAction === "promote") await promote(detail.id).unwrap();
+      else if (pendingAction === "demote") await demote(detail.id).unwrap();
+      else await setAccess({ id: detail.id, action: pendingAction }).unwrap();
+      toast.success(copy.success(name));
+      setPendingAction(null);
     } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, "Promotion failed"));
-    }
-  };
-
-  const handleDemote = async () => {
-    if (!detail || !window.confirm(`Are you sure you want to demote "${name}" to STUDENT?`)) return;
-    try {
-      await demote(detail.id).unwrap();
-      toast.success(`${name} has been demoted to STUDENT`);
-    } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, "Demotion failed"));
+      toast.error(getApiErrorMessage(error, "That didn't work."));
     }
   };
 
@@ -153,6 +207,11 @@ export default function UserDetailSheet({
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <RoleBadge role={detail.role} />
                 <VerifiedBadge verified={detail.emailVerified} />
+                {isSuspended ? (
+                  <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+                    Suspended {format(new Date(detail.disabledAt!), "MMM d, yyyy")}
+                  </Badge>
+                ) : null}
                 <span className="text-xs text-muted-foreground">
                   Member since {format(new Date(detail.createdAt), "MMM dd, yyyy")}
                 </span>
@@ -162,14 +221,32 @@ export default function UserDetailSheet({
             <div className="flex-1 space-y-6 overflow-y-auto px-4">
               <div className="flex flex-wrap gap-2">
                 {canManageRoles && detail.role === "STUDENT" ? (
-                  <Button variant="outline" size="sm" onClick={handlePromote} disabled={isPromoting}>
+                  <Button variant="outline" size="sm" onClick={() => setPendingAction("promote")} disabled={isBusy}>
                     <ArrowUpCircle className="size-4" aria-hidden="true" /> Promote to admin
                   </Button>
                 ) : null}
                 {canManageRoles && detail.role === "ADMIN" ? (
-                  <Button variant="outline" size="sm" onClick={handleDemote} disabled={isDemoting}>
+                  <Button variant="outline" size="sm" onClick={() => setPendingAction("demote")} disabled={isBusy}>
                     <ArrowDownCircle className="size-4" aria-hidden="true" /> Demote to student
                   </Button>
+                ) : null}
+                {canManageRoles && !isSelf ? (
+                  <>
+                    {!isSuspended ? (
+                      <Button variant="outline" size="sm" onClick={() => setPendingAction("revoke-sessions")} disabled={isBusy}>
+                        <LogOut className="size-4" aria-hidden="true" /> Sign out everywhere
+                      </Button>
+                    ) : null}
+                    {isSuspended ? (
+                      <Button variant="outline" size="sm" onClick={() => setPendingAction("reactivate")} disabled={isBusy}>
+                        <RotateCcw className="size-4" aria-hidden="true" /> Reactivate
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => setPendingAction("suspend")} disabled={isBusy} className="text-red-700 hover:text-red-800">
+                        <Ban className="size-4" aria-hidden="true" /> Suspend
+                      </Button>
+                    )}
+                  </>
                 ) : null}
                 {!detail.emailVerified ? (
                   <Button variant="outline" size="sm" onClick={handleSendVerification} disabled={isSendingVerification}>
@@ -316,25 +393,59 @@ export default function UserDetailSheet({
                 </section>
               ) : null}
 
-              <section className="space-y-2">
-                <SectionHeading icon={ScrollText} label="Recent account activity" total={detail.auditActions.total} />
-                {detail.auditActions.items.length === 0 ? (
-                  <EmptySection label="No recorded activity yet." />
-                ) : (
-                  <ul className="space-y-1.5 pl-6">
-                    {detail.auditActions.items.map((item) => (
-                      <li key={item.id} className="text-sm">
-                        <span className="text-muted-foreground">{format(new Date(item.createdAt), "MMM dd, yyyy HH:mm")} · </span>
-                        {item.description ?? item.action.replace(/_/g, " ").toLowerCase()}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
+              {/* Super admins only: the audit trail can describe payouts,
+                  share splits and refunds (code review M10-02). */}
+              {detail.auditActions ? (
+                <section className="space-y-2">
+                  <SectionHeading icon={ScrollText} label="Recent account activity" total={detail.auditActions.total} />
+                  {detail.auditActions.items.length === 0 ? (
+                    <EmptySection label="No recorded activity yet." />
+                  ) : (
+                    <ul className="space-y-1.5 pl-6">
+                      {detail.auditActions.items.map((item) => (
+                        <li key={item.id} className="text-sm">
+                          <span className="text-muted-foreground">{format(new Date(item.createdAt), "MMM dd, yyyy HH:mm")} · </span>
+                          {item.description ?? item.action.replace(/_/g, " ").toLowerCase()}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              ) : null}
             </div>
           </>
         )}
       </SheetContent>
+      <AlertDialog open={pendingAction !== null} onOpenChange={(open) => !open && setPendingAction(null)}>
+        <AlertDialogContent>
+          {pendingAction ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{ACTION_COPY[pendingAction].title(name)}</AlertDialogTitle>
+                <AlertDialogDescription>{ACTION_COPY[pendingAction].description}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={isBusy}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void runPendingAction();
+                  }}
+                  className={
+                    ACTION_COPY[pendingAction].destructive
+                      ? "bg-linear-to-r from-red-600 to-rose-500 bg-none text-white hover:opacity-90"
+                      : "bg-[#191919] bg-none text-white hover:bg-[#27272A]"
+                  }
+                >
+                  {isBusy ? <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" /> : null}
+                  {ACTION_COPY[pendingAction].confirm}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          ) : null}
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

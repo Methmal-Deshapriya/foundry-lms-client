@@ -49,7 +49,8 @@ export interface LedgerSummary {
 
 export interface LedgerPage {
   entries: LedgerEntry[];
-  summary: LedgerSummary;
+  /** null when requested with summary=false (CSV export). */
+  summary: LedgerSummary | null;
   pagination: { total: number; limit: number; offset: number; hasMore: boolean };
 }
 
@@ -61,6 +62,8 @@ export interface LedgerFilters {
   q?: string;
   limit?: number;
   offset?: number;
+  /** "false" skips the totals (used by the CSV export). */
+  summary?: "true" | "false";
 }
 
 export interface OutstandingRow {

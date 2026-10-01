@@ -30,6 +30,8 @@ export type PublicCertificateVerification = {
   certificateCode: string;
   status: CertificateStatus;
   skills: string[];
+  /** For a revoked certificate that was reissued: the current one's code (M08-11). */
+  supersededByCode: string | null;
 };
 
 export type IssueCertificateRequest = {
