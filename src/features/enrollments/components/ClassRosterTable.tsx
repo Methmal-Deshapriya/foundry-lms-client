@@ -36,6 +36,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
 import { Input } from "@/components/ui/input";
+import { PaymentMethodSelect } from "@/features/payments/components/PaymentMethodSelect";
+import type { PaymentMethod } from "@/features/payments/paymentsTypes";
+import { Label } from "@/components/ui/label";
 import { OffsetPagination } from "@/components/ui/offset-pagination";
 import {
   Sheet,
@@ -292,6 +295,7 @@ export default function ClassRosterTable({
 
   const [certificateTarget, setCertificateTarget] = useState<ClassRosterEntry | null>(null);
   const [completePaymentTarget, setCompletePaymentTarget] = useState<ClassRosterEntry | null>(null);
+  const [topUpDraft, setTopUpDraft] = useState<{ method: PaymentMethod | null; reference: string }>({ method: null, reference: "" });
   const [detailEntry, setDetailEntry] = useState<ClassRosterEntry | null>(null);
   const [evidenceDraft, setEvidenceDraft] = useState({ reference: "", note: "" });
 
@@ -346,7 +350,8 @@ export default function ClassRosterTable({
   const confirmCompletePayment = async () => {
     if (!completePaymentTarget) return;
     try {
-      await completePayment(completePaymentTarget.id).unwrap();
+      await completePayment({ id: completePaymentTarget.id, paymentMethod: topUpDraft.method, externalReference: topUpDraft.reference.trim() || null }).unwrap();
+      setTopUpDraft({ method: null, reference: "" });
       toast.success("Remaining payment recorded; enrollment is now fully paid");
       setCompletePaymentTarget(null);
     } catch (error: unknown) {
@@ -573,6 +578,22 @@ export default function ClassRosterTable({
               Confirms {completePaymentTarget?.user?.firstName} {completePaymentTarget?.user?.lastName} has now paid the other half of this course&apos;s price. This marks payment as fully complete and enables certificate issuance.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="topup-payment-method">Paid by</Label>
+              <PaymentMethodSelect id="topup-payment-method" value={topUpDraft.method} onChange={(method) => setTopUpDraft({ ...topUpDraft, method })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="topup-payment-reference">Reference</Label>
+              <Input
+                id="topup-payment-reference"
+                value={topUpDraft.reference}
+                maxLength={160}
+                onChange={(event) => setTopUpDraft({ ...topUpDraft, reference: event.target.value })}
+                placeholder="Receipt or transfer reference"
+              />
+            </div>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction

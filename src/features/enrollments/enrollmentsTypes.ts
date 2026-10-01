@@ -77,6 +77,7 @@ export interface CreatePaidEnrollmentRequest {
   paymentStatus?: Exclude<PaymentStatus, "NOT_REQUIRED">;
   externalPaymentReference?: string | null;
   paymentNote?: string | null;
+  paymentMethod?: "CASH" | "BANK_TRANSFER" | "ONLINE" | "OTHER" | null;
 }
 
 // paymentStatus is not editable here — it only ever changes via the

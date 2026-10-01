@@ -45,4 +45,5 @@ export type EnrollFromRequestBody = {
   paymentStatus?: "PARTIAL" | "COMPLETED";
   externalPaymentReference?: string | null;
   paymentNote?: string | null;
+  paymentMethod?: "CASH" | "BANK_TRANSFER" | "ONLINE" | "OTHER" | null;
 };

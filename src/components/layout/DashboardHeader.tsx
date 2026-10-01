@@ -6,6 +6,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useDashboardHeader } from "@/components/layout/DashboardHeaderContext";
 import { cn } from "@/lib/utils";
+import { useAppSelector } from "@/store/hooks";
+import { selectAuthRole } from "@/features/auth/authSelectors";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import Link from "next/link";
 
 const PAGE_TITLES: Record<string, string> = {
@@ -22,6 +25,10 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin/projects": "Review Projects",
   "/admin/users": "Users",
   "/admin/audit": "Audit Logs",
+  "/admin/payments": "Payments",
+  "/admin/partner-earnings": "Partner earnings",
+  "/admin/notifications": "Notifications",
+  "/admin/students-at-risk": "Students at risk",
 };
 
 function getPageTitle(pathname: string) {
@@ -41,6 +48,8 @@ function getPageTitle(pathname: string) {
 export default function DashboardHeader() {
   const pathname = usePathname();
   const { breadcrumbs } = useDashboardHeader();
+  // Notifications are for students; admins write them from /admin/notifications.
+  const isStudent = useAppSelector(selectAuthRole) === "STUDENT";
   const activeBreadcrumbs =
     breadcrumbs?.pathname === pathname ? breadcrumbs.crumbs : null;
 
@@ -86,6 +95,7 @@ export default function DashboardHeader() {
           {getPageTitle(pathname)}
         </h1>
       )}
+      {isStudent ? <NotificationBell /> : null}
     </header>
   );
 }

@@ -23,6 +23,9 @@ export const PERMISSIONS = {
   CERTIFICATES_MANAGE: "CERTIFICATES_MANAGE",
   PROJECTS_REVIEW: "PROJECTS_REVIEW",
   AUDIT_VIEW: "AUDIT_VIEW",
+  PAYMENTS_VIEW: "PAYMENTS_VIEW",
+  PAYMENTS_MANAGE: "PAYMENTS_MANAGE",
+  NOTIFICATIONS_MANAGE: "NOTIFICATIONS_MANAGE",
 } as const;
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export type AuthorizationSubject = {
@@ -40,6 +43,10 @@ export const canAccessAdminArea = (subject: AuthorizationSubject) => hasPermissi
 export const canManageUsers = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.USERS_MANAGE_ROLES);
 export const canViewUsers = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.USERS_VIEW);
 export const canViewAuditLogs = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.AUDIT_VIEW);
+// The payment ledger is super-admin only (granted server-side to SUPER_ADMIN alone).
+export const canViewPayments = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.PAYMENTS_VIEW);
+export const canManageNotifications = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.NOTIFICATIONS_MANAGE);
+export const canManagePayments = (subject: AuthorizationSubject) => hasPermission(subject, PERMISSIONS.PAYMENTS_MANAGE);
 
 // The one place that decides where a logged-in user's "home" is — students
 // and admins now have entirely separate dashboards (/dashboard vs.

@@ -12,6 +12,20 @@ import type {
   SelfHistoryParams,
 } from "./enrollmentsTypes";
 
+/** A student who hasn't completed a session in the at-risk threshold (14 days). */
+export interface AtRiskRow {
+  enrollmentId: string;
+  student: { id: string; name: string; email: string; phone: string | null };
+  course: { id: string; title: string; serviceSlug: string | null };
+  intake: { id: string; code: string };
+  enrolledAt: string;
+  lastCompletedAt: string | null;
+  daysInactive: number;
+  completedCount: number;
+  availableSessionCount: number;
+  progressPercent: number;
+}
+
 export const enrollmentsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getMyEnrollments: builder.query<MyEnrollmentsPage, SelfHistoryParams | void>({
@@ -94,9 +108,16 @@ export const enrollmentsApi = baseApi.injectEndpoints({
         "Courses",
       ],
     }),
-    completePayment: builder.mutation<ClassRosterEntry, string>({
-      query: (id) => ({ url: `/enrollments/${id}/complete-payment`, method: "POST" }),
-      invalidatesTags: (_result, _error, id) => [
+    getAtRiskStudents: builder.query<{ thresholdDays: number; rows: AtRiskRow[] }, void>({
+      query: () => "/enrollments/at-risk",
+      providesTags: ["Enrollments"],
+    }),
+    completePayment: builder.mutation<
+      ClassRosterEntry,
+      { id: string; paymentMethod?: "CASH" | "BANK_TRANSFER" | "ONLINE" | "OTHER" | null; externalReference?: string | null }
+    >({
+      query: ({ id, ...body }) => ({ url: `/enrollments/${id}/complete-payment`, method: "POST", body }),
+      invalidatesTags: (_result, _error, { id }) => [
         { type: "Enrollments", id },
         "Enrollments",
         "Courses",
@@ -107,6 +128,7 @@ export const enrollmentsApi = baseApi.injectEndpoints({
 
 export const {
   useGetMyEnrollmentsQuery,
+  useGetAtRiskStudentsQuery,
   useGetCourseRosterQuery,
   useLazyGetCourseRosterQuery,
   useGetEligibleStudentsQuery,

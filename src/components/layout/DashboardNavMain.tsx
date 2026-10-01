@@ -11,6 +11,8 @@ import {
   canAccessAdminArea,
   canViewUsers,
   canViewAuditLogs,
+  canViewPayments,
+  canManageNotifications,
   getDashboardPath,
 } from "@/lib/access";
 import {
@@ -59,11 +61,15 @@ export function DashboardNavMain() {
         { label: "Session Library", href: "/admin/sessions", icon: Icons.sessionLibrary },
         { label: "Manage Certificates", href: "/admin/certificates", icon: Icons.manageCertificates },
         { label: "Review Projects", href: "/admin/projects", icon: Icons.reviewProjects },
+        ...(canManageNotifications(user) ? [{ label: "Notifications", href: "/admin/notifications", icon: Icons.notifications }] : []),
+        { label: "Students at risk", href: "/admin/students-at-risk", icon: Icons.attention },
       ]
     : [];
 
   const superAdminItems: NavItem[] = [
     ...(canViewUsers(user) ? [{ label: "Users", href: "/admin/users", icon: Icons.users }] : []),
+    ...(canViewPayments(user) ? [{ label: "Payments", href: "/admin/payments", icon: Icons.payments }] : []),
+    ...(canViewPayments(user) ? [{ label: "Partner earnings", href: "/admin/partner-earnings", icon: Icons.partnerEarnings }] : []),
     ...(canViewAuditLogs(user) ? [{ label: "Audit Logs", href: "/admin/audit", icon: Icons.auditLogs }] : []),
   ];
 

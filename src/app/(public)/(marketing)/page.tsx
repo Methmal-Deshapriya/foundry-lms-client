@@ -9,6 +9,8 @@ import LearningExperience from "@/components/marketing/LearningExperience";
 import Instructors from "@/components/marketing/Instructors";
 import { Testimonials } from "@/components/marketing/Testimonials";
 import { ProjectGallery } from "@/components/marketing/ProjectGallery";
+import { useGetActivePromotionQuery } from "@/features/notifications/notificationsApi";
+import { FloatingPromotionBanner } from "@/features/notifications/components/PromotionBanner";
 import { PathProvider } from "@/components/marketing/companion/PathContext";
 import { PathChoice } from "@/components/marketing/companion/PathChoice";
 import { WelcomeSlide } from "@/components/marketing/companion/WelcomeSlide";
@@ -32,9 +34,11 @@ import { getDashboardPath } from "@/lib/access";
 function HomeSections() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const role = useAppSelector(selectAuthRole);
+  const { data: promotion } = useGetActivePromotionQuery();
 
   return (
     <PathProvider>
+      <FloatingPromotionBanner promotion={promotion} />
       <div className="w-full bg-[#FAFAFA]">
         <section id="welcome" className="px-3 py-16 sm:px-6 sm:py-24">
           <WelcomeSlide />

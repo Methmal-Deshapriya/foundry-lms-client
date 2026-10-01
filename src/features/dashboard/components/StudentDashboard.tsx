@@ -25,6 +25,7 @@ import type { ProjectStatus, StudentProject } from "@/features/projects/projects
 import { useGetStudentDashboardQuery } from "../dashboardApi";
 import type { ContinueLearningPointer, RecentEnrollmentSummary } from "../dashboardTypes";
 import { ActivityHeatmap } from "./ActivityHeatmap";
+import { PinnedNotifications } from "@/features/notifications/components/PinnedNotifications";
 
 /**
  * The student dashboard, laid out to the 2026-09-14 sketch: the page itself
@@ -100,6 +101,8 @@ export default function StudentDashboard({ firstName }: { firstName?: string }) 
           value={isLoading ? <KpiValueSkeleton /> : data?.certificatesEarned ?? 0}
         />
       </div>
+
+      <PinnedNotifications />
 
       {data?.continueLearning && data.recentEnrollments[0] ? (
         <ContinueLearningHero continueLearning={data.continueLearning} topEnrollment={data.recentEnrollments[0]} />

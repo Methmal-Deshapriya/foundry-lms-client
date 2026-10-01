@@ -24,6 +24,7 @@ import { getAccessMessage } from "@/features/enrollments/components/EnrollmentCa
 import type { MyEnrollment } from "@/features/enrollments/enrollmentsTypes";
 import { useAppSelector } from "@/store/hooks";
 import { getWhatsAppEnrollUrl } from "@/lib/whatsapp";
+import { NotifyMeButton } from "@/features/notifications/components/NotifyMeButton";
 import { CertificatePreview } from "./CertificatePreview";
 import { CourseExplainerVideo } from "./CourseExplainerVideo";
 import { PageSlide } from "./PageSlide";
@@ -290,16 +291,19 @@ export function ApiCourseDetail({ course }: { course: PublicCourseDetail }) {
                   </p>
                 </div>
               ) : (
-                <div className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-100 px-6 font-alt text-sm font-semibold text-[#71717A]">
-                  {course.enrollmentStatus === "COMING_SOON" ? (
-                    <>
-                      <Clock className="h-4 w-4" aria-hidden="true" /> Coming soon
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reopening soon
-                    </>
-                  )}
+                <div className="space-y-3">
+                  <div className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-zinc-100 px-6 font-alt text-sm font-semibold text-[#71717A]">
+                    {course.enrollmentStatus === "COMING_SOON" ? (
+                      <>
+                        <Clock className="h-4 w-4" aria-hidden="true" /> Coming soon
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reopening soon
+                      </>
+                    )}
+                  </div>
+                  <NotifyMeButton courseId={course.id} />
                 </div>
               )}
             </div>

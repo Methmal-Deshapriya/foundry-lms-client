@@ -34,6 +34,7 @@ import {
   TREND_COLOR,
 } from "@/components/dataviz/chartColors";
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
+import { StorageCleanupButton } from "@/features/storage/components/StorageCleanupButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -590,12 +591,15 @@ function AdminDashboardPageTwo({
             title="Recent activity"
             className="flex flex-col xl:min-h-0"
             action={
-              <Link
-                href="/admin/audit"
-                className="text-xs font-semibold text-[#E91717] hover:text-[#C91414]"
-              >
-                View all
-              </Link>
+              <div className="flex items-center gap-3">
+                <StorageCleanupButton />
+                <Link
+                  href="/admin/audit"
+                  className="text-xs font-semibold text-[#E91717] hover:text-[#C91414]"
+                >
+                  View all
+                </Link>
+              </div>
             }
           >
             <div className="flex-1 xl:min-h-0 xl:overflow-y-auto">

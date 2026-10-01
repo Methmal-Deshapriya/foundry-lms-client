@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChecklistSkeleton } from "@/components/ui/loading-skeletons";
 import { Label } from "@/components/ui/label";
+import { PaymentMethodSelect } from "@/features/payments/components/PaymentMethodSelect";
+import type { PaymentMethod } from "@/features/payments/paymentsTypes";
 import { Select } from "@/components/ui/select";
 import { getApiErrorMessage } from "@/lib/api";
 import { formatLKR } from "@/lib/utils";
@@ -39,6 +41,7 @@ export default function ManualEnrollmentForm({
   const [cursor, setCursor] = useState<string>();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [paymentStatus, setPaymentStatus] = useState<PaidStatus>("COMPLETED");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
 
@@ -78,6 +81,7 @@ export default function ManualEnrollmentForm({
     if (selectedIds.length === 0) return;
     const payment = {
       paymentStatus,
+      paymentMethod,
       externalPaymentReference: reference.trim() || null,
       paymentNote: note.trim() || null,
     };
@@ -176,7 +180,11 @@ export default function ManualEnrollmentForm({
             </p>
           ) : null}
         </div>
-        <div className="space-y-2"><Label htmlFor="enrollment-payment-reference">External payment reference</Label><Input id="enrollment-payment-reference" value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Receipt or transfer reference" /></div>
+        <div className="space-y-2">
+          <Label htmlFor="enrollment-payment-method">Paid by</Label>
+          <PaymentMethodSelect id="enrollment-payment-method" value={paymentMethod} onChange={setPaymentMethod} />
+        </div>
+        <div className="space-y-2 md:col-span-2"><Label htmlFor="enrollment-payment-reference">External payment reference</Label><Input id="enrollment-payment-reference" value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Receipt or transfer reference" /></div>
       </div>
       <div className="space-y-2"><Label htmlFor="enrollment-payment-note">Internal payment note</Label><textarea id="enrollment-payment-note" className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm" value={note} onChange={(event) => setNote(event.target.value)} /></div>
       <div className="flex gap-2">

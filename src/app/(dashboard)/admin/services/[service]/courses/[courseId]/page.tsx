@@ -38,6 +38,7 @@ import { AdminCatalogBreadcrumbs } from "@/features/catalog/components/AdminCata
 import { AdminCatalogPageHeader } from "@/features/catalog/components/AdminCatalogPageHeader";
 import { CatalogStatusBadge } from "@/features/catalog/components/CatalogStatusBadge";
 import { CourseKpiTile } from "@/features/catalog/components/admin/CourseKpiTile";
+import { useGetCourseInterestCountQuery } from "@/features/notifications/notificationsApi";
 import { CHART_BODY_HEIGHT, PaymentsProjectsSummary } from "@/features/catalog/components/admin/PaymentsProjectsSummary";
 import { Bar, BarChart, XAxis } from "recharts";
 import { StatusDonutCard } from "@/components/dataviz/StatusDonutCard";
@@ -84,6 +85,8 @@ export default function CourseDetailPage() {
   const { data: course, isLoading: courseLoading } = useGetCourseQuery(courseId);
   const { data: intakesPage, isLoading: intakesLoading } = useGetCourseIntakesQuery(courseId);
   const { data: analytics } = useGetCourseAnalyticsQuery(courseId, { skip: !course });
+  // How many students pressed "Notify me" — told automatically when an intake opens.
+  const { data: interestCount } = useGetCourseInterestCountQuery(courseId);
   const [publishCourse] = usePublishCourseMutation();
   const [unpublishCourse] = useUnpublishCourseMutation();
   const [archiveCourse, archiveState] = useArchiveCourseMutation();
@@ -226,7 +229,14 @@ export default function CourseDetailPage() {
           count at every width instead. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <CourseKpiTile size="sm" className="w-full min-w-0" icon={Users} label="Total learners" value={totalLearners} />
-        <CourseKpiTile size="sm" className="w-full min-w-0" icon={Layers} label="Intakes" value={course.intakeCount} />
+        <CourseKpiTile
+          size="sm"
+          className="w-full min-w-0"
+          icon={Layers}
+          label="Intakes"
+          value={course.intakeCount}
+          secondary={interestCount?.count ? `${interestCount.count} waiting to hear it's open` : undefined}
+        />
         <CourseKpiTile
           size="sm"
           className="w-full min-w-0"

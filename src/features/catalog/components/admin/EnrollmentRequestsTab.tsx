@@ -23,6 +23,8 @@ import {
 import { FilterPills, type FilterPillOption } from "@/components/ui/filter-pills";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PaymentMethodSelect } from "@/features/payments/components/PaymentMethodSelect";
+import type { PaymentMethod } from "@/features/payments/paymentsTypes";
 import { OffsetPagination } from "@/components/ui/offset-pagination";
 import { Select } from "@/components/ui/select";
 import {
@@ -182,6 +184,7 @@ export function EnrollmentRequestsTab({
   );
   const [enrollTarget, setEnrollTarget] = useState<EnrollmentRequest | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PaidStatus>("COMPLETED");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
 
@@ -240,6 +243,7 @@ export function EnrollmentRequestsTab({
         id: enrollTarget.id,
         body: {
           paymentStatus,
+          paymentMethod,
           externalPaymentReference: reference.trim() || null,
           paymentNote: note.trim() || null,
         },
@@ -416,6 +420,10 @@ export function EnrollmentRequestsTab({
                 value={paymentOptionLabels[paymentStatus]}
                 onChange={(label) => setPaymentStatus(labelToStatus(label))}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="request-payment-method">Paid by</Label>
+              <PaymentMethodSelect id="request-payment-method" value={paymentMethod} onChange={setPaymentMethod} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="request-payment-reference">External payment reference</Label>
