@@ -47,46 +47,52 @@ function classroomResponse({
   sessionTitle,
 }: {
   enrollmentId: string;
-  deliveryMode: "COHORT" | "SELF_PACED";
+  deliveryMode: "PAID" | "FREE";
   courseTitle: string;
   sessionTitle: string;
 }) {
+  const isPaid = deliveryMode === "PAID";
+
   return {
     success: true,
     data: {
       enrollment: {
         id: enrollmentId,
         status: "ACTIVE",
-        source: deliveryMode === "COHORT" ? "ADMIN" : "SELF",
+        source: isPaid ? "ADMIN" : "SELF",
         deliveryMode,
+        enrolledAt: "2026-08-15T00:00:00.000Z",
+        paymentStatus: isPaid ? "COMPLETED" : "NOT_REQUIRED",
+        paymentCompletedAt: isPaid ? "2026-08-14T00:00:00.000Z" : null,
+        certificate: null,
         course: {
           id: `${enrollmentId}-course`,
           slug: "browser-course",
           title: courseTitle,
           summary: "Browser release-gate fixture",
+          description: "A deterministic classroom fixture for the browser release gate.",
+          highlights: [],
+          skills: [],
+          prerequisites: [],
           level: "BEGINNER",
           levelLabel: "Beginner",
           durationValue: 4,
           durationUnit: "WEEKS",
           durationLabel: "4 weeks",
-          accessType: deliveryMode === "COHORT" ? "PAID" : "FREE",
+          accessType: deliveryMode,
+          instanceKind: isPaid ? "SEASONAL" : "EVERGREEN",
           enrollmentStatus: "OPEN",
-          price: deliveryMode === "COHORT" ? 1000 : 0,
+          price: isPaid ? 1000 : 0,
           currency: "LKR",
           certificateEnabled: false,
+          thumbnailUrl: null,
+          serviceTitle: isPaid ? "Bootcamps" : "Free Sessions",
+          intakeKey: isPaid ? "2026-B1" : "EVERGREEN",
+          code: isPaid ? "BROWSER-2026-B1" : "BROWSER-EVERGREEN",
+          startDate: isPaid ? "2026-08-01" : null,
+          expectedEndDate: isPaid ? "2026-12-01" : null,
+          timezone: "Asia/Colombo",
         },
-        batch:
-          deliveryMode === "COHORT"
-            ? {
-                id: "batch-browser",
-                name: "August 2026",
-                code: "BROWSER-AUG",
-                status: "ACTIVE",
-                startDate: "2026-08-01",
-                expectedEndDate: "2026-12-01",
-                timezone: "Asia/Colombo",
-              }
-            : null,
       },
       sessions: [
         {
@@ -100,7 +106,9 @@ function classroomResponse({
           feedbackUrl: null,
           durationMinutes: 60,
           sessionStatus: "READY",
+          deliveryStatus: "RELEASED",
           availableAt: "2026-08-15T00:00:00.000Z",
+          retired: false,
           completed: false,
           completedAt: null,
         },
@@ -108,12 +116,36 @@ function classroomResponse({
       progress: {
         enrollmentId,
         courseId: `${enrollmentId}-course`,
+        intakeId: `${enrollmentId}-intake`,
         completedCount: 0,
         availableSessionCount: 1,
         progressPercent: 0,
       },
     },
   };
+}
+
+async function mockEmptyClassroomSupportingData(page: Page) {
+  await page.route("**/projects/my**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: { projects: [], nextCursor: null },
+      }),
+    }),
+  );
+  await page.route("**/profiles/me", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        success: true,
+        data: { profile: null, isPublished: false, approvedProjectCount: 0 },
+      }),
+    }),
+  );
 }
 
 test("a stale HttpOnly cookie cannot trap public recovery routes", async ({
@@ -170,12 +202,13 @@ test("student sessions are denied by the admin route layout", async ({
   ).toBeVisible();
 });
 
-test("free enrollment return intent opens the self-paced classroom", async ({
+test("free enrollment return intent opens the intake classroom after confirmation", async ({
   context,
   page,
 }) => {
   await authenticateStudent(context, page);
-  await page.route("**/courses/free-course/enroll", (route) =>
+  await mockEmptyClassroomSupportingData(page);
+  await page.route("**/intakes/free-intake/enroll", (route) =>
     route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -189,7 +222,7 @@ test("free enrollment return intent opens the self-paced classroom", async ({
       body: JSON.stringify(
         classroomResponse({
           enrollmentId: "free-enrollment",
-          deliveryMode: "SELF_PACED",
+          deliveryMode: "FREE",
           courseTitle: "Free Browser Learning",
           sessionTitle: "Free session available immediately",
         }),
@@ -197,7 +230,11 @@ test("free enrollment return intent opens the self-paced classroom", async ({
     }),
   );
 
-  await page.goto("/dashboard?enrollCourse=free-course");
+  await page.goto("/dashboard?enrollCourse=free-intake");
+  await expect(
+    page.getByRole("heading", { name: "Add this course to My Courses?" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Add course" }).click();
   await expect(page).toHaveURL(/\/my-courses\/free-enrollment$/);
   await expect(
     page.getByRole("heading", { name: "Free Browser Learning" }),
@@ -210,6 +247,7 @@ test("paid classroom renders only the sessions returned for its enrollment", asy
   page,
 }) => {
   await authenticateStudent(context, page);
+  await mockEmptyClassroomSupportingData(page);
   await page.route("**/enrollments/paid-enrollment/classroom", (route) =>
     route.fulfill({
       status: 200,
@@ -217,9 +255,9 @@ test("paid classroom renders only the sessions returned for its enrollment", asy
       body: JSON.stringify(
         classroomResponse({
           enrollmentId: "paid-enrollment",
-          deliveryMode: "COHORT",
+          deliveryMode: "PAID",
           courseTitle: "Paid Browser Bootcamp",
-          sessionTitle: "Released cohort session",
+          sessionTitle: "Released intake session",
         }),
       ),
     }),
@@ -229,6 +267,6 @@ test("paid classroom renders only the sessions returned for its enrollment", asy
   await expect(
     page.getByRole("heading", { name: "Paid Browser Bootcamp" }),
   ).toBeVisible();
-  await expect(page.getByText("Released cohort session")).toBeVisible();
-  await expect(page.getByText("Another batch private session")).toHaveCount(0);
+  await expect(page.getByText("Released intake session")).toBeVisible();
+  await expect(page.getByText("Another intake private session")).toHaveCount(0);
 });

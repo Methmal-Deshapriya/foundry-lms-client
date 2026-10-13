@@ -101,6 +101,10 @@ export function createContentSecurityPolicy(
 const clientBuildConfig = readClientBuildConfig();
 
 const nextConfig: NextConfig = {
+  // Emit the minimal server and traced runtime dependencies used by the
+  // production Docker image. public/ and .next/static are copied beside it
+  // in the Dockerfile because Next deliberately leaves them out.
+  output: "standalone",
   async headers() {
     const contentSecurityPolicy = createContentSecurityPolicy(
       clientBuildConfig.apiOrigin,
