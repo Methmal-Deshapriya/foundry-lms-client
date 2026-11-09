@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { CheckCircle2, FileUp, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -47,11 +47,14 @@ export function ObjectUploadField({
   // Keyed on the id, not the object: a parent that passes a fresh object
   // literal on every render must not wipe out a file just uploaded here
   // (code review M04-09).
+  // Reset during render when the id changes (React's recommended pattern for
+  // syncing state to a prop, instead of an effect).
   const initialObjectId = initialObject?.id ?? null;
-  useEffect(() => {
+  const [syncedInitialObjectId, setSyncedInitialObjectId] = useState(initialObjectId);
+  if (syncedInitialObjectId !== initialObjectId) {
+    setSyncedInitialObjectId(initialObjectId);
     setObject(initialObject ?? null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on the id only
-  }, [initialObjectId]);
+  }
 
   const upload = async (file: File) => {
     setUploading(true);
