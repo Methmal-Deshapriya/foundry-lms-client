@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Foundry LMS Client
 
-## Getting Started
+Next.js frontend for Foundry Academy's public course catalog and authenticated learning management system.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 App Router and React 19
+- TypeScript and Tailwind CSS 4
+- Redux Toolkit and RTK Query
+- React Hook Form and Zod
+- HTTP-only cookie authentication provided by the Express API
+
+## Local development
+
+Create `.env.local` with:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api/v1
+CATALOG_REVALIDATION_SECRET=replace-with-the-same-strong-secret-used-by-the-api
+NEXT_PUBLIC_IMAGE_ORIGINS=https://your-approved-thumbnail-cdn.example
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The shared server-only revalidation secret lets the Express API immediately
+expire public catalog caches after published category or course changes.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Then run:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+The application runs at `http://localhost:3000`.
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `src/app/(public)` contains the landing page, authentication flows, and public catalogs.
+- `src/app/(dashboard)` contains authenticated student and admin routes.
+- `src/features` contains domain types, RTK Query endpoints, and feature components.
+- `src/store/baseApi.ts` owns API response unwrapping, normalized errors, credentials, and cache tags.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The backend remains authoritative for authentication, roles, ownership checks, and LMS business rules.
 
-## Deploy on Vercel
+## Verification
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm test
+npm run lint
+npm run build
+npm run test:e2e
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The Playwright release gates run against a production build and retain browser
+coverage for stale-cookie recovery, API outages, CSP connectivity, route
+authorization, free-enrollment return intent, and paid-classroom isolation.

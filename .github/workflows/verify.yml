@@ -1,0 +1,31 @@
+name: Verify client
+
+on:
+  pull_request:
+  push:
+    branches: [main, development]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_BASE_URL: https://api.ci.foundry.invalid/api/v1
+      CATALOG_REVALIDATION_SECRET: ci-only-placeholder-secret
+      NEXT_PUBLIC_IMAGE_ORIGINS: https://cdn.ci.foundry.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

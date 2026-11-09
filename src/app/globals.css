@@ -1,0 +1,228 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --color-background: var(--background);
+  --font-poppins: "Poppins", "Poppins Fallback", ui-sans-serif, system-ui, sans-serif;
+  --color-foreground: var(--foreground);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-alt: "Inter", "Inter Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-ember: var(--ember);
+  --color-ember-soft: var(--ember-soft);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Fluid type scale: every text-* utility (text-xs...text-7xl) now scales
+   continuously with viewport width between 375px and 1920px instead of
+   sitting at one fixed size (or jumping between fixed sizes at manual
+   sm:/md:/lg: breakpoints). The existing default size is the ceiling — kept
+   as the clamp() max so nothing ever renders bigger than it already does on
+   a large desktop screen — and each step has its own floor, tuned so text
+   stays comfortably readable at phone width without shrinking so far it
+   reads as a different type scale. Line-height (below, untouched) is
+   Tailwind's own unitless ratio per step, so it keeps scaling
+   proportionally with whatever the clamped font-size resolves to.
+   Exception: CertificateTemplate.tsx pins its own literal rem sizes,
+   because that DOM node is captured into a fixed-size exported certificate
+   image and must never vary with the capturing browser's viewport. */
+@theme {
+  --text-xs: clamp(0.6875rem, 0.6723rem + 0.065vw, 0.75rem);
+  --text-sm: clamp(0.8125rem, 0.7973rem + 0.065vw, 0.875rem);
+  --text-base: clamp(0.875rem, 0.8447rem + 0.13vw, 1rem);
+  --text-lg: clamp(0.9375rem, 0.892rem + 0.194vw, 1.125rem);
+  --text-xl: clamp(1rem, 0.9393rem + 0.259vw, 1.25rem);
+  --text-2xl: clamp(1.125rem, 1.034rem + 0.388vw, 1.5rem);
+  --text-3xl: clamp(1.375rem, 1.2536rem + 0.518vw, 1.875rem);
+  --text-4xl: clamp(1.625rem, 1.4733rem + 0.647vw, 2.25rem);
+  --text-5xl: clamp(2rem, 1.7573rem + 1.036vw, 3rem);
+  --text-6xl: clamp(2.5rem, 2.1966rem + 1.295vw, 3.75rem);
+  --text-7xl: clamp(3rem, 2.6359rem + 1.553vw, 4.5rem);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: #0E1116;
+  --card: oklch(1 0 0);
+  --card-foreground: #0E1116;
+  --popover: oklch(1 0 0);
+  --popover-foreground: #0E1116;
+  --primary: var(--color-blue-600);
+  --primary-foreground: var(--color-white);
+  --ember: var(--color-orange-600);
+  --ember-soft: color-mix(in oklch, var(--color-orange-600) 12%, transparent);
+  --secondary: #F5F6FA;
+  --secondary-foreground: #0E1116;
+  --muted: #F5F6FA;
+  --muted-foreground: #5B6472;
+  --accent: #F5F6FA;
+  --accent-foreground: #0E1116;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: rgb(0 0 0 / 0.1);
+  --input: rgb(0 0 0 / 0.1);
+  --ring: var(--color-blue-600);
+  --chart-1: #2563EB;
+  --chart-2: #16A34A;
+  --chart-3: #7C3AED;
+  --chart-4: #D97706;
+  --chart-5: #E91717;
+  /* Sidebar — pure white rail with black text, one shade lighter than the
+     #FAFAFA main shell background behind it (see SidebarInset in
+     (dashboard)/layout.tsx) so the two surfaces read as distinct panels. */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #191919;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #191919;
+  --sidebar-accent: #F5F6FA;
+  --sidebar-accent-foreground: #191919;
+  --sidebar-border: rgb(0 0 0 / 0.1);
+  --sidebar-ring: #191919;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    /* This app is light-only. Without this, a visitor with OS-level dark
+       mode enabled still gets dark browser-native chrome (autofill fields,
+       scrollbars, form controls) layered on top of our light UI. */
+    color-scheme: light;
+  }
+  /* No global scroll-behavior: smooth here on purpose — even scoped to
+     :has(:target), it risked intercepting Next.js's own scroll-to-top call
+     on a plain page navigation (e.g. a Services card to /bootcamps),
+     animating what should be an instant, complete jump and letting the new
+     page's layout settling cut it short. The handful of same-page
+     `/#section`-style links glide instead via an explicit
+     scrollIntoView({ behavior: "smooth" }) on click (see
+     MarketingNavbar.tsx / WelcomeSlide.tsx), which can't affect unrelated
+     route changes. */
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Slim, soft-blue scrollbar for the click-driven marketing/catalog pages */
+.catalog-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(37, 99, 235, 0.3) transparent;
+}
+.catalog-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.catalog-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.catalog-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(37, 99, 235, 0.3);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.catalog-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(37, 99, 235, 0.5);
+}
+.catalog-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* Horizontal-scroll fallback for tables narrower than their content (see
+   the shared Table component in components/ui/table.tsx) — a browser only
+   ever renders this scrollbar when the table actually overflows, so it
+   doubles as the affordance that tells an admin "there's more to the
+   right" instead of the table just looking like it has empty space past
+   its last column. A faint bar stays visible at rest specifically so that
+   discovery works without hovering first; it brightens further on
+   hover/focus or while `.is-scrolling` is toggled during an active scroll.
+   scrollbar-width stays "thin" throughout so the reserved gutter never
+   changes size — only the thumb's color shifts. */
+.table-hscroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(25, 25, 25, 0.25) transparent;
+}
+.table-hscroll:hover,
+.table-hscroll:focus-within,
+.table-hscroll.is-scrolling {
+  scrollbar-color: rgba(25, 25, 25, 0.75) transparent;
+}
+.table-hscroll::-webkit-scrollbar {
+  height: 8px;
+}
+.table-hscroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.table-hscroll::-webkit-scrollbar-thumb {
+  background-color: rgba(25, 25, 25, 0.25);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 150ms ease;
+}
+.table-hscroll:hover::-webkit-scrollbar-thumb,
+.table-hscroll:focus-within::-webkit-scrollbar-thumb,
+.table-hscroll.is-scrolling::-webkit-scrollbar-thumb {
+  background-color: rgba(25, 25, 25, 0.75);
+}
+.table-hscroll:hover::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(25, 25, 25, 0.9);
+}
+
+/* Marquee (see components/ui/marquee.tsx) — a track holding two identical
+   copies of its content side by side, sliding left by exactly one copy's
+   width (100% + the gap) so the loop point is invisible. `reverse` just
+   plays the same keyframe backwards for the opposite direction, rather
+   than needing a second keyframe. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - var(--marquee-gap, 1.25rem)));
+  }
+}
+.animate-marquee {
+  animation: marquee linear infinite;
+}
+.animate-marquee-reverse {
+  animation: marquee linear infinite reverse;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-marquee-reverse {
+    animation: none;
+  }
+}

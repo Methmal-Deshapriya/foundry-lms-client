@@ -1,0 +1,552 @@
+<title>Chart Palette Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAFA;
+    --surface:#FFFFFF;
+    --surface-2:#F5F5F5;
+    --border:#E4E4E7;
+    --ink:#191919;
+    --muted:#71717A;
+    --muted-2:#A1A1AA;
+    --accent:#E91717;
+    --accent-dark:#C91414;
+    --accent-wash:#FDEAEA;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px -12px rgba(0,0,0,0.10);
+    --focus: 0 0 0 3px rgba(233,23,23,0.28);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#121212;
+      --surface:#1B1B1D;
+      --surface-2:#222224;
+      --border:#303033;
+      --ink:#F4F4F5;
+      --muted:#A1A1AA;
+      --muted-2:#8B8B90;
+      --accent:#F0332F;
+      --accent-dark:#FF5A56;
+      --accent-wash:rgba(240,51,47,0.14);
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121212;
+    --surface:#1B1B1D;
+    --surface-2:#222224;
+    --border:#303033;
+    --ink:#F4F4F5;
+    --muted:#A1A1AA;
+    --muted-2:#8B8B90;
+    --accent:#F0332F;
+    --accent-dark:#FF5A56;
+    --accent-wash:rgba(240,51,47,0.14);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.6);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    padding-inline:20px;
+    padding-block:0 40px;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums;}
+
+  header{
+    max-width:1180px;
+    margin:0 auto;
+    padding-block:28px 20px;
+  }
+  header .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 10px;
+  }
+  header .eyebrow::before{content:"";width:14px;height:2px;background:var(--accent);display:inline-block;}
+  header h1{
+    font-size:clamp(22px,3.4vw,30px);
+    font-weight:800;
+    letter-spacing:-0.02em;
+    margin:0 0 8px;
+    text-wrap:balance;
+  }
+  header p{
+    margin:0;
+    max-width:62ch;
+    color:var(--muted);
+    font-size:14.5px;
+    line-height:1.55;
+  }
+
+  main{max-width:1180px;margin:0 auto;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
+    gap:16px;
+  }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:18px 18px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    outline:2px solid transparent;
+    outline-offset:2px;
+    transition:outline-color .15s ease, transform .15s ease;
+  }
+  .card.selected{outline-color:var(--accent);}
+  .card:focus-within{outline-color:var(--accent);}
+
+  .card-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .card-head h2{
+    font-size:16px;
+    font-weight:700;
+    margin:0 0 3px;
+    letter-spacing:-0.01em;
+  }
+  .card-head .tag{
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+    line-height:1.4;
+  }
+
+  .pick-btn{
+    flex-shrink:0;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    padding:6px 11px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .pick-btn:hover{border-color:var(--muted-2);}
+  .pick-btn:focus-visible{outline:none; box-shadow:var(--focus);}
+  .card.selected .pick-btn{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+
+  .swatches{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .swatch{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    border-radius:999px;
+    padding:4px 9px 4px 6px;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .swatch i{
+    width:10px;height:10px;border-radius:50%;flex-shrink:0;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+  }
+  .swatch span{font-family:"JetBrains Mono",monospace; color:var(--ink); font-size:11px;}
+
+  .charts{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .chart-block{
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    border-radius:10px;
+    padding:10px 10px 8px;
+  }
+  .chart-block.wide{grid-column:1 / -1;}
+  .chart-block h3{
+    font-size:10px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--muted);
+    margin:0 0 8px;
+  }
+  .chart-block svg{display:block; width:100%; height:auto; overflow:visible;}
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 12px;
+    margin-top:8px;
+  }
+  .legend .item{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:10.5px;
+    color:var(--muted);
+  }
+  .legend .item i{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .legend .item b{color:var(--ink); font-weight:600; margin-left:2px;}
+
+  .copy-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding-top:2px;
+  }
+  .copy-btn{
+    border:none;
+    background:none;
+    color:var(--muted);
+    font-family:inherit;
+    font-size:11.5px;
+    font-weight:600;
+    cursor:pointer;
+    padding:4px 2px;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .copy-btn:hover{color:var(--ink);}
+  .copy-btn:focus-visible{outline:none; box-shadow:var(--focus); border-radius:4px;}
+  .copy-btn svg{width:13px;height:13px;}
+  .copy-btn.copied{color:var(--accent);}
+
+  footer{
+    max-width:1180px;
+    margin:28px auto 0;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+    color:var(--muted-2);
+    font-size:12px;
+  }
+
+  @media (max-width:480px){
+    .charts{grid-template-columns:1fr;}
+    .chart-block.wide{grid-column:auto;}
+  }
+</style>
+
+<header>
+  <p class="eyebrow">Admin dashboard</p>
+  <h1>Six chart palettes, side by side</h1>
+  <p>Every option below is drawn from the same three chart shapes on <span class="mono">/admin/dashboard</span> — the enrollment trend bar chart, the enrollment status donut, and the active-enrollments-by-service pie — using sample data so you can compare them like-for-like. Cancelled/negative segments stay the house red (#E91717) in every option; only the "positive" data hues change. Click "Pick this one" on your favorite, then just tell me the name.</p>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>Mock data only — Oct–Mar enrollment trend, a 3-way status split, and a 4-service breakdown. Not connected to live figures.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var RED = "#E91717";
+
+  var PALETTES = [
+    {
+      id: "signal",
+      name: "Signal",
+      tag: "Clean semantic tones — a SaaS-standard blue/green/amber/violet set",
+      colors: { primary:"#2563EB", secondary:"#16A34A", tertiary:"#D97706", quaternary:"#7C3AED" }
+    },
+    {
+      id: "muted",
+      name: "Muted Editorial",
+      tag: "Desaturated dusty blue, sage, ochre and mauve — quieter, more considered",
+      colors: { primary:"#5B7C99", secondary:"#7A9B76", tertiary:"#C08A3E", quaternary:"#9B7A99" }
+    },
+    {
+      id: "terracotta",
+      name: "Warm Terracotta",
+      tag: "Terracotta, olive, gold and umber — leans warm to sit closer to the red accent",
+      colors: { primary:"#B5502A", secondary:"#8A9B6E", tertiary:"#C9A227", quaternary:"#6B4E3D" }
+    },
+    {
+      id: "cool",
+      name: "Cool Professional",
+      tag: "Navy, teal, slate and sky — a cooler, more corporate register",
+      colors: { primary:"#1E3A8A", secondary:"#0F766E", tertiary:"#64748B", quaternary:"#38BDF8" }
+    },
+    {
+      id: "vibrant",
+      name: "Vibrant",
+      tag: "Higher-saturation blue, emerald, orange and purple — the boldest option here",
+      colors: { primary:"#2563EB", secondary:"#059669", tertiary:"#EA580C", quaternary:"#9333EA" }
+    },
+    {
+      id: "mono",
+      name: "Monochrome + Red",
+      tag: "Black-to-grey scale, red reserved only for the negative segment",
+      colors: { primary:"#191919", secondary:"#71717A", tertiary:"#A1A1AA", quaternary:"#D4D4D8" }
+    }
+  ];
+
+  var TREND = [4, 5, 5, 7, 9, 8, 11, 14, 13, 17, 19, 22]; // sample monthly enrollments
+  var TREND_LABELS = ["Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep"];
+
+  var STATUS = [
+    { label:"Active", value:45 },
+    { label:"Completed", value:40 },
+    { label:"Cancelled", value:15 }
+  ];
+
+  var SERVICES = [
+    { label:"Bootcamps", value:38 },
+    { label:"Diplomas", value:29 },
+    { label:"Short Courses", value:21 },
+    { label:"Corporate", value:12 }
+  ];
+
+  var svgns = "http://www.w3.org/2000/svg";
+  function el(tag, attrs){
+    var n = document.createElementNS(svgns, tag);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  }
+
+  function buildBarChart(color){
+    var w = 280, h = 96, pad = 4, gap = 4;
+    var max = Math.max.apply(null, TREND);
+    var barW = (w - pad * 2 - gap * (TREND.length - 1)) / TREND.length;
+    var svg = el("svg", { viewBox: "0 0 " + w + " " + h, role:"img", "aria-label":"Sample enrollment trend" });
+    TREND.forEach(function(v, i){
+      var barH = (v / max) * (h - 18);
+      var x = pad + i * (barW + gap);
+      var y = h - 14 - barH;
+      svg.appendChild(el("rect", {
+        x: x, y: y, width: barW, height: barH, rx: 2,
+        fill: color
+      }));
+    });
+    // baseline
+    svg.appendChild(el("line", { x1: pad, y1: h - 14, x2: w - pad, y2: h - 14, stroke: "var(--border)", "stroke-width": 1 }));
+    return svg;
+  }
+
+  function polar(cx, cy, r, angle){
+    var rad = (angle - 90) * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function buildDonut(data, colors, innerRatio){
+    var size = 96, cx = size/2, cy = size/2, r = size/2 - 4;
+    var inner = r * (innerRatio == null ? 0.6 : innerRatio);
+    var total = data.reduce(function(s,d){ return s + d.value; }, 0);
+    var svg = el("svg", { viewBox: "0 0 " + size + " " + size, role:"img", "aria-label":"Sample status breakdown" });
+    var start = 0;
+    data.forEach(function(d, i){
+      var angle = (d.value / total) * 360;
+      var end = start + angle;
+      var p0 = polar(cx, cy, r, start);
+      var p1 = polar(cx, cy, r, end);
+      var p2 = polar(cx, cy, inner, end);
+      var p3 = polar(cx, cy, inner, start);
+      var largeArc = angle > 180 ? 1 : 0;
+      var dPath = [
+        "M", p0.x, p0.y,
+        "A", r, r, 0, largeArc, 1, p1.x, p1.y,
+        "L", p2.x, p2.y,
+        "A", inner, inner, 0, largeArc, 0, p3.x, p3.y,
+        "Z"
+      ].join(" ");
+      svg.appendChild(el("path", { d: dPath, fill: colors[i], stroke: "var(--surface-2)", "stroke-width": 1.5 }));
+      start = end;
+    });
+    return svg;
+  }
+
+  function buildLegend(data, colors){
+    var wrap = document.createElement("div");
+    wrap.className = "legend";
+    data.forEach(function(d, i){
+      var item = document.createElement("span");
+      item.className = "item";
+      var dot = document.createElement("i");
+      dot.style.background = colors[i];
+      item.appendChild(dot);
+      item.appendChild(document.createTextNode(d.label));
+      var b = document.createElement("b");
+      b.className = "mono";
+      b.textContent = d.value + "%";
+      item.appendChild(b);
+      wrap.appendChild(item);
+    });
+    return wrap;
+  }
+
+  function chartBlock(title, wide){
+    var block = document.createElement("div");
+    block.className = "chart-block" + (wide ? " wide" : "");
+    var h3 = document.createElement("h3");
+    h3.textContent = title;
+    block.appendChild(h3);
+    return block;
+  }
+
+  function swatchRow(colors){
+    var wrap = document.createElement("div");
+    wrap.className = "swatches";
+    var order = [
+      { hex: colors.primary, label: "Primary" },
+      { hex: colors.secondary, label: "Secondary" },
+      { hex: colors.tertiary, label: "Tertiary" },
+      { hex: colors.quaternary, label: "Quaternary" },
+      { hex: RED, label: "Negative" }
+    ];
+    order.forEach(function(c){
+      var s = document.createElement("span");
+      s.className = "swatch";
+      var i = document.createElement("i");
+      i.style.background = c.hex;
+      s.appendChild(i);
+      var span = document.createElement("span");
+      span.textContent = c.hex.toUpperCase();
+      s.appendChild(span);
+      wrap.appendChild(s);
+    });
+    return wrap;
+  }
+
+  function copyIcon(){
+    var span = document.createElement("span");
+    span.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M4.5 13V5.5A2 2 0 0 1 6.5 3.5H13"/></svg>';
+    return span.firstChild;
+  }
+
+  function buildCard(p){
+    var card = document.createElement("article");
+    card.className = "card";
+    card.id = "card-" + p.id;
+
+    var head = document.createElement("div");
+    head.className = "card-head";
+    var titleWrap = document.createElement("div");
+    var h2 = document.createElement("h2");
+    h2.textContent = p.name;
+    var tag = document.createElement("p");
+    tag.className = "tag";
+    tag.textContent = p.tag;
+    titleWrap.appendChild(h2);
+    titleWrap.appendChild(tag);
+
+    var pickBtn = document.createElement("button");
+    pickBtn.className = "pick-btn";
+    pickBtn.type = "button";
+    pickBtn.textContent = "Pick this one";
+    pickBtn.setAttribute("aria-pressed", "false");
+    pickBtn.addEventListener("click", function(){
+      var wasSelected = card.classList.contains("selected");
+      document.querySelectorAll(".card.selected").forEach(function(c){
+        c.classList.remove("selected");
+        var btn = c.querySelector(".pick-btn");
+        btn.textContent = "Pick this one";
+        btn.setAttribute("aria-pressed", "false");
+      });
+      if (!wasSelected){
+        card.classList.add("selected");
+        pickBtn.textContent = "Picked ✓";
+        pickBtn.setAttribute("aria-pressed", "true");
+      }
+    });
+
+    head.appendChild(titleWrap);
+    head.appendChild(pickBtn);
+
+    var colorsArr3 = [p.colors.primary, p.colors.secondary, RED]; // Active / Completed / Cancelled
+    var colorsArr4 = [p.colors.primary, p.colors.secondary, p.colors.tertiary, p.colors.quaternary];
+
+    var chartsWrap = document.createElement("div");
+    chartsWrap.className = "charts";
+
+    var trendBlock = chartBlock("Enrollment trend", true);
+    trendBlock.appendChild(buildBarChart(p.colors.primary));
+    chartsWrap.appendChild(trendBlock);
+
+    var statusBlock = chartBlock("Enrollment status");
+    statusBlock.appendChild(buildDonut(STATUS, colorsArr3));
+    statusBlock.appendChild(buildLegend(STATUS, colorsArr3));
+    chartsWrap.appendChild(statusBlock);
+
+    var serviceBlock = chartBlock("By service");
+    serviceBlock.appendChild(buildDonut(SERVICES, colorsArr4, 0.42));
+    serviceBlock.appendChild(buildLegend(SERVICES, colorsArr4));
+    chartsWrap.appendChild(serviceBlock);
+
+    var copyRow = document.createElement("div");
+    copyRow.className = "copy-row";
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "copy-btn";
+    copyBtn.type = "button";
+    copyBtn.appendChild(copyIcon());
+    var copyLabel = document.createElement("span");
+    copyLabel.textContent = "Copy hex values";
+    copyBtn.appendChild(copyLabel);
+    copyBtn.addEventListener("click", function(){
+      var text = p.name + "\nPrimary " + p.colors.primary + "\nSecondary " + p.colors.secondary +
+        "\nTertiary " + p.colors.tertiary + "\nQuaternary " + p.colors.quaternary + "\nNegative " + RED;
+      function done(){
+        copyBtn.classList.add("copied");
+        copyLabel.textContent = "Copied";
+        setTimeout(function(){
+          copyBtn.classList.remove("copied");
+          copyLabel.textContent = "Copy hex values";
+        }, 1400);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done).catch(function(){
+          try {
+            var ta = document.createElement("textarea");
+            ta.value = text; document.body.appendChild(ta); ta.select();
+            document.execCommand("copy"); document.body.removeChild(ta);
+            done();
+          } catch(e){}
+        });
+      }
+    });
+    copyRow.appendChild(copyBtn);
+
+    card.appendChild(head);
+    card.appendChild(swatchRow(p.colors));
+    card.appendChild(chartsWrap);
+    card.appendChild(copyRow);
+    return card;
+  }
+
+  var grid = document.getElementById("grid");
+  PALETTES.forEach(function(p){
+    grid.appendChild(buildCard(p));
+  });
+})();
+</script>
